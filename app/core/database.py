@@ -3,7 +3,6 @@
 Содержит:
 - Настройку асинхронного движка БД
 - Фабрику сессий
-- Базовую модель ORM
 - Утилиты для управления подключением
 """
 
@@ -11,16 +10,10 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator, Optional
 
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
-from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy import text
 
 from app.core.config import settings
 from app.core.logging import log
-
-
-class Base(DeclarativeBase):
-    """Базовый класс для всех ORM-моделей"""
-    pass
 
 
 class Database:
