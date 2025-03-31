@@ -25,25 +25,33 @@ microblog/
 │   │   ├── __init__.py
 │   │   ├── user.py               # Модель для User
 │   │   ├── tweet.py              # Модель для Tweet
-│   │   └── ...
+│   │   ├── media.py              # Модель для media
+│   │   ├── like.py               # Модель для like
+│   │   └── follow.py             # Модель для follow
 │   │
 │   ├── schemas/                  # Pydantic схемы
 │   │   ├── __init__.py
 │   │   ├── user.py               # Схема для User
 │   │   ├── tweet.py              # Схема для Tweet
-│   │   └── ...
+│   │   ├── media.py              # Схема для media
+│   │   ├── like.py               # Схема для like
+│   │   └── follow.py             # Схема для follow
 │   │
 │   ├── repositories/             # Логика работы с базой данных (CRUD)
 │   │   ├── __init__.py
 │   │   ├── user.py               # Репозиторий для User
 │   │   ├── tweet.py              # Репозиторий для Tweet
-│   │   └── ...
+│   │   ├── media.py              # Репозиторий для media
+│   │   ├── like.py               # Репозиторий для like
+│   │   └── follow.py             # Репозиторий для follow
 │   │
 │   ├── services/                 # Бизнес-логика
 │   │   ├── __init__.py
 │   │   ├── user.py
 │   │   ├── tweet.py
-│   │   └── ...
+│   │   ├── media.py
+│   │   ├── like.py
+│   │   └── follow.py
 │   │
 │   ├── api/                      # API endpoints
 │   │   ├── __init__.py
@@ -52,9 +60,12 @@ microblog/
 │   │       ├── dependencies.py   # Зависимости
 │   │       └── routes/           # Маршруты
 │   │         ├── __init__.py
+│   │         ├── router.py       # ? Роутер ?
 │   │         ├── users.py        # /users/...
 │   │         ├── tweets.py       # /tweets/...
-│   │         └── ...
+│   │         ├── media.py        # /media/...
+│   │         ├── likes.py        # /likes/...
+│   │         └── follow.py       # /follow/...
 │   │
 │   └── utils/                    # Вспомогательные утилиты
 │       ├── __init__.py
