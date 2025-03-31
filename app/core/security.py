@@ -7,7 +7,7 @@
 
 from typing import Annotated
 
-from fastapi import Header, HTTPException, status, Depends
+from fastapi import Depends, Header, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings

@@ -37,7 +37,7 @@ class Settings(BaseSettings):
     API_KEY_HEADER: str = Field("api-key", description="HTTP-заголовок с API-ключом")
     SECRET_KEY: str = Field(..., min_length=32, description="Секретный ключ")
 
-    # Настройки логгирования
+    # Настройки логирования
     LOG_LEVEL: str = Field("INFO", description="Уровень логирования")
     LOG_FILE: Path | None = Field(None, description="Файл для записи логов")
 
