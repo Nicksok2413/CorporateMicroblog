@@ -1,6 +1,5 @@
 from functools import cached_property
 from pathlib import Path
-from typing import List
 
 from pydantic import AnyUrl, Field, PostgresDsn, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
