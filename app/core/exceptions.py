@@ -1,47 +1,102 @@
-class BaseServiceError(Exception):
-    """Базовое исключение для всех ошибок в сервисах."""
-    def __init__(self, message: str):
-        self.message = message
-        super().__init__(self.message)
+"""Модуль кастомных исключений для микросервиса блогов.
+
+Содержит специализированные исключения для разных сценариев:
+- Ошибки аутентификации
+- Ошибки работы с контентом
+- Ошибки валидации
+"""
+
+from typing import Any, Optional
+
+from fastapi import HTTPException, status
 
 
-class NotFoundError(BaseServiceError):
-    """Исключение, выбрасываемое, когда объект не найден."""
-    def __init__(self, message: str = "Resource not found"):
-        super().__init__(message)
+class MicroblogHTTPException(HTTPException):
+    """Базовое исключение для API микросервиса.
+
+    Args:
+        status_code: HTTP статус-код
+        detail: Детальное описание ошибки
+        error_type: Тип ошибки для клиента
+        extra: Дополнительные данные об ошибке
+    """
+
+    def __init__(
+            self,
+            status_code: int,
+            detail: str,
+            error_type: Optional[str] = None,
+            extra: Optional[dict[str, Any]] = None
+    ):
+        super().__init__(status_code=status_code, detail=detail)
+        self.error_type = error_type or "microblog_error"
+        self.extra = extra or {}
 
 
-class AlreadyExistsError(BaseServiceError):
-    """Исключение, выбрасываемое, когда объект уже существует."""
-    def __init__(self, message: str = "Resource already exists"):
-        super().__init__(message)
+class NotFoundError(MicroblogHTTPException):
+    """Ошибка при отсутствии запрашиваемого ресурса."""
+
+    def __init__(self, detail: str = "Ресурс не найден", **kwargs):
+        super().__init__(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=detail,
+            error_type="not_found",
+            **kwargs
+        )
 
 
-class ValidationError(BaseServiceError):
-    """Исключение для ошибок валидации."""
-    def __init__(self, message: str = "Validation failed"):
-        super().__init__(message)
+class PermissionDeniedError(MicroblogHTTPException):
+    """Ошибка доступа при отсутствии прав."""
+
+    def __init__(self, detail: str = "Доступ запрещен", **kwargs):
+        super().__init__(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=detail,
+            error_type="permission_denied",
+            **kwargs
+        )
 
 
-class UnauthorizedError(BaseServiceError):
-    """Исключение для неавторизованных запросов."""
-    def __init__(self, message: str = "Unauthorized access"):
-        super().__init__(message)
+class BadRequestError(MicroblogHTTPException):
+    """Ошибка при невалидных входных данных."""
+
+    def __init__(self, detail: str = "Некорректный запрос", **kwargs):
+        super().__init__(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=detail,
+            error_type="bad_request",
+            **kwargs
+        )
 
 
-class ForbiddenError(BaseServiceError):
-    """Исключение для запрещенных действий."""
-    def __init__(self, message: str = "Forbidden"):
-        super().__init__(message)
+class TweetValidationError(BadRequestError):
+    """Ошибка валидации твита."""
+
+    def __init__(self, detail: str = "Ошибка валидации твита", **kwargs):
+        super().__init__(
+            detail=detail,
+            error_type="tweet_validation_error",
+            **kwargs
+        )
 
 
-class ConflictError(BaseServiceError):
-    """Исключение для конфликта данных."""
-    def __init__(self, message: str = "Conflict error"):
-        super().__init__(message)
+class MediaValidationError(BadRequestError):
+    """Ошибка валидации медиафайла."""
+
+    def __init__(self, detail: str = "Ошибка валидации медиа", **kwargs):
+        super().__init__(
+            detail=detail,
+            error_type="media_validation_error",
+            **kwargs
+        )
 
 
-class InternalServerError(BaseServiceError):
-    """Исключение для внутренних ошибок сервера."""
-    def __init__(self, message: str = "Internal server error"):
-        super().__init__(message)
+class UserNotFoundError(NotFoundError):
+    """Ошибка при отсутствии пользователя."""
+
+    def __init__(self, api_key: Optional[str] = None):
+        detail = "Пользователь не найден"
+        extra = {}
+        if api_key:
+            extra["api_key"] = api_key
+        super().__init__(detail=detail, extra=extra)
