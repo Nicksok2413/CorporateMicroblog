@@ -1,0 +1,22 @@
+
+---
+
+### 🐳 **Docker-compose.yml** (проверь):
+#```yaml
+services:
+  web:
+    build: .
+    ports: ["8000:8000"]
+    volumes:
+      - ./static/media:/app/static/media  # Важно для сохранения медиа!
+    depends_on:
+      - db
+  db:
+    image: postgres:13
+    environment:
+      POSTGRES_PASSWORD: example
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
