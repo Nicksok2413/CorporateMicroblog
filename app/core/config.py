@@ -14,11 +14,6 @@ class Settings(BaseSettings):
         PRODUCTION: Продакшен режим
     """
 
-    # Настройки приложения
-    DEBUG: bool = Field(default=False, description="Режим отладки")
-    TESTING: bool = Field(default=False, description="Режим тестирования")
-    PRODUCTION: bool = Field(default=False, description="Продакшен режим")
-
     # Настройки базы данных
     POSTGRES_USER: str = Field(..., description="Имя пользователя PostgreSQL")
     POSTGRES_PASSWORD: str = Field(..., description="Пароль PostgreSQL")
@@ -26,6 +21,15 @@ class Settings(BaseSettings):
     POSTGRES_HOST: str = Field("localhost", description="Хост PostgreSQL")
     POSTGRES_PORT: int = Field(5432, description="Порт PostgreSQL")
     TEST_DB_URL: AnyUrl = Field("sqlite:///./test.db", description="URL тестовой БД")
+
+    # Настройки приложения
+    DEBUG: bool = Field(default=False, description="Режим отладки")
+    TESTING: bool = Field(default=False, description="Режим тестирования")
+    PRODUCTION: bool = Field(default=False, description="Продакшен режим")
+    STORAGE_PATH: str = Field(
+        "static/media",
+        description="Директория для хранения медиафайлов"
+    )
 
     # Настройки безопасности
     API_KEY_HEADER: str = Field("api-key", description="HTTP-заголовок с API-ключом")

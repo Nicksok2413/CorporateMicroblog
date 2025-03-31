@@ -2,9 +2,11 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.core.exceptions import MicroblogHTTPException
 from app.core.logging import log
+from app.core.config import settings
 
 
 @asynccontextmanager
@@ -34,6 +36,13 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+# Подключаем статические файлы
+app.mount(
+    "/media/files",
+    StaticFiles(directory=settings.STORAGE_PATH),
+    name="media_files"
+)
+
 
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
@@ -56,3 +65,4 @@ async def microblog_exception_handler(
             **exc.extra
         }
     )
+
