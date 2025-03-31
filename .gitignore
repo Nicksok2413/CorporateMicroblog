@@ -1,0 +1,60 @@
+# === Python ===
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+.python-version
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.so
+*.lib
+*.dll
+
+# === Environment ===
+.env
+.env.*
+!.env.example
+.venv/
+venv/
+env/
+ENV/
+
+# === Database ===
+*.sqlite
+*.sqlite3
+*.db
+*.dump
+
+# === Docker ===
+docker-compose.override.yml
+data/  # Для volume PostgreSQL (если используется локально)
+
+# === IDE ===
+# PyCharm
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# === OS ===
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# === Logs ===
+*.log
+logs/
+
+# === Alembic migrations (исключаем всё, кроме самих миграций) ===
+migrations/
+!migrations/versions/
+!migrations/env.py
+!migrations/script.py.mako
+
+# === Static files ===
+static/media/*  # Исключаем загруженные файлы (храним только в production)
+!static/media/.gitkeep  # Пустой файл для сохранения папки
