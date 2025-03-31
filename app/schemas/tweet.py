@@ -2,10 +2,14 @@
 
 from typing import List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import Field
+
+from app.schemas.base import BaseSchema
+from app.schemas.media import MediaResponse
+from app.schemas.user import UserResponse
 
 
-class TweetCreate(BaseModel):
+class TweetCreate(BaseSchema):
     """Схема для создания твита.
 
     Fields:
@@ -13,21 +17,23 @@ class TweetCreate(BaseModel):
         tweet_media_ids: Список ID медиавложений
     """
     tweet_data: str = Field(..., max_length=280)
-    tweet_media_ids: Optional[List[int]] = None
+    tweet_media_ids: Optional[List[int]] = Field(None, description="ID прикрепленных медиафайлов")
 
 
-class TweetResponse(BaseModel):
+class TweetResponse(BaseSchema):
     """Схема ответа с твитом.
 
     Fields:
         id: ID твита
         content: Текст
-        author_id: ID автора
+        author: Автор
+        is_liked: Есть ли лайки
         likes_count: Количество лайков
         attachments: Ссылки на медиа
     """
     id: int
     content: str
-    author_id: int
+    author: UserResponse
+    is_liked: bool
     likes_count: int
-    attachments: List[str]
+    attachments: List[MediaResponse]

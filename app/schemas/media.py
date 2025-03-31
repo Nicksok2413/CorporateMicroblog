@@ -1,9 +1,9 @@
 """Pydantic-схемы для медиафайлов."""
 
-from pydantic import BaseModel
+from app.schemas.base import BaseSchema
 
 
-class MediaResponse(BaseModel):
+class MediaResponse(BaseSchema):
     """Схема ответа с информацией о медиафайле.
 
     Fields:

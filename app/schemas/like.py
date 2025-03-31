@@ -1,16 +1,16 @@
 """Pydantic-схемы для работы с лайками."""
 
-from pydantic import BaseModel
+from app.schemas.base import BaseSchema
 
 
-class LikeResponse(BaseModel):
+class LikeResponse(BaseSchema):
     """Схема ответа при работе с лайками.
 
     Fields:
         tweet_id: ID твита
-        likes_count: Количество лайков
         is_liked: Поставил ли текущий пользователь лайк
+        likes_count: Количество лайков
     """
     tweet_id: int
-    likes_count: int
     is_liked: bool
+    likes_count: int

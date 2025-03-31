@@ -2,11 +2,11 @@
 
 from typing import List
 
-from pydantic import BaseModel
+from app.schemas.base import BaseSchema
 
 
-class UserFollow(BaseModel):
-    """Схема информации о пользователе для подписок.
+class FollowStats(BaseSchema):
+    """Схема статистики подписки.
 
     Fields:
         id: ID пользователя
@@ -16,7 +16,7 @@ class UserFollow(BaseModel):
     name: str
 
 
-class FollowResponse(BaseModel):
+class FollowResponse(BaseSchema):
     """Схема ответа для операций с подписками.
 
     Fields:
@@ -31,12 +31,12 @@ class FollowResponse(BaseModel):
     is_following: bool
 
 
-class UserFollowStats(BaseModel):
-    """Схема статистики подписок.
+class UserFollowStats(BaseSchema):
+    """Детализированная статистика подписок.
 
     Fields:
         followers: Список подписчиков
         following: Список подписок
     """
-    followers: List[UserFollow]
-    following: List[UserFollow]
+    followers: List[FollowStats]
+    following: List[FollowStats]
