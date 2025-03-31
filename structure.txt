@@ -1,61 +1,4 @@
 microblog/
-├── .env                           # Environment variables
-├── .gitignore
-├── docker-compose.yml             # Docker Compose configuration
-├── Dockerfile
-├── requirements.txt               # Production dependencies
-├── requirements-dev.txt           # Development dependencies
-├── README.md                      # Project documentation
-├── tests/                         # Unit and integration tests
-│   ├── __init__.py
-│   ├── conftest.py
-│   └── ...                         # Test modules
-└── src/
-    ├── main.py                     # FastAPI app initialization
-    ├── config/                     # Configuration
-    │   ├── __init__.py
-    │   └── settings.py
-    ├── db/                         # Database related code
-    │   ├── __init__.py
-    │   ├── base.py                 # Base model
-    │   ├── session.py              # Session factory
-    │   └── models/                 # Database models
-    │       ├── __init__.py
-    │       ├── user.py
-    │       ├── tweet.py
-    │       ├── media.py
-    │       └── ...
-    ├── schemas/                    # Pydantic models
-    │   ├── __init__.py
-    │   ├── user.py
-    │   ├── tweet.py
-    │   └── ...
-    ├── services/                   # Business logic
-    │   ├── __init__.py
-    │   ├── auth.py                 # API-key auth
-    │   ├── user.py
-    │   ├── tweet.py
-    │   └── ...
-    ├── api/                        # API endpoints
-    │   ├── __init__.py
-    │   ├── dependencies.py         # FastAPI dependencies
-    │   ├── errors.py               # Custom HTTP exceptions
-    │   ├── v1/                     # API version 1
-    │   │   ├── __init__.py
-    │   │   ├── users.py
-    │   │   ├── tweets.py
-    │   │   └── ...
-    │   └── router.py               # Main API router
-    ├── storage/                    # File storage
-    │   ├── __init__.py
-    │   └── local.py                # Local file storage
-    └── utils/                      # Utilities
-        ├── __init__.py
-        └── ...
-
-
-###########################################################################
-microblog/
 ├── .env.example                  # Шаблон конфигурации
 ├── .gitignore                    # Игнорируемые файлы
 ├── docker-compose.yml            # Композиция сервисов
@@ -74,12 +17,14 @@ microblog/
 │   │   ├── __init__.py
 │   │   ├── config.py             # Настройки приложения
 │   │   ├── database.py           # Подключение к БД
+│   │   ├── exceptions.py         # Обработка исключений
+│   │   ├── logging.py            # Настройка логгера
 │   │   └── security.py           # Аутентификация
 │   │
 │   ├── models/                   # SQLAlchemy модели
 │   │   ├── __init__.py
-│   │   ├── user_model.py         # Модель для User
-│   │   ├── tweet_model.py        # Модель для Tweet
+│   │   ├── user.py               # Модель для User
+│   │   ├── tweet.py              # Модель для Tweet
 │   │   └── ...
 │   │
 │   ├── schemas/                  # Pydantic схемы
