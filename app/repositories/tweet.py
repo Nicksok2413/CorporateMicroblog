@@ -76,5 +76,5 @@ class TweetRepository:
             .offset(offset)
         )
 
-        result = await self.session.execute(query)
+        result = await self.db.execute(query)
         return result.all()
