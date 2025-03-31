@@ -5,8 +5,8 @@ from pathlib import Path
 from sqlalchemy import Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
-from app.core.database import Base
 from app.core.config import settings
+from app.models.base import Base
 
 
 class Media(Base):
