@@ -1,30 +1,44 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
+"""Модуль эндпоинтов для работы с твитами."""
+
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, UploadFile, status
 
 from app.core.database import get_db
-from app.repositories.like_repository import LikeRepository
-from app.schemas.response_schema import ResultResponse
-from app.utils.auth import get_current_user
+from app.core.exceptions import TweetValidationError
+from app.core.security import get_current_user
+from app.models.user import User
+from app.schemas.tweet import TweetCreate, TweetResponse
+from app.services.tweet import TweetService
+
+router = APIRouter(prefix="/tweets", tags=["tweets"])
 
 
-router = APIRouter()
-
-
-@router.delete("/tweets/{tweet_id}/likes", response_model=ResultResponse)
-async def unlike_tweet(
-    tweet_id: int,
-    db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user)
+@router.post(
+    "/",
+    response_model=TweetResponse,
+    status_code=status.HTTP_201_CREATED
+)
+async def create_tweet(
+        tweet_data: TweetCreate,
+        current_user: Annotated[User, Depends(get_current_user)],
+        db=Depends(get_db)
 ):
-    """
-    Удаление лайка с твита
-    """
-    deleted = await LikeRepository.delete_like(db, current_user.id, tweet_id)
+    """Создание нового твита.
 
-    if not deleted:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Like not found"
-        )
+    Args:
+        tweet_data: Данные твита (текст + медиа)
+        current_user: Текущий пользователь из API-ключа
+        db: Сессия БД
 
-    return ResultResponse(result=True)
+    Returns:
+        TweetResponse: Созданный твит
+
+    Raises:
+        TweetValidationError: При невалидных данных
+    """
+    service = TweetService(db)
+    try:
+        return await service.create_tweet(current_user.id, tweet_data)
+    except ValueError as e:
+        raise TweetValidationError(detail=str(e))
