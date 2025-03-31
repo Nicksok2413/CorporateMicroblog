@@ -2,6 +2,7 @@ from sqlalchemy import Boolean, Integer, Column, String
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
+from app.models.follow import Follow
 
 
 class User(Base):
@@ -17,3 +18,5 @@ class User(Base):
     # Связи
     tweets = relationship("Tweet", back_populates="author")
     likes = relationship("Like", back_populates="user")
+    followers = relationship("Follow", foreign_keys=[Follow.followed_id], back_populates="followed")
+    following = relationship("Follow", foreign_keys=[Follow.follower_id], back_populates="follower")
