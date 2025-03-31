@@ -21,24 +21,19 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(50), nullable=False)
     api_key = Column(String(64), unique=True, nullable=False)
-    is_demo = Column(Boolean, default=False, nullable=False)
+    is_demo = Column(Boolean, default=False)
 
     # Связи
-    tweets = relationship("Tweet", back_populates="author", cascade="all, delete")
-    likes = relationship("Like", back_populates="user", cascade="all, delete")
+    tweets = relationship("Tweet", back_populates="author", cascade="all, delete-orphan")
+    likes = relationship("Like", back_populates="user", cascade="all, delete-orphan")
+    media = relationship("Media", back_populates="user", cascade="all, delete-orphan")
     followers = relationship(
         "Follow",
         foreign_keys="Follow.followed_id",
-        back_populates="followed",
-        cascade="all, delete"
+        back_populates="followed"
     )
     following = relationship(
         "Follow",
         foreign_keys="Follow.follower_id",
-        back_populates="follower",
-        cascade="all, delete"
+        back_populates="follower"
     )
-    media = relationship("Media", back_populates="user", cascade="all, delete")
-
-    def __repr__(self) -> str:
-        return f"<User(id={self.id}, name={self.name})>"

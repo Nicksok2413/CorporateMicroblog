@@ -13,6 +13,7 @@ class Tweet(Base):
     content = Column(String(280), nullable=False)
     author_id = Column(Integer, ForeignKey("users.id"))
 
+    # Связи
     author = relationship("User", back_populates="tweets")
-    likes = relationship("Like", back_populates="tweet")
-    media = relationship("TweetMedia", back_populates="tweet")
+    likes = relationship("Like", back_populates="tweet", cascade="all, delete-orphan")
+    media_links = relationship("TweetMedia", back_populates="tweet", cascade="all, delete-orphan")
