@@ -52,3 +52,102 @@ microblog/
     └── utils/                      # Utilities
         ├── __init__.py
         └── ...
+
+
+###########################################################################
+microblog/
+├── .env.example                  # Шаблон конфигурации
+├── .gitignore                    # Игнорируемые файлы
+├── docker-compose.yml            # Композиция сервисов
+├── Dockerfile                    # Образ приложения
+├── requirements.txt              # Зависимости (Production)
+├── requirements-dev.txt          # Зависимости (Development)
+├── alembic.ini                   # Настройки миграций
+├── pytest.ini                    # Настройки тестирования
+├── README.md                     # Документация
+│
+├── app/                          # Основное приложение
+│   ├── __init__.py
+│   ├── main.py                   # Точка входа в приложение
+│   │
+│   ├── core/                     # Ядро приложения
+│   │   ├── __init__.py
+│   │   ├── config.py             # Настройки приложения
+│   │   ├── database.py           # Подключение к БД
+│   │   └── security.py           # Аутентификация
+│   │
+│   ├── models/                   # SQLAlchemy модели
+│   │   ├── __init__.py
+│   │   ├── user_model.py         # Модель для User
+│   │   ├── tweet_model.py        # Модель для Tweet
+│   │   └── ...
+│   │
+│   ├── schemas/                  # Pydantic схемы
+│   │   ├── __init__.py
+│   │   ├── user.py               # Схема для User
+│   │   ├── tweet.py              # Схема для Tweet
+│   │   └── ...
+│   │
+│   ├── repositories/             # Логика работы с базой данных (CRUD)
+│   │   ├── __init__.py
+│   │   ├── user.py               # Репозиторий для User
+│   │   ├── tweet.py              # Репозиторий для Tweet
+│   │   └── ...
+│   │
+│   ├── services/                 # Бизнес-логика
+│   │   ├── __init__.py
+│   │   ├── user.py
+│   │   ├── tweet.py
+│   │   └── ...
+│   │
+│   ├── api/                      # API endpoints
+│   │   ├── __init__.py
+│   │   └── v1/                   # Версия API
+│   │       ├── __init__.py
+│   │       ├── dependencies.py   # Зависимости
+│   │       └── routes/           # Маршруты
+│   │         ├── __init__.py
+│   │         ├── users.py        # /users/...
+│   │         ├── tweets.py       # /tweets/...
+│   │         └── ...
+│   │
+│   └── utils/                    # Вспомогательные утилиты
+│       ├── __init__.py
+│       ├── file_upload.py
+│       └── pagination.py
+│
+├── migrations/                   # Alembic миграции
+│   ├── versions/
+│   ├── env.py
+│   └── script.py.mako
+│
+├── tests/                        # Тесты
+│   ├── __init__.py
+│   ├── conftest.py               # Фикстуры pytest
+│   ├── unit/                     # Юнит-тесты
+│   │   ├── repositories/
+│   │   │   ├── test_user_repo.py
+│   │   │   └── ...
+│   │   ├── services/
+│   │   │   ├── test_user_service.py
+│   │   │   └── ...
+│   │   └── utils/
+│   │       ├── test_file_upload.py
+│   │       └── ...
+│   └── integration/              # Интеграционные тесты
+│       ├── api/
+│       │   ├── test_users_api.py
+│       │   └── ...
+│       └── database/
+│           └── test_connections.py
+│
+└── static/                       # Статические файлы
+    ├── index.html
+    ├── favicon.ico
+    ├── media/                    # Загруженные медиа
+    │   └── ...
+    ├── css/
+    │   └── ...
+    └── js/
+        └── ...
+
