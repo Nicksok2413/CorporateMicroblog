@@ -27,4 +27,5 @@ class TweetRepository:
         """Проверка существования медиа."""
         result = await self.db.execute(
             select(Media.id).where(Media.id.in_(media_ids))
+        )
         return result.scalars().all()

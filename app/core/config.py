@@ -26,6 +26,8 @@ class Settings(BaseSettings):
     DEBUG: bool = Field(default=False, description="Режим отладки")
     TESTING: bool = Field(default=False, description="Режим тестирования")
     PRODUCTION: bool = Field(default=False, description="Продакшен режим")
+
+    # Настройки хранения файлов
     STORAGE_PATH: str = Field(
         "static/media",
         description="Директория для хранения медиафайлов"
