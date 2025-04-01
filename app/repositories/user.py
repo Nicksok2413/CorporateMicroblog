@@ -1,107 +1,46 @@
-"""Репозиторий для работы с пользователями в БД."""
+"""Репозиторий для работы с моделью User."""
 
-from sqlalchemy import distinct, func, select
+from typing import Optional
+
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.follow import Follow
-from app.models.tweet import Tweet
 from app.models.user import User
 from app.repositories.base import BaseRepository
 
 
-class UserRepository(BaseRepository):
-    """Логика работы с пользователями в БД."""
+# Схемы здесь обычно не нужны, они используются в сервисах/API
+# from app.schemas.user import UserCreate, UserUpdate # Если бы они использовались
 
-    def __init__(self, session: AsyncSession):
-        super().__init__(session, User)
+class UserRepository(BaseRepository[User, None, None]):  # Используем None для схем
+    """
+    Репозиторий для выполнения CRUD операций с моделью User.
 
-    async def get_by_api_key(self, api_key: str) -> User | None:
-        """Находит пользователя по API-ключу.
+    Наследует общие методы от BaseRepository и добавляет специфичные для User.
+    """
+
+    async def get_by_api_key(self, db: AsyncSession, *, api_key: str) -> Optional[User]:
+        """
+        Получает пользователя по его API ключу.
 
         Args:
-            api_key: Ключ аутентификации
+            db: Асинхронная сессия SQLAlchemy
+            api_key: API ключ пользователя
 
         Returns:
-            User | None: Объект пользователя или None
+            Optional[User]: Найденный пользователь или None.
         """
-        result = await self.session.execute(select(User).filter_by(api_key=api_key))
-        return result.scalar_one_or_none()
+        statement = select(self.model).where(self.model.api_key == api_key)
+        result = await db.execute(statement)
+        return result.scalars().first()
 
-    async def create_user(
-            self,
-            name: str,
-            api_key: str,
-            is_demo: bool = False
-    ) -> User:
-        """Создает нового пользователя.
-
-        Args:
-            name: Имя пользователя
-            api_key: Ключ аутентификации
-            is_demo: Флаг демо-аккаунта
-
-        Returns:
-            User: Созданный пользователь
-
-        Raises:
-            ValueError: Если пользователь с таким api_key уже существует
-        """
-        existing_user = await self.get_by_api_key(api_key)
-        if existing_user:
-            raise ValueError("Пользователь с таким API-ключом уже существует")
-
-        user = User(
-            name=name,
-            api_key=api_key,
-            is_demo=is_demo
-        )
-        self.session.add(user)
-        await self.session.commit()
-        return user
-
-    async def get_users_with_stats(
-            self,
-            limit: int = 100,
-            offset: int = 0
-    ) -> list[tuple[User, int, int]]:
-        """Возвращает список пользователей со статистикой.
-
-        Args:
-            limit: Максимальное количество записей
-            offset: Смещение
-
-        Returns:
-            list: Список кортежей (пользователь, кол-во твитов, кол-во подписчиков)
-        """
-        query = (
-            select(
-                User,
-                func.count(distinct(Tweet.id)),
-                func.count(distinct(Follow.follower_id))
-            )
-            .outerjoin(Tweet, User.id == Tweet.author_id)
-            .outerjoin(Follow, User.id == Follow.followed_id)
-            .group_by(User.id)
-            .limit(limit)
-            .offset(offset)
-        )
-
-        result = await self.session.execute(query)
-        return result.all()
+    # Добавьте другие специфичные методы поиска/получения для User при необходимости
+    # Например:
+    # async def get_by_name(self, db: AsyncSession, *, name: str) -> Optional[User]:
+    #     statement = select(self.model).where(self.model.name == name)
+    #     result = await db.execute(statement)
+    #     return result.scalars().first()
 
 
-    # v2
-    # async def get_with_stats(self, user_id: int) -> tuple[User, int, int]:
-    #     """Возвращает пользователя с кол-вом твитов и подписчиков."""
-    #     result = await self.session.execute(
-    #         select(
-    #             User,
-    #             func.count(distinct(Follow.follower_id)),
-    #             func.count(distinct(Tweet.id))
-    #         )
-    #         .outerjoin(Follow, User.id == Follow.followed_id)
-    #         .outerjoin(Tweet, User.id == Tweet.author_id)
-    #         .where(User.id == user_id)
-    #         .group_by(User.id)
-    #     )
-    #     return result.first()
+# Создаем экземпляр репозитория для использования в других частях приложения
+user_repo = UserRepository(User)
