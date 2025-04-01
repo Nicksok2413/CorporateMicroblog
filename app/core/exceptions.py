@@ -84,12 +84,7 @@ class ConflictError(MicroblogHTTPException):
     """Ошибка при конфликте данных (например, дубликат)."""
 
     def __init__(self, detail: str = "Конфликт данных", **kwargs):
-        super().__init__(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=detail,
-            error_type="conflict_error",
-            **kwargs
-        )
+        super().__init__(status.HTTP_409_CONFLICT, detail, "conflict_error", **kwargs)
 
 
 class TweetValidationError(BadRequestError):
