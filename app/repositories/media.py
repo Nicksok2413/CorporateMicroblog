@@ -1,18 +1,13 @@
 """Репозиторий для работы с моделью Media."""
 
-# Импорты для схем здесь не обязательны, но могут понадобиться для type hinting
-# в специфичных методах, если такие будут
-from typing import TYPE_CHECKING
+from typing import Optional  # Добавим Optional для схемы Update, если она появится
 
 from app.models.media import Media
 from app.repositories.base import BaseRepository
-
-if TYPE_CHECKING:
-    # Импортируем схемы для аннотаций, если нужно
-    from app.schemas.media import MediaCreate
+from app.schemas.media import MediaCreate  # Импортируем реальную схему
 
 
-class MediaRepository(BaseRepository[Media, "MediaCreate", None]):  # Указываем схемы
+class MediaRepository(BaseRepository[Media, MediaCreate, None]):  # Указываем схему Create, Update = None
     """
     Репозиторий для выполнения CRUD операций с моделью Media.
     """

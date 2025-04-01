@@ -1,24 +1,28 @@
 """Репозиторий для работы с моделью Tweet."""
 
-from typing import List, Optional, Sequence, TYPE_CHECKING
+from typing import List, Optional, Sequence
 
 from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload, selectinload
+from sqlalchemy.orm import selectinload
 
 from app.core.logging import log
 from app.models import Like, Media, Tweet, User  # Импортируем все нужные модели
 from app.repositories.base import BaseRepository
+# Импортируем внутреннюю схему для базового метода create
+# (предполагается, что она создана в schemas/tweet.py)
+from app.schemas.tweet import TweetCreateInternal  # Убедитесь, что эта схема существует!
 
-if TYPE_CHECKING:
-    # Импортируем схемы для аннотаций
-    from app.schemas.tweet import TweetCreate  # Пример
+
+# Если схемы TweetUpdate нет, используем None
 
 
-class TweetRepository(BaseRepository[Tweet, "TweetCreate", None]):  # Указываем схемы
+class TweetRepository(BaseRepository[Tweet, TweetCreateInternal, None]):  # Указываем схемы
     """
     Репозиторий для выполнения CRUD операций с моделью Tweet.
     """
+
+    # Базовый метод create унаследован и ожидает TweetCreateInternal
 
     async def create_with_author_and_media(
             self,
@@ -31,11 +35,14 @@ class TweetRepository(BaseRepository[Tweet, "TweetCreate", None]):  # Указы
         """
         Создает твит, связывая его с автором и медиафайлами.
 
+        Это специфичный метод, более удобный, чем базовый create,
+        когда нужно сразу прикрепить медиа.
+
         Args:
-            db: Асинхронная сессия SQLAlchemy
-            content: Содержимое твита
-            author_id: ID автора твита
-            media_items: Список объектов Media для прикрепления (опционально)
+            db: Асинхронная сессия SQLAlchemy.
+            content: Содержимое твита.
+            author_id: ID автора твита.
+            media_items: Список объектов Media для прикрепления (опционально).
 
         Returns:
             Tweet: Созданный объект твита.
@@ -44,6 +51,7 @@ class TweetRepository(BaseRepository[Tweet, "TweetCreate", None]):  # Указы
             SQLAlchemyError: В случае ошибки базы данных.
         """
         log.debug(f"Создание твита для автора ID {author_id} с медиа: {'Да' if media_items else 'Нет'}")
+        # Создаем объект Tweet напрямую
         db_obj = Tweet(content=content, author_id=author_id)
         if media_items:
             # Присоединяем медиа к твиту (SQLAlchemy обработает M2M связь)
@@ -52,13 +60,15 @@ class TweetRepository(BaseRepository[Tweet, "TweetCreate", None]):  # Указы
         db.add(db_obj)
         try:
             await db.commit()
-            await db.refresh(db_obj, attribute_names=['attachments'])  # Обновляем и связь
+            # Обновляем объект, чтобы получить связанные данные, если нужно
+            # Особенно важно для many-to-many, чтобы увидеть attachments
+            await db.refresh(db_obj, attribute_names=['attachments'])
             log.info(f"Успешно создан твит ID {db_obj.id} для автора {author_id}.")
             return db_obj
-        except Exception as exc:  # Ловим общую ошибку для отката
+        except Exception as e:  # Ловим общую ошибку для отката
             await db.rollback()
-            log.error(f"Ошибка при создании твита для автора {author_id}: {exc}", exc_info=True)
-            raise exc  # Передаем исключение выше
+            log.error(f"Ошибка при создании твита для автора {author_id}: {e}", exc_info=True)
+            raise e  # Передаем исключение выше
 
     async def get_feed_for_user(
             self,
@@ -71,13 +81,14 @@ class TweetRepository(BaseRepository[Tweet, "TweetCreate", None]):  # Указы
         """
         Получает ленту твитов для пользователя от указанных авторов.
 
-        Загружает связанные данные (автор, лайки, медиа) и сортирует по популярности (лайки).
+        Загружает связанные данные (автор, лайки + их пользователи, медиа)
+        и сортирует по популярности (количество лайков убыв.), затем по дате создания (убыв.).
 
         Args:
             db: Асинхронная сессия SQLAlchemy.
-            author_ids: Список ID авторов, чьи твиты нужно включить
-            limit: Максимальное количество твитов
-            offset: Смещение для пагинации
+            author_ids: Список ID авторов, чьи твиты нужно включить.
+            limit: Максимальное количество твитов.
+            offset: Смещение для пагинации.
 
         Returns:
             Sequence[Tweet]: Последовательность объектов Tweet с загруженными связями.
@@ -88,7 +99,7 @@ class TweetRepository(BaseRepository[Tweet, "TweetCreate", None]):  # Указы
 
         log.debug(f"Получение ленты твитов для авторов {author_ids} (limit={limit}, offset={offset})")
 
-        # Подзапрос для подсчета лайков (более эффективный способ)
+        # Подзапрос для подсчета лайков
         like_count_subquery = (
             select(Like.tweet_id, func.count(Like.user_id).label("like_count"))
             .group_by(Like.tweet_id)
@@ -100,7 +111,7 @@ class TweetRepository(BaseRepository[Tweet, "TweetCreate", None]):  # Указы
             .where(Tweet.author_id.in_(author_ids))
             # Присоединяем подзапрос с количеством лайков (LEFT JOIN)
             .outerjoin(like_count_subquery, Tweet.id == like_count_subquery.c.tweet_id)
-            # Используем selectinload для эффективной загрузки связей (меньше запросов)
+            # Используем selectinload для эффективной загрузки связей
             .options(
                 selectinload(Tweet.author),
                 selectinload(Tweet.likes).selectinload(Like.user),  # Загружаем лайки и пользователей
@@ -143,7 +154,6 @@ class TweetRepository(BaseRepository[Tweet, "TweetCreate", None]):  # Указы
             )
         )
         result = await db.execute(statement)
-        # unique() здесь тоже не помешает, хотя для одного объекта менее критично
         instance = result.unique().scalars().first()
         if instance:
             log.debug(f"Твит с деталями (ID {id}) найден.")

@@ -15,18 +15,33 @@ class TweetCreateRequest(BaseModel):
     Схема запроса на создание нового твита.
 
     Fields:
-        tweet_data (str): Текст твита
-        tweet_media_ids (Optional[List[int]]): Список ID медиафайлов для прикрепления
+        tweet_data (str): Текст твита.
+        tweet_media_ids (Optional[List[int]]): Список ID медиафайлов для прикрепления.
     """
     tweet_data: str = Field(..., min_length=1, max_length=280, description="Текст твита (1-280 символов)")
     tweet_media_ids: Optional[List[int]] = Field(None, description="Список ID медиафайлов для прикрепления")
 
-    # Пример валидатора, если нужно что-то проверить дополнительно
+    # Можно добавить валидатор для уникальности ID медиа, если нужно
     # @field_validator('tweet_media_ids')
     # def ensure_unique_ids(cls, v):
     #     if v and len(v) != len(set(v)):
     #         raise ValueError('Media IDs must be unique')
     #     return v
+
+
+# --- Внутренние схемы (для передачи между слоями) ---
+class TweetCreateInternal(BaseModel):
+    """
+    Внутренняя схема для создания объекта Tweet в репозитории.
+
+    Содержит только поля, напрямую соответствующие модели Tweet.
+
+    Fields:
+        content (str): Текст твита.
+        author_id (int): ID автора твита.
+    """
+    content: str
+    author_id: int
 
 
 # --- Выходные данные API ---
@@ -36,8 +51,8 @@ class TweetCreateResult(ResultTrue):
     Схема ответа при успешном создании твита.
 
     Fields:
-        result (bool): Всегда True
-        tweet_id (int): ID созданного твита
+        result (bool): Всегда True.
+        tweet_id (int): ID созданного твита.
     """
     tweet_id: int
 
@@ -47,7 +62,7 @@ class TweetActionResult(ResultTrue):
     Общая схема успешного ответа для действий с твитом (удаление, лайк/анлайк).
 
     Fields:
-        result (bool): Всегда True
+        result (bool): Всегда True.
     """
     pass  # Нет дополнительных полей
 
@@ -58,22 +73,12 @@ class LikeInfo(BaseUser):
     Наследует id и name от BaseUser.
 
     Fields:
-        user_id (int): ID пользователя (переименовано для соответствия ТЗ)
-        name (str): Имя пользователя
+        id (int): ID пользователя.
+        name (str): Имя пользователя.
     """
-    # Переименовываем поле id в user_id для соответствия ТЗ
-    # В Pydantic V2 это делается через Field(validation_alias='id') или alias='user_id'
-    # Если модель SQLAlchemy имеет поле user_id, то from_attributes справится само
-    # Если модель SQLAlchemy имеет поле id, то нужен alias
-    # В нашей модели Like есть user_id, но для User - id. Нужно достать из User.
-    # Проще оставить id и name, как в BaseUser, если фронт не возражает.
-    # Если ТЗ строгое, нужна кастомная сериализация или адаптер.
-    # --- Вариант 1: Оставляем id, name (проще) ---
-    pass  # Наследует id, name
-    # --- Вариант 2: Строго по ТЗ (сложнее, требует адаптации при формировании) ---
-    # user_id: int = Field(..., alias="id") # Читаем 'id' из модели User, отдаем как 'user_id'
-    # name: str
-    # model_config = ConfigDict(from_attributes=True, populate_by_name=True) # populate_by_name нужно для alias
+    # Оставляем id и name для простоты. Если ТЗ требует user_id, name,
+    # то нужна адаптация при формировании ответа в сервисе/эндпоинте.
+    pass
 
 
 class TweetAuthor(BaseUser):
@@ -82,8 +87,8 @@ class TweetAuthor(BaseUser):
     Наследует id и name от BaseUser.
 
     Fields:
-        id (int): ID автора
-        name (str): Имя автора
+        id (int): ID автора.
+        name (str): Имя автора.
     """
     pass  # Наследует id, name
 

@@ -9,9 +9,6 @@ from app.core.logging import log
 from app.models.like import Like
 
 
-# BaseRepository здесь не очень подходит, т.к. у Like составной PK и нет схем Create/Update
-# Можно было бы унаследовать, но проще определить методы явно.
-
 class LikeRepository:
     """
     Репозиторий для управления лайками.
@@ -24,9 +21,9 @@ class LikeRepository:
         Проверяет наличие лайка от пользователя на конкретный твит.
 
         Args:
-            db: Асинхронная сессия SQLAlchemy
-            user_id: ID пользователя
-            tweet_id: ID твита
+            db: Асинхронная сессия SQLAlchemy.
+            user_id: ID пользователя.
+            tweet_id: ID твита.
 
         Returns:
             Optional[Like]: Объект Like, если лайк существует, иначе None.
@@ -44,9 +41,9 @@ class LikeRepository:
         Создает запись о лайке.
 
         Args:
-            db: Асинхронная сессия SQLAlchemy
-            user_id: ID пользователя
-            tweet_id: ID твита
+            db: Асинхронная сессия SQLAlchemy.
+            user_id: ID пользователя.
+            tweet_id: ID твита.
 
         Returns:
             Like: Созданный объект Like.
@@ -59,23 +56,21 @@ class LikeRepository:
         db.add(db_obj)
         try:
             await db.commit()
-            # Refresh не обязателен для Like, т.к. нет автогенерируемых полей
-            # await db.refresh(db_obj)
             log.info(f"Лайк успешно создан: user_id={user_id}, tweet_id={tweet_id}")
             return db_obj
-        except Exception as exc:
+        except Exception as e:
             await db.rollback()
-            log.error(f"Ошибка при создании лайка (user_id={user_id}, tweet_id={tweet_id}): {exc}", exc_info=True)
-            raise exc
+            log.error(f"Ошибка при создании лайка (user_id={user_id}, tweet_id={tweet_id}): {e}", exc_info=True)
+            raise e
 
     async def remove_like(self, db: AsyncSession, *, user_id: int, tweet_id: int) -> bool:
         """
         Удаляет запись о лайке.
 
         Args:
-            db: Асинхронная сессия SQLAlchemy
-            user_id: ID пользователя
-            tweet_id: ID твита
+            db: Асинхронная сессия SQLAlchemy.
+            user_id: ID пользователя.
+            tweet_id: ID твита.
 
         Returns:
             bool: True, если лайк был найден и удален, иначе False.
@@ -98,10 +93,10 @@ class LikeRepository:
             else:
                 log.warning(f"Лайк для удаления не найден: user_id={user_id}, tweet_id={tweet_id}")
                 return False
-        except Exception as exc:
+        except Exception as e:
             await db.rollback()
-            log.error(f"Ошибка при удалении лайка (user_id={user_id}, tweet_id={tweet_id}): {exc}", exc_info=True)
-            raise exc
+            log.error(f"Ошибка при удалении лайка (user_id={user_id}, tweet_id={tweet_id}): {e}", exc_info=True)
+            raise e
 
 
 # Создаем экземпляр репозитория

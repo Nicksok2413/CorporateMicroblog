@@ -9,10 +9,12 @@ from app.models.user import User
 from app.repositories.base import BaseRepository
 
 
-# Схемы здесь обычно не нужны, они используются в сервисах/API
-# from app.schemas.user import UserCreate, UserUpdate # Если бы они использовались
+# Схемы Create/Update для User пока не определены и не требуются по ТЗ
+# Если понадобятся, нужно будет их создать и импортировать
+# from app.schemas.user import UserCreate, UserUpdate
 
-class UserRepository(BaseRepository[User, None, None]):  # Используем None для схем
+
+class UserRepository(BaseRepository[User, None, None]):  # Оставляем None для схем
     """
     Репозиторий для выполнения CRUD операций с моделью User.
 
@@ -24,8 +26,8 @@ class UserRepository(BaseRepository[User, None, None]):  # Используем 
         Получает пользователя по его API ключу.
 
         Args:
-            db: Асинхронная сессия SQLAlchemy
-            api_key: API ключ пользователя
+            db: Асинхронная сессия SQLAlchemy.
+            api_key: API ключ пользователя.
 
         Returns:
             Optional[User]: Найденный пользователь или None.
@@ -34,12 +36,7 @@ class UserRepository(BaseRepository[User, None, None]):  # Используем 
         result = await db.execute(statement)
         return result.scalars().first()
 
-    # Добавьте другие специфичные методы поиска/получения для User при необходимости
-    # Например:
-    # async def get_by_name(self, db: AsyncSession, *, name: str) -> Optional[User]:
-    #     statement = select(self.model).where(self.model.name == name)
-    #     result = await db.execute(statement)
-    #     return result.scalars().first()
+    # Можно добавить другие методы при необходимости
 
 
 # Создаем экземпляр репозитория для использования в других частях приложения

@@ -1,6 +1,6 @@
 """Базовый класс репозитория с общими CRUD операциями."""
 
-from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union
+from typing import Any, Generic, List, Optional, Type, TypeVar, Union, Dict
 
 from pydantic import BaseModel
 from sqlalchemy import delete, func, select, update
@@ -8,7 +8,7 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.logging import log
-from app.models.base import Base
+from app.models.base import Base  # Импортируем Base из models
 
 # Определяем Generic типы для моделей SQLAlchemy и схем Pydantic
 ModelType = TypeVar("ModelType", bound=Base)
@@ -21,31 +21,31 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     Базовый репозиторий с асинхронными CRUD операциями.
 
     Args:
-        model: Класс модели SQLAlchemy.
+        model (Type[ModelType]): Класс модели SQLAlchemy.
     """
 
     def __init__(self, model: Type[ModelType]):
         self.model = model
 
-    async def get(self, db: AsyncSession, obj_id: Any) -> Optional[ModelType]:
+    async def get(self, db: AsyncSession, id: Any) -> Optional[ModelType]:
         """
         Получает запись по её ID.
 
         Args:
-            db: Асинхронная сессия SQLAlchemy
-            obj_id: Идентификатор записи
+            db: Асинхронная сессия SQLAlchemy.
+            id: Идентификатор записи.
 
         Returns:
             Optional[ModelType]: Найденный объект модели или None.
         """
-        log.debug(f"Получение {self.model.__name__} по ID: {obj_id}")
-        statement = select(self.model).where(self.model.id == obj_id)
+        log.debug(f"Получение {self.model.__name__} по ID: {id}")
+        statement = select(self.model).where(self.model.id == id)
         result = await db.execute(statement)
         instance = result.scalars().first()
         if instance:
-            log.debug(f"{self.model.__name__} с ID {obj_id} найден.")
+            log.debug(f"{self.model.__name__} с ID {id} найден.")
         else:
-            log.debug(f"{self.model.__name__} с ID {obj_id} не найден.")
+            log.debug(f"{self.model.__name__} с ID {id} не найден.")
         return instance
 
     async def get_multi(
@@ -55,9 +55,9 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         Получает список записей с пагинацией.
 
         Args:
-            db: Асинхронная сессия SQLAlchemy
-            skip: Количество записей для пропуска
-            limit: Максимальное количество записей для возврата
+            db: Асинхронная сессия SQLAlchemy.
+            skip: Количество записей для пропуска.
+            limit: Максимальное количество записей для возврата.
 
         Returns:
             List[ModelType]: Список объектов модели.
@@ -67,15 +67,15 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         result = await db.execute(statement)
         instances = result.scalars().all()
         log.debug(f"Найдено {len(instances)} записей {self.model.__name__}.")
-        return instances
+        return list(instances)  # Преобразуем в list для консистентности
 
     async def create(self, db: AsyncSession, *, obj_in: CreateSchemaType) -> ModelType:
         """
         Создает новую запись в базе данных.
 
         Args:
-            db: Асинхронная сессия SQLAlchemy
-            obj_in: Pydantic схема с данными для создания
+            db: Асинхронная сессия SQLAlchemy.
+            obj_in: Pydantic схема с данными для создания.
 
         Returns:
             ModelType: Созданный объект модели.
@@ -93,14 +93,14 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             await db.refresh(db_obj)
             log.info(f"Успешно создан {self.model.__name__} с ID: {db_obj.id}")
             return db_obj
-        except IntegrityError as exc:
+        except IntegrityError as e:
             await db.rollback()
-            log.error(f"Ошибка целостности при создании {self.model.__name__}: {exc}")
-            raise exc  # Передаем исключение дальше для обработки в сервисе/API
-        except SQLAlchemyError as exc:
+            log.error(f"Ошибка целостности при создании {self.model.__name__}: {e}")
+            raise e  # Передаем исключение дальше для обработки в сервисе/API
+        except SQLAlchemyError as e:
             await db.rollback()
-            log.error(f"Ошибка БД при создании {self.model.__name__}: {exc}")
-            raise exc
+            log.error(f"Ошибка БД при создании {self.model.__name__}: {e}")
+            raise e
 
     async def update(
             self,
@@ -113,9 +113,9 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         Обновляет существующую запись в базе данных.
 
         Args:
-            db: Асинхронная сессия SQLAlchemy
-            db_obj: Объект модели SQLAlchemy для обновления
-            obj_in: Pydantic схема или словарь с данными для обновления
+            db: Асинхронная сессия SQLAlchemy.
+            db_obj: Объект модели SQLAlchemy для обновления.
+            obj_in: Pydantic схема или словарь с данными для обновления.
 
         Returns:
             ModelType: Обновленный объект модели.
@@ -148,22 +148,22 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             await db.refresh(db_obj)
             log.info(f"Успешно обновлен {self.model.__name__} с ID: {db_obj.id}")
             return db_obj
-        except IntegrityError as exc:
+        except IntegrityError as e:
             await db.rollback()
-            log.error(f"Ошибка целостности при обновлении {self.model.__name__} (ID: {db_obj.id}): {exc}")
-            raise exc
-        except SQLAlchemyError as exc:
+            log.error(f"Ошибка целостности при обновлении {self.model.__name__} (ID: {db_obj.id}): {e}")
+            raise e
+        except SQLAlchemyError as e:
             await db.rollback()
-            log.error(f"Ошибка БД при обновлении {self.model.__name__} (ID: {db_obj.id}): {exc}")
-            raise exc
+            log.error(f"Ошибка БД при обновлении {self.model.__name__} (ID: {db_obj.id}): {e}")
+            raise e
 
     async def remove(self, db: AsyncSession, *, id: Any) -> Optional[ModelType]:
         """
         Удаляет запись по её ID.
 
         Args:
-            db: Асинхронная сессия SQLAlchemy
-            id: Идентификатор записи для удаления
+            db: Асинхронная сессия SQLAlchemy.
+            id: Идентификатор записи для удаления.
 
         Returns:
             Optional[ModelType]: Удаленный объект модели или None, если не найден.
@@ -172,22 +172,22 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             SQLAlchemyError: В случае ошибки базы данных при удалении.
         """
         log.debug(f"Удаление {self.model.__name__} по ID: {id}")
-        obj = await self.get(db, obj_id=id)
+        obj = await self.get(db, id=id)
         if obj:
             try:
                 await db.delete(obj)
                 await db.commit()
                 log.info(f"Успешно удален {self.model.__name__} с ID: {id}")
                 return obj
-            except IntegrityError as exc:
+            except IntegrityError as e:
                 # Это маловероятно при удалении, но возможно при сложных каскадах
                 await db.rollback()
-                log.error(f"Ошибка целостности при удалении {self.model.__name__} (ID: {id}): {exc}")
-                raise exc
-            except SQLAlchemyError as exc:
+                log.error(f"Ошибка целостности при удалении {self.model.__name__} (ID: {id}): {e}")
+                raise e
+            except SQLAlchemyError as e:
                 await db.rollback()
-                log.error(f"Ошибка БД при удалении {self.model.__name__} (ID: {id}): {exc}")
-                raise exc
+                log.error(f"Ошибка БД при удалении {self.model.__name__} (ID: {id}): {e}")
+                raise e
         else:
             log.warning(f"{self.model.__name__} с ID {id} не найден для удаления.")
             return None
