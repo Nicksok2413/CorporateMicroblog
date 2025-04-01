@@ -1,15 +1,49 @@
-from fastapi import Depends, HTTPException, Header
+"""Модуль для работы с API-ключами в корпоративной системе.
+
+Содержит:
+- Зависимость для проверки API-ключей
+"""
+
+from typing import Annotated
+
+from fastapi import Depends, Header, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import get_db
-from app.repositories.user_repository import UserRepository
+from app.core.config import settings
+from app.core.database import get_db_session
+from app.models.user import User
+from app.repositories.user import UserRepository
+
 
 async def get_current_user(
-    api_key: str = Header(..., alias="api-key"),
-    db: AsyncSession = Depends(get_db),
+        api_key: Annotated[str, Header(alias=settings.API_KEY_HEADER)] = None,
+        db: AsyncSession = Depends(get_db_session)
 ) -> User:
+    """Зависимость для получения пользователя по API-ключу.
+
+    Args:
+        api_key: Ключ из HTTP-заголовка (любое значение)
+        db: Асинхронная сессия БД
+
+    Returns:
+        User: Пользователь, найденный по ключу
+
+    Raises:
+        HTTPException: Если пользователь не найден (код 403)
+    """
+    if not api_key:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="API key header is required"
+        )
+
     user_repo = UserRepository(db)
     user = await user_repo.get_by_api_key(api_key)
+
     if not user:
-        raise HTTPException(status_code=403, detail="Invalid API key")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User with this API key not found"
+        )
+
     return user
