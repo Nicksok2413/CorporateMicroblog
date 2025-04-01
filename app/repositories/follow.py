@@ -8,8 +8,8 @@ from app.models.user import User
 
 
 class FollowRepository:
-    def __init__(self, db: AsyncSession):
-        self.db = db
+    def __init__(self, sessiob: AsyncSession):
+        self.session = sessiob
 
     async def get_follow_stats(self, user_id: int) -> tuple[int, int]:
         """Возвращает статистику подписок пользователя.
@@ -20,11 +20,11 @@ class FollowRepository:
         Returns:
             tuple: (followers_count, following_count)
         """
-        followers = await self.db.execute(
+        followers = await self.session.execute(
             select(func.count())
             .where(Follow.followed_id == user_id)
         )
-        following = await self.db.execute(
+        following = await self.session.execute(
             select(func.count())
             .where(Follow.follower_id == user_id)
         )
@@ -40,7 +40,7 @@ class FollowRepository:
         Returns:
             bool: True если подписка существует
         """
-        result = await self.db.execute(
+        result = await self.session.execute(
             select(Follow)
             .where(Follow.follower_id == follower_id)
             .where(Follow.followed_id == followed_id)
@@ -65,8 +65,8 @@ class FollowRepository:
             raise ValueError("Подписка уже существует")
 
         follow = Follow(follower_id=follower_id, followed_id=followed_id)
-        self.db.add(follow)
-        await self.db.commit()
+        self.session.add(follow)
+        await self.session.commit()
 
     async def remove_follow(self, follower_id: int, followed_id: int):
         """Удаляет подписку.
@@ -78,7 +78,7 @@ class FollowRepository:
         Raises:
             ValueError: Если подписка не найдена
         """
-        result = await self.db.execute(
+        result = await self.session.execute(
             select(Follow)
             .where(Follow.follower_id == follower_id)
             .where(Follow.followed_id == followed_id)
@@ -88,8 +88,8 @@ class FollowRepository:
         if not follow:
             raise ValueError("Подписка не найдена")
 
-        await self.db.delete(follow)
-        await self.db.commit()
+        await self.session.delete(follow)
+        await self.session.commit()
 
     async def get_followers_list(self, user_id: int) -> list[tuple[int, str]]:
         """Возвращает список подписчиков.
@@ -100,7 +100,7 @@ class FollowRepository:
         Returns:
             list: Список кортежей (id, name)
         """
-        result = await self.db.execute(
+        result = await self.session.execute(
             select(User.id, User.name)
             .join(Follow, User.id == Follow.follower_id)
             .where(Follow.followed_id == user_id)
@@ -116,7 +116,7 @@ class FollowRepository:
         Returns:
             list: Список кортежей (id, name)
         """
-        result = await self.db.execute(
+        result = await self.session.execute(
             select(User.id, User.name)
             .join(Follow, User.id == Follow.followed_id)
             .where(Follow.follower_id == user_id)

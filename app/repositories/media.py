@@ -6,8 +6,8 @@ from app.models.media import Media
 
 
 class MediaRepository:
-    def __init__(self, db: AsyncSession):
-        self.db = db
+    def __init__(self, session: AsyncSession):
+        self.session = session
 
     async def create_media(
             self,
@@ -27,8 +27,8 @@ class MediaRepository:
             user_id=user_id,
             filename=filename
         )
-        self.db.add(media)
-        await self.db.commit()
+        self.session.add(media)
+        await self.session.commit()
         return media
 
 
