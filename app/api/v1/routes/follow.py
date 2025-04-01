@@ -3,8 +3,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import get_db
-from app.core.security import get_current_user
+from app.api.v1.dependencies import get_current_user
+from app.core.database import get_db_session
 from app.models.user import User
 from app.schemas.follow import FollowResponse, UserFollowStats
 from app.services.follow import FollowService
@@ -20,7 +20,7 @@ router = APIRouter(prefix="/users", tags=["follow"])
 async def follow_user(
         user_id: int,
         current_user: User = Depends(get_current_user),
-        db: AsyncSession = Depends(get_db)
+        db: AsyncSession = Depends(get_db_session)
 ):
     """Подписаться на пользователя.
 
@@ -52,7 +52,7 @@ async def follow_user(
 async def unfollow_user(
         user_id: int,
         current_user: User = Depends(get_current_user),
-        db: AsyncSession = Depends(get_db)
+        db: AsyncSession = Depends(get_db_session)
 ):
     """Отписаться от пользователя.
 
@@ -84,7 +84,7 @@ async def unfollow_user(
 async def get_follow_status(
         user_id: int,
         current_user: User = Depends(get_current_user),
-        db: AsyncSession = Depends(get_db)
+        db: AsyncSession = Depends(get_db_session)
 ):
     """Проверить статус подписки.
 
@@ -106,7 +106,7 @@ async def get_follow_status(
 )
 async def get_user_follow_stats(
         user_id: int,
-        db: AsyncSession = Depends(get_db)
+        db: AsyncSession = Depends(get_db_session)
 ):
     """Получить детальную статистику подписок.
 
