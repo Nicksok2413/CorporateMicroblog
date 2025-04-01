@@ -160,7 +160,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         error_messages.append(f"Поле '{field}': {message}")
 
     error_detail = ". ".join(error_messages)
-    log.warning(f"Ошибка валидации запроса: {error_detail}")  # Логгируем ошибку валидации
+    log.warning(f"Ошибка валидации запроса: {error_detail}")  # Логируем ошибку валидации
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         content=ResultFalseWithError(
@@ -176,7 +176,7 @@ async def generic_exception_handler(request: Request, exc: Exception) -> JSONRes
     """
     Обработчик для всех остальных (непредвиденных) исключений.
 
-    Логгирует ошибку с трейсбэком и возвращает стандартизированный ответ 500 Internal Server Error.
+    Логирует ошибку с трейсбэком и возвращает стандартизированный ответ 500 Internal Server Error.
 
     Args:
         request: Объект запроса FastAPI.
