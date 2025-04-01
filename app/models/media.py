@@ -1,4 +1,4 @@
-"""Модель для хранения информации о медиафайлах."""
+"""Модель SQLAlchemy для Media (Медиафайл)."""
 
 from pathlib import Path
 from typing import List, TYPE_CHECKING
@@ -6,29 +6,31 @@ from typing import List, TYPE_CHECKING
 from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from app.core.config import settings
+from .associations import tweet_media_association_table
 from .base import Base
-# Импорт нужен, если используем переменную, а не строку в relationship(secondary=...)
-from .tweet import tweet_media_association_table
 
 if TYPE_CHECKING:
     from .tweet import Tweet
 
 
 class Media(Base):
-    """Модель медиафайла с метаданными и связями.
+    """
+    Представляет медиафайл (например, изображение), который может быть прикреплен к твитам.
 
     Attributes:
-        id: Уникальный идентификатор
-        file_path: Имя файла в хранилище
+        id: Первичный ключ, идентификатор медиафайла
+        file_path: Путь к медиафайлу (относительно корневой папки медиа)
+        tweets: Список твитов, к которым прикреплен этот медиафайл
     """
     __tablename__ = "media"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    # Путь к файлу относительно корня статики (или как вы решите)
-    # unique=True, если предполагается, что каждый файл уникален (например, по UUID имени)
+    # Путь относительно настроенного корневого каталога для хранения медиа.
+    # unique=True предполагает, что генерируемые имена файлов (например, UUID) предотвращают коллизии.
     file_path: Mapped[str] = mapped_column(String(500), nullable=False, unique=True)
 
-    # Связь с твитами
+    # Связи
     tweets: Mapped[List["Tweet"]] = relationship(
         secondary=tweet_media_association_table, back_populates="attachments"
     )
@@ -51,5 +53,12 @@ class Media(Base):
         """
         return Path(settings.STORAGE_PATH) / self.file_path
 
+
     def __repr__(self) -> str:
+        """
+        Возвращает строковое представление объекта Media.
+
+        Returns:
+            Строковое представление медиафайла.
+        """
         return f"<Media(id={self.id}, path='{self.file_path}')>"

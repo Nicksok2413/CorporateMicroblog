@@ -1,11 +1,12 @@
-"""Модель твита для БД."""
+"""Модель SQLAlchemy для Tweet (Твит)."""
 
 import datetime
 from typing import List, TYPE_CHECKING
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Table, func
+from sqlalchemy import DateTime, ForeignKey, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from .associations import tweet_media_association_table
 from .base import Base
 
 if TYPE_CHECKING:
@@ -13,39 +14,47 @@ if TYPE_CHECKING:
     from .media import Media
     from .user import User
 
-# --- Ассоциативная таблица для связи Tweet <-> Media ---
-# Ее можно вынести в отдельный файл models/associations.py или оставить здесь
-tweet_media_association_table = Table(
-    "tweet_media_association",
-    Base.metadata,
-    Column("tweet_id", Integer, ForeignKey("tweets.id", ondelete="CASCADE"), primary_key=True),
-    Column("media_id", Integer, ForeignKey("media.id", ondelete="CASCADE"), primary_key=True),
-    # ondelete="CASCADE" означает, что при удалении твита или медиа, связь в этой таблице будет удалена
-)
-
-
-# --- Конец ассоциативной таблицы ---
 
 class Tweet(Base):
+    """
+    Представляет твит, опубликованный пользователем.
+
+    Attributes:
+        id: Первичный ключ, идентификатор твита
+        content: Текстовое содержимое твита (макс. 280 символов)
+        created_at: Временная метка создания твита
+        author_id: Внешний ключ, ссылающийся на автора (User)
+        author: Связь с объектом User, автором твита
+        likes: Список лайков, полученных этим твитом
+        attachments: Список объектов Media, прикрепленных к этому твиту
+    """
     __tablename__ = "tweets"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     content: Mapped[str] = mapped_column(String(280), nullable=False)
     created_at: Mapped[datetime.datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), index=True  # Индекс по дате для сортировки ленты
+        DateTime(timezone=True), server_default=func.now(), index=True
     )
-    author_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"),
-                                           index=True)  # ondelete=CASCADE, если твиты удаляются при удалении юзера
+    # onDelete=CASCADE: если автор (User) удаляется, его твиты также удаляются.
+    author_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
 
     # Связи
     author: Mapped["User"] = relationship(back_populates="tweets")
+    # onDelete=CASCADE обрабатывается через ForeignKey в модели Like
     likes: Mapped[List["Like"]] = relationship(
-        back_populates="tweet", cascade="all, delete-orphan"  # При удалении твита удалять его лайки
+        back_populates="tweet", cascade="all, delete-orphan"
     )
     attachments: Mapped[List["Media"]] = relationship(
         secondary=tweet_media_association_table, back_populates="tweets"
-        # cascade для M2M обычно не нужен здесь, т.к. удаление связи происходит через CASCADE в FK ассоциативной таблицы
     )
 
     def __repr__(self) -> str:
+        """
+        Возвращает строковое представление объекта Tweet.
+
+        Returns:
+            Строковое представление твита.
+        """
         return f"<Tweet(id={self.id}, author_id={self.author_id}, content='{self.content[:20]}...')>"

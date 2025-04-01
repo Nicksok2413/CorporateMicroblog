@@ -1,28 +1,25 @@
-"""Связь твитов и медиа."""
+"""Ассоциативные таблицы SQLAlchemy для связей многие-ко-многим."""
 
-from sqlalchemy import Column, Integer, ForeignKey
-from sqlalchemy.orm import relationship
+from sqlalchemy import Column, ForeignKey, Integer, Table
 
-from app.models.base import Base
+from .base import Base
 
-
-class TweetMedia(Base):
-    """Связующая модель для медиа в твитах (many-to-many)."""
-
-    __tablename__ = "tweet_media"
-
-    tweet_id = Column(
+# Ассоциативная таблица для связи многие-ко-многим между Tweets и Media
+tweet_media_association_table = Table(
+    "tweet_media_association",
+    Base.metadata,
+    # Внешний ключ к таблице твитов. Удаление твита удалит связь.
+    Column(
+        "tweet_id",
         Integer,
         ForeignKey("tweets.id", ondelete="CASCADE"),
         primary_key=True
-    )
-    media_id = Column(
+    ),
+    # Внешний ключ к таблице медиа. Удаление медиа удалит связь.
+    Column(
+        "media_id",
         Integer,
         ForeignKey("media.id", ondelete="CASCADE"),
         primary_key=True
-    )
-    position = Column(Integer, default=0)  # Порядок отображения
-
-    # Связи
-    tweet = relationship("Tweet", back_populates="media_links")
-    media = relationship("Media", back_populates="tweet_media")
+    ),
+)

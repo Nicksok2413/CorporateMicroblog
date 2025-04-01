@@ -1,4 +1,4 @@
-"""Базовые модели SQLAlchemy."""
+"""Базовое определение модели для SQLAlchemy."""
 
 from sqlalchemy import MetaData
 from sqlalchemy.orm import DeclarativeBase
@@ -13,5 +13,9 @@ convention = {
 
 
 class Base(DeclarativeBase):
-    """Базовый класс для всех ORM-моделей"""
+    """
+    Базовый класс для декларативных моделей SQLAlchemy.
+
+    Включает метаданные с соглашением об именовании для ограничений и индексов БД.
+    """
     metadata = MetaData(naming_convention=convention)
