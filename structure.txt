@@ -13,6 +13,20 @@ microblog/
 │   ├── __init__.py
 │   ├── main.py                   # Точка входа в приложение
 │   │
+│   ├── api/                      # API роутеры
+│   │   ├── __init__.py
+│   │   ├── router.py             # Агрегация роутеров v1
+│   │   └── v1/                   # Версия API
+│   │       ├── __init__.py
+│   │       ├── dependencies.py   # Зависимости
+│   │       └── routes/           # Маршруты
+│   │         ├── __init__.py
+│   │         ├── users.py        # /users/...
+│   │         ├── tweets.py       # /tweets/...
+│   │         ├── media.py        # /media/...
+│   │         ├── likes.py        # /likes/...
+│   │         └── follow.py       # /follow/...
+│   │
 │   ├── core/                     # Ядро приложения
 │   │   ├── __init__.py
 │   │   ├── config.py             # Настройки приложения
@@ -53,19 +67,6 @@ microblog/
 │   │   ├── like.py
 │   │   └── follow.py
 │   │
-│   ├── api/                      # API endpoints
-│   │   ├── __init__.py
-│   │   └── v1/                   # Версия API
-│   │       ├── __init__.py
-│   │       ├── dependencies.py   # Зависимости
-│   │       └── routes/           # Маршруты
-│   │         ├── __init__.py
-│   │         ├── router.py       # ? Роутер ?
-│   │         ├── users.py        # /users/...
-│   │         ├── tweets.py       # /tweets/...
-│   │         ├── media.py        # /media/...
-│   │         ├── likes.py        # /likes/...
-│   │         └── follow.py       # /follow/...
 │   │
 │   └── utils/                    # Вспомогательные утилиты
 │       ├── __init__.py
