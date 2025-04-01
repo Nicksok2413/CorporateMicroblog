@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     POSTGRES_DB: str = Field(..., description="Имя базы данных")
     POSTGRES_HOST: str = Field("localhost", description="Хост PostgreSQL")
     POSTGRES_PORT: int = Field(5432, description="Порт PostgreSQL")
-    TEST_DB_URL: AnyUrl = Field("sqlite:///./test.db", description="URL тестовой БД")
+    TEST_DB_URL: AnyUrl = Field("sqlite:///./test.session", description="URL тестовой БД")
 
     # Настройки приложения
     DEBUG: bool = Field(default=False, description="Режим отладки")

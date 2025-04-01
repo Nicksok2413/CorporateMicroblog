@@ -12,17 +12,17 @@ from app.core.config import settings
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # # Подключение к БД
-    # await db.connect()
+    # await session.connect()
     #
     # # Создание демо-данных в dev-режиме
     # if settings.DEBUG and not settings.TESTING:
-    #     async with db.session() as session:
+    #     async with session.session() as session:
     #         await create_demo_data(session)
     #
     # yield
     #
     # # Завершение работы
-    # await db.disconnect()
+    # await session.disconnect()
 
     log.info("Starting application...")
     try:

@@ -91,7 +91,7 @@ class Database:
             RuntimeError: При вызове до инициализации подключения
         """
         if not self.session_factory:
-            raise RuntimeError("База не инициализирована. Сначала вызовите await db.connect()")
+            raise RuntimeError("База не инициализирована. Сначала вызовите await session.connect()")
 
         async with self.session_factory() as session:
             try:
