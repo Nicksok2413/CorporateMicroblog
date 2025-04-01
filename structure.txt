@@ -37,6 +37,7 @@ microblog/
     │   │
     │   ├── models/                   # SQLAlchemy модели
     │   │   ├── __init__.py
+    │   │   ├── associations.py       # Модели ассоциативных таблиц
     │   │   ├── base.py               # Базовая модель
     │   │   ├── user.py               # Модель для User
     │   │   ├── tweet.py              # Модель для Tweet
