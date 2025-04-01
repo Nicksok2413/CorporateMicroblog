@@ -5,7 +5,6 @@ from app.core.logging import log, configure_logging
 # configure_logging() # Loguru обычно настраивается при импорте, вызов не обязателен
 
 # 2. Импортируем остальные компоненты ядра и FastAPI
-import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI

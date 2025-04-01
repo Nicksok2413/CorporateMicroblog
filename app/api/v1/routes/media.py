@@ -1,6 +1,6 @@
 """API роуты для работы с медиафайлами."""
 
-from fastapi import APIRouter, Depends, File, UploadFile, status
+from fastapi import APIRouter, File, UploadFile, status
 
 # Импортируем зависимости, сервисы и схемы
 from app.api.v1.dependencies import CurrentUser, DBSession

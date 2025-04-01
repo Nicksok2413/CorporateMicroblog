@@ -1,6 +1,6 @@
 """Сервис для работы с пользователями."""
 
-from typing import List, Optional, Sequence
+from typing import Optional, Sequence
 
 from sqlalchemy.ext.asyncio import AsyncSession
 

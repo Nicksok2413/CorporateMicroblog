@@ -4,7 +4,7 @@ from functools import cached_property
 from pathlib import Path
 from typing import Optional
 
-from pydantic import AnyUrl, Field, PostgresDsn, computed_field, field_validator
+from pydantic import Field, PostgresDsn, computed_field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
@@ -73,7 +73,7 @@ class Settings(BaseSettings):
         """Приводит LOG_LEVEL к верхнему регистру."""
         return value.upper()
 
-    @computed_field(repr=False) # Скрываем из стандартного вывода repr, т.к. содержит пароль
+    @computed_field(repr=False) # Скрываем из стандартного вывода repr, так как содержит пароль
     @cached_property
     def DATABASE_URL(self) -> str: # Возвращаем строку, а не PostgresDsn, для совместимости с create_async_engine
         """

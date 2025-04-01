@@ -3,7 +3,7 @@
 from typing import Any, Generic, List, Optional, Type, TypeVar, Union, Dict
 
 from pydantic import BaseModel
-from sqlalchemy import delete, func, select, update
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -27,25 +27,25 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     def __init__(self, model: Type[ModelType]):
         self.model = model
 
-    async def get(self, db: AsyncSession, id: Any) -> Optional[ModelType]:
+    async def get(self, db: AsyncSession, obj_id: Any) -> Optional[ModelType]:
         """
         Получает запись по её ID.
 
         Args:
             db: Асинхронная сессия SQLAlchemy.
-            id: Идентификатор записи.
+            obj_id: Идентификатор записи.
 
         Returns:
             Optional[ModelType]: Найденный объект модели или None.
         """
-        log.debug(f"Получение {self.model.__name__} по ID: {id}")
-        statement = select(self.model).where(self.model.id == id)
+        log.debug(f"Получение {self.model.__name__} по ID: {obj_id}")
+        statement = select(self.model).where(self.model.id == obj_id)
         result = await db.execute(statement)
         instance = result.scalars().first()
         if instance:
-            log.debug(f"{self.model.__name__} с ID {id} найден.")
+            log.debug(f"{self.model.__name__} с ID {obj_id} найден.")
         else:
-            log.debug(f"{self.model.__name__} с ID {id} не найден.")
+            log.debug(f"{self.model.__name__} с ID {obj_id} не найден.")
         return instance
 
     async def get_multi(
@@ -157,13 +157,13 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             log.error(f"Ошибка БД при обновлении {self.model.__name__} (ID: {db_obj.id}): {e}")
             raise e
 
-    async def remove(self, db: AsyncSession, *, id: Any) -> Optional[ModelType]:
+    async def remove(self, db: AsyncSession, *, obj_id: Any) -> Optional[ModelType]:
         """
         Удаляет запись по её ID.
 
         Args:
             db: Асинхронная сессия SQLAlchemy.
-            id: Идентификатор записи для удаления.
+            obj_id: Идентификатор записи для удаления.
 
         Returns:
             Optional[ModelType]: Удаленный объект модели или None, если не найден.
@@ -171,25 +171,25 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         Raises:
             SQLAlchemyError: В случае ошибки базы данных при удалении.
         """
-        log.debug(f"Удаление {self.model.__name__} по ID: {id}")
-        obj = await self.get(db, id=id)
+        log.debug(f"Удаление {self.model.__name__} по ID: {obj_id}")
+        obj = await self.get(db, obj_id=obj_id)
         if obj:
             try:
                 await db.delete(obj)
                 await db.commit()
-                log.info(f"Успешно удален {self.model.__name__} с ID: {id}")
+                log.info(f"Успешно удален {self.model.__name__} с ID: {obj_id}")
                 return obj
             except IntegrityError as e:
                 # Это маловероятно при удалении, но возможно при сложных каскадах
                 await db.rollback()
-                log.error(f"Ошибка целостности при удалении {self.model.__name__} (ID: {id}): {e}")
+                log.error(f"Ошибка целостности при удалении {self.model.__name__} (ID: {obj_id}): {e}")
                 raise e
             except SQLAlchemyError as e:
                 await db.rollback()
-                log.error(f"Ошибка БД при удалении {self.model.__name__} (ID: {id}): {e}")
+                log.error(f"Ошибка БД при удалении {self.model.__name__} (ID: {obj_id}): {e}")
                 raise e
         else:
-            log.warning(f"{self.model.__name__} с ID {id} не найден для удаления.")
+            log.warning(f"{self.model.__name__} с ID {obj_id} не найден для удаления.")
             return None
 
     async def count(self, db: AsyncSession) -> int:

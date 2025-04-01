@@ -3,7 +3,7 @@
 import datetime
 from typing import List, Optional
 
-from pydantic import Field, field_validator
+from pydantic import Field
 
 from app.schemas.base import ResultTrue, TunedModel, BaseModel
 from app.schemas.user import BaseUser  # Используем базовую схему пользователя

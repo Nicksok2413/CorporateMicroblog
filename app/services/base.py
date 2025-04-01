@@ -4,7 +4,6 @@ from typing import Generic, TypeVar
 
 from app.repositories.base import BaseRepository  # Импортируем базовый репозиторий
 from app.models.base import Base
-from app.schemas.base import BaseModel
 
 # Определяем Generic типы
 ModelType = TypeVar("ModelType", bound=Base)

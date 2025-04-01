@@ -8,8 +8,6 @@ from app.core.exceptions import (BadRequestError, ConflictError,
 from app.core.logging import log
 from app.models import User  # Импортируем модель User
 from app.repositories import follow_repo, user_repo  # Импортируем репозитории
-# Схемы для Follow не используются напрямую в API, но могут быть полезны внутри
-from app.services.base import BaseService
 
 
 class FollowService:
@@ -48,7 +46,7 @@ class FollowService:
             raise PermissionDeniedError("Вы не можете подписаться на себя.")
 
         # Проверяем, существует ли пользователь, на которого подписываемся
-        user_to_follow = await self.user_repo.get(db, id=following_id)
+        user_to_follow = await self.user_repo.get(db, obj_id=following_id)
         if not user_to_follow:
             log.warning(f"Пользователь ID {following_id} (на которого пытаются подписаться/отписаться) не найден.")
             raise NotFoundError(f"Пользователь с ID {following_id} не найден.")

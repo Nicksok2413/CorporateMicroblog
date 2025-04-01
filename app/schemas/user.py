@@ -1,6 +1,6 @@
 """Схемы Pydantic для модели User."""
 
-from typing import List, Optional
+from typing import List
 
 from pydantic import Field
 

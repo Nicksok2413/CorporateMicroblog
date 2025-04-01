@@ -1,6 +1,6 @@
 """Схемы Pydantic для модели Media."""
 
-from pydantic import Field, FilePath  # FilePath не используется здесь, т.к. храним относительный путь
+from pydantic import Field
 
 from app.schemas.base import ResultTrue, TunedModel, BaseModel
 
@@ -35,7 +35,6 @@ class MediaOut(TunedModel):
 
     Fields:
         id (int): ID медиафайла
-        # Добавим URL для удобства клиента
         url (str): Ссылка на медиафайл
     """
     id: int

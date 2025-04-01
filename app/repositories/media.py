@@ -1,7 +1,5 @@
 """Репозиторий для работы с моделью Media."""
 
-from typing import Optional  # Добавим Optional для схемы Update, если она появится
-
 from app.models.media import Media
 from app.repositories.base import BaseRepository
 from app.schemas.media import MediaCreate  # Импортируем реальную схему

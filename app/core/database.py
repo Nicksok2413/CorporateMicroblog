@@ -45,11 +45,11 @@ class Database:
             RuntimeError: При неудачной проверке подключения.
         """
         db_url = settings.EFFECTIVE_DATABASE_URL
-        log.info(f"Подключение к базе данных: {'*' * 5}{db_url[-20:]}")  # Логгируем URL (частично скрытый)
+        log.info(f"Подключение к базе данных: {'*' * 5}{db_url[-20:]}")  # Логируем URL (частично скрытый)
 
         self.engine = create_async_engine(
             db_url,
-            echo=settings.DEBUG,  # Включаем логгирование SQL запросов в режиме DEBUG
+            echo=settings.DEBUG,  # Включаем логирование SQL запросов в режиме DEBUG
             future=True,   # Включение нового стиля использования SQLAlchemy
             pool_pre_ping=True,  # Проверять соединение перед использованием
             pool_recycle=3600,  # Переподключение каждый час

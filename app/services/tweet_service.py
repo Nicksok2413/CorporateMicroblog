@@ -1,6 +1,6 @@
 """Сервис для работы с твитами."""
 
-from typing import List, Optional, Sequence
+from typing import List, Sequence
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -43,7 +43,7 @@ class TweetService(BaseService[Tweet, type(tweet_repo)]):
         if load_details:
             tweet = await self.repo.get_with_details(db, id=tweet_id)
         else:
-            tweet = await self.repo.get(db, id=tweet_id)
+            tweet = await self.repo.get(db, obj_id=tweet_id)
 
         if not tweet:
             log.warning(f"Твит с ID {tweet_id} не найден.")
@@ -77,7 +77,7 @@ class TweetService(BaseService[Tweet, type(tweet_repo)]):
         if tweet_data.tweet_media_ids:
             log.debug(f"Прикрепление медиа ID: {tweet_data.tweet_media_ids}")
             for media_id in tweet_data.tweet_media_ids:
-                media = await media_repo.get(db, id=media_id)
+                media = await media_repo.get(db, obj_id=media_id)
                 if not media:
                     log.warning(f"Медиа с ID {media_id} не найдено при создании твита.")
                     raise NotFoundError(f"Медиафайл с ID {media_id} не найден.")
@@ -94,7 +94,7 @@ class TweetService(BaseService[Tweet, type(tweet_repo)]):
             )
             return tweet
         except Exception as e:
-            # Ошибка уже залоггирована в репозитории
+            # Ошибка уже залогирована в репозитории
             raise BadRequestError("Не удалось создать твит.") from e
 
     async def delete_tweet(self, db: AsyncSession, *, tweet_id: int, current_user: User):
@@ -119,7 +119,7 @@ class TweetService(BaseService[Tweet, type(tweet_repo)]):
                 f"Пользователь ID {current_user.id} не имеет прав на удаление твита ID {tweet_id} (автор ID {tweet.author_id}).")
             raise PermissionDeniedError("Вы не можете удалить этот твит.")
 
-        deleted_tweet = await self.repo.remove(db, id=tweet_id)
+        deleted_tweet = await self.repo.remove(db, obj_id=tweet_id)
         if not deleted_tweet:
             # Это не должно произойти после _get_tweet_or_404, но для надежности
             log.error(f"Не удалось удалить твит ID {tweet_id} после проверки прав.")

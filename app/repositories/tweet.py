@@ -132,21 +132,21 @@ class TweetRepository(BaseRepository[Tweet, TweetCreateInternal, None]):  # Ук
         log.debug(f"Найдено {len(tweets)} твитов для ленты.")
         return tweets
 
-    async def get_with_details(self, db: AsyncSession, id: int) -> Optional[Tweet]:
+    async def get_with_details(self, db: AsyncSession, tweet_id: int) -> Optional[Tweet]:
         """
         Получает твит по ID с загруженными связанными данными (автор, лайки, медиа).
 
         Args:
             db: Асинхронная сессия SQLAlchemy.
-            id: ID твита.
+            tweet_id: ID твита.
 
         Returns:
             Optional[Tweet]: Найденный твит с загруженными деталями или None.
         """
-        log.debug(f"Получение твита с деталями по ID: {id}")
+        log.debug(f"Получение твита с деталями по ID: {tweet_id}")
         statement = (
             select(self.model)
-            .where(self.model.id == id)
+            .where(self.model.id == tweet_id)
             .options(
                 selectinload(Tweet.author),
                 selectinload(Tweet.likes).selectinload(Like.user),
@@ -156,9 +156,9 @@ class TweetRepository(BaseRepository[Tweet, TweetCreateInternal, None]):  # Ук
         result = await db.execute(statement)
         instance = result.unique().scalars().first()
         if instance:
-            log.debug(f"Твит с деталями (ID {id}) найден.")
+            log.debug(f"Твит с деталями (ID {tweet_id}) найден.")
         else:
-            log.debug(f"Твит с деталями (ID {id}) не найден.")
+            log.debug(f"Твит с деталями (ID {tweet_id}) не найден.")
         return instance
 
 
