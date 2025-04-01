@@ -1,12 +1,17 @@
 """Модель для хранения информации о медиафайлах."""
 
 from pathlib import Path
+from typing import List, TYPE_CHECKING
 
-from sqlalchemy import Column, ForeignKey, Integer, String
-from sqlalchemy.orm import relationship
+from sqlalchemy import String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.core.config import settings
-from app.models.base import Base
+from .base import Base
+# Импорт нужен, если используем переменную, а не строку в relationship(secondary=...)
+from .tweet import tweet_media_association_table
+
+if TYPE_CHECKING:
+    from .tweet import Tweet
 
 
 class Media(Base):
@@ -14,22 +19,18 @@ class Media(Base):
 
     Attributes:
         id: Уникальный идентификатор
-        user_id: ID пользователя, загрузившего файл
-        filename: Имя файла в хранилище
+        file_path: Имя файла в хранилище
     """
-
     __tablename__ = "media"
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    filename = Column(String(255), nullable=False, unique=True)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    # Путь к файлу относительно корня статики (или как вы решите)
+    # unique=True, если предполагается, что каждый файл уникален (например, по UUID имени)
+    file_path: Mapped[str] = mapped_column(String(500), nullable=False, unique=True)
 
-    # Связи
-    user = relationship("User", back_populates="media")
-    tweet_media = relationship(
-        "TweetMedia",
-        back_populates="media",
-        cascade="all, delete-orphan"
+    # Связь с твитами
+    tweets: Mapped[List["Tweet"]] = relationship(
+        secondary=tweet_media_association_table, back_populates="attachments"
     )
 
     @property
@@ -39,7 +40,7 @@ class Media(Base):
         Returns:
             str: Относительный URL вида /media/files/{filename}
         """
-        return f"/media/files/{self.filename}"
+        return f"/media/files/{self.file_path}"
 
     @property
     def path(self) -> Path:
@@ -48,4 +49,7 @@ class Media(Base):
         Returns:
             Path: Полный путь к файлу
         """
-        return Path(settings.STORAGE_PATH) / self.filename
+        return Path(settings.STORAGE_PATH) / self.file_path
+
+    def __repr__(self) -> str:
+        return f"<Media(id={self.id}, path='{self.file_path}')>"

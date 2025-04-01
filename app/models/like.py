@@ -1,27 +1,31 @@
 """Модель для хранения лайков твитов."""
 
-from sqlalchemy import Column, ForeignKey, Integer
-from sqlalchemy.orm import relationship
+from typing import TYPE_CHECKING
 
-from app.models.base import Base
+from sqlalchemy import ForeignKey, UniqueConstraint
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from .base import Base
+
+if TYPE_CHECKING:
+    from .tweet import Tweet
+    from .user import User
 
 
 class Like(Base):
     """Модель лайка (составной первичный ключ: user_id + tweet_id)."""
-
     __tablename__ = "likes"
 
-    user_id = Column(
-        Integer,
-        ForeignKey("users.id", ondelete="CASCADE"),
-        primary_key=True
-    )
-    tweet_id = Column(
-        Integer,
-        ForeignKey("tweets.id", ondelete="CASCADE"),
-        primary_key=True
-    )
+    # Составной первичный ключ
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    tweet_id: Mapped[int] = mapped_column(ForeignKey("tweets.id", ondelete="CASCADE"), primary_key=True)
 
-    # Связи
-    user = relationship("User", back_populates="likes")
-    tweet = relationship("Tweet", back_populates="likes")
+    # Связи (для удобной навигации, если потребуется)
+    user: Mapped["User"] = relationship(back_populates="likes")
+    tweet: Mapped["Tweet"] = relationship(back_populates="likes")
+
+    # Гарантия уникальности лайка от пользователя для твита
+    __table_args__ = (UniqueConstraint("user_id", "tweet_id", name="uq_user_tweet_like"),)
+
+    def __repr__(self) -> str:
+        return f"<Like(user_id={self.user_id}, tweet_id={self.tweet_id})>"

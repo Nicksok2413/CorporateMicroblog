@@ -1,9 +1,14 @@
-"""Модель пользователя для микросервиса блогов."""
+from typing import List, TYPE_CHECKING
 
-from sqlalchemy import Boolean, Column, Integer, String
-from sqlalchemy.orm import relationship
+from sqlalchemy import String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.models.base import Base
+from .base import Base
+
+if TYPE_CHECKING:
+    from .follow import Follow
+    from .like import Like
+    from .tweet import Tweet
 
 
 class User(Base):
@@ -13,27 +18,26 @@ class User(Base):
         id: Уникальный идентификатор
         name: Имя пользователя
         api_key: Уникальный ключ для аутентификации
-        is_demo: Флаг демо-пользователя
     """
-
     __tablename__ = "users"
 
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(50), nullable=False)
-    api_key = Column(String(64), unique=True, nullable=False)
-    is_demo = Column(Boolean, default=False)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    api_key: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
 
     # Связи
-    tweets = relationship("Tweet", back_populates="author", cascade="all, delete-orphan")
-    likes = relationship("Like", back_populates="user", cascade="all, delete-orphan")
-    media = relationship("Media", back_populates="user", cascade="all, delete-orphan")
-    followers = relationship(
-        "Follow",
-        foreign_keys="Follow.followed_id",
-        back_populates="followed"
+    tweets: Mapped[List["Tweet"]] = relationship(
+        back_populates="author", cascade="all, delete-orphan"  # При удалении юзера удалять его твиты
     )
-    following = relationship(
-        "Follow",
-        foreign_keys="Follow.follower_id",
-        back_populates="follower"
+    likes: Mapped[List["Like"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"  # При удалении юзера удалять его лайки
     )
+    following: Mapped[List["Follow"]] = relationship(
+        foreign_keys="Follow.follower_id", back_populates="follower", cascade="all, delete-orphan"
+    )
+    followers: Mapped[List["Follow"]] = relationship(
+        foreign_keys="Follow.following_id", back_populates="followed_user", cascade="all, delete-orphan"
+    )
+
+    def __repr__(self) -> str:
+        return f"<User(id={self.id}, name='{self.name}')>"
