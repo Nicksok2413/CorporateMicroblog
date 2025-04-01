@@ -9,11 +9,12 @@
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator, Optional
 
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
 
 from app.core.config import settings
 from app.core.logging import log
+from app.models.base import Base
 
 
 class Database:
