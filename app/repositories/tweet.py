@@ -13,8 +13,8 @@ from app.schemas.tweet import TweetCreate
 
 
 class TweetRepository:
-    def __init__(self, db: AsyncSession):
-        self.db = db
+    def __init__(self, session: AsyncSession):
+        self.session = session
 
     async def create_tweet(self, user_id: int, data: TweetCreate) -> Tweet:
         """Создание твита в БД."""
@@ -22,17 +22,16 @@ class TweetRepository:
             content=data.tweet_data,
             author_id=user_id
         )
-        self.db.add(tweet)
-        await self.db.commit()
+        self.session.add(tweet)
+        await self.session.commit()
         return tweet
 
     async def validate_media(self, media_ids: List[int]) -> List[int]:
         """Проверка существования медиа."""
-        result = await self.db.execute(
+        result = await self.session.execute(
             select(Media.id).where(Media.id.in_(media_ids))
         )
         return result.scalars().all()
-
 
     async def get_feed_tweets(
             self,
@@ -51,11 +50,7 @@ class TweetRepository:
             list: Список кортежей (твит, количество лайков)
         """
         # Подзапрос для получения ID подписок
-        following_subq = (
-            select(Follow.followed_id)
-            .where(Follow.follower_id == user_id)
-            .subquery()
-        )
+        following_subquery = select(Follow.followed_id).filter_by(follower_id=user_id).subquery()
 
         query = (
             select(
@@ -67,7 +62,7 @@ class TweetRepository:
             .where(
                 or_(
                     Tweet.author_id == user_id,
-                    Tweet.author_id.in_(following_subq)
+                    Tweet.author_id.in_(following_subquery)
                 )
             )
             .group_by(Tweet.id)
@@ -76,5 +71,5 @@ class TweetRepository:
             .offset(offset)
         )
 
-        result = await self.db.execute(query)
+        result = await self.session.execute(query)
         return result.all()

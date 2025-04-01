@@ -6,27 +6,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.follow import Follow
 from app.models.tweet import Tweet
 from app.models.user import User
+from app.repositories.base import BaseRepository
 
 
-class UserRepository:
-    """Инкапсулирует логику работы с пользователями в БД."""
+class UserRepository(BaseRepository):
+    """Логика работы с пользователями в БД."""
 
     def __init__(self, session: AsyncSession):
-        self.session = session
-
-    async def get_by_id(self, user_id: int) -> User | None:
-        """Находит пользователя по ID.
-
-        Args:
-            user_id: Идентификатор пользователя
-
-        Returns:
-            User | None: Объект пользователя или None
-        """
-        result = await self.session.execute(
-            select(User).where(User.id == user_id)
-        )
-        return result.scalar_one_or_none()
+        super().__init__(session, User)
 
     async def get_by_api_key(self, api_key: str) -> User | None:
         """Находит пользователя по API-ключу.
@@ -37,9 +24,7 @@ class UserRepository:
         Returns:
             User | None: Объект пользователя или None
         """
-        result = await self.session.execute(
-            select(User).where(User.api_key == api_key)
-        )
+        result = await self.session.execute(select(User).filter_by(api_key=api_key))
         return result.scalar_one_or_none()
 
     async def create_user(
@@ -103,3 +88,20 @@ class UserRepository:
 
         result = await self.session.execute(query)
         return result.all()
+
+
+    # v2
+    # async def get_with_stats(self, user_id: int) -> tuple[User, int, int]:
+    #     """Возвращает пользователя с кол-вом твитов и подписчиков."""
+    #     result = await self.session.execute(
+    #         select(
+    #             User,
+    #             func.count(distinct(Follow.follower_id)),
+    #             func.count(distinct(Tweet.id))
+    #         )
+    #         .outerjoin(Follow, User.id == Follow.followed_id)
+    #         .outerjoin(Tweet, User.id == Tweet.author_id)
+    #         .where(User.id == user_id)
+    #         .group_by(User.id)
+    #     )
+    #     return result.first()
