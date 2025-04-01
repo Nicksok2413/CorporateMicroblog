@@ -1,3 +1,5 @@
+"""Настройка конфигурации логирования для приложения с использованием Loguru."""
+
 import json
 import sys
 from pathlib import Path
@@ -8,75 +10,132 @@ from app.core.config import settings
 
 
 def serialize(record):
-    """Кастомная сериализация для JSON-логов"""
+    """
+    Кастомная сериализация для записи логов в формате JSON.
+
+    Args:
+        record: Запись лога Loguru.
+
+    Returns:
+        str: Сериализованная в JSON строка лога.
+    """
     subset = {
-        "timestamp": record["time"].timestamp(),
+        "timestamp": record["time"].isoformat(),  # Используем ISO формат для единообразия
         "message": record["message"],
         "level": record["level"].name,
+        "name": record["name"],  # Добавим имя логгера
         "module": record["module"],
         "function": record["function"],
         "line": record["line"],
     }
-    if "extra" in record and record["extra"]:
-        subset.update(record["extra"])
-    return json.dumps(subset)
+    # Добавляем extra данные, если они есть
+    if record["extra"]:
+        subset["extra"] = record["extra"]
+    # Добавляем информацию об исключении, если она есть
+    if record["exception"]:
+        exception_type, exception_value, traceback = record["exception"]
+        subset["exception"] = {
+            "type": str(exception_type),
+            "value": str(exception_value),
+            # Трейсбек не добавляем в JSON по умолчанию, т.к. может быть большим
+        }
+    return json.dumps(subset, ensure_ascii=False)  # ensure_ascii=False для кириллицы
 
 
-def formatter(record):
-    """Форматтер для консольного вывода"""
-    if settings.PRODUCTION:
-        return serialize(record)
-    return (
+def development_formatter(record):
+    """
+    Форматтер для цветного консольного вывода в режиме разработки.
+
+    Args:
+        record: Запись лога Loguru.
+
+    Returns:
+        str: Отформатированная строка лога для консоли.
+    """
+    # Базовый формат
+    log_format = (
         "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | "
         "<level>{level: <8}</level> | "
-        "<cyan>{module}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - "
+        "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - "
         "<level>{message}</level>"
     )
+    # Добавляем информацию об исключении, если есть
+    if record["exception"]:
+        log_format += "\n<red>{exception}</red>"  # Loguru автоматически форматирует exception
+
+    return log_format
 
 
 def configure_logging():
-    """Настройка Loguru с ротацией логов и фильтрацией"""
+    """
+    Настраивает Loguru для приложения.
 
-    # Удаляем стандартный обработчик
+    Удаляет стандартные обработчики и добавляет новые:
+    - Цветной вывод в stderr для разработки.
+    - JSON вывод в stderr для production.
+    - Опциональный вывод в файл с ротацией для production.
+    - Специальная обработка логов SQLAlchemy в режиме DEBUG.
+    """
+    # Удаляем стандартный обработчик, чтобы избежать дублирования
     logger.remove()
 
-    # Консольный вывод (все уровни в dev, только WARNING+ в production)
+    # Определяем форматтер в зависимости от режима
+    formatter_func = development_formatter if settings.DEBUG else serialize
+
+    # Основной обработчик для вывода в stderr
     logger.add(
         sys.stderr,
         level=settings.LOG_LEVEL,
-        format=formatter,
-        filter=lambda record: "uvicorn.access" not in record["extra"],
-        colorize=True,
-        backtrace=settings.DEBUG,
-        diagnose=settings.DEBUG
+        format=formatter_func,
+        # Фильтруем стандартные логи доступа uvicorn по имени логгера
+        filter=lambda record: record["name"] != "uvicorn.access",
+        colorize=settings.DEBUG,  # Цветной вывод только в DEBUG
+        backtrace=settings.DEBUG,  # Подробный трейсбек только в DEBUG
+        diagnose=settings.DEBUG  # Диагностика переменных только в DEBUG
     )
 
-    # Файловый вывод (только для production)
-    if settings.PRODUCTION:
-        log_path = Path("logs") / "app_{time}.log"
+    # Файловый вывод (если указан LOG_FILE или включен PRODUCTION)
+    log_file_path = settings.LOG_FILE
+    if not log_file_path and settings.PRODUCTION:
+        # По умолчанию пишем в logs/app.log в production, если LOG_FILE не задан явно
+        log_file_path = Path("logs") / "app.log"
+        # Создаем директорию, если нужно (на случай, если post_init в config не сработал)
+        log_file_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if log_file_path:
+        logger.info(f"Логирование в файл включено: {log_file_path}")
         logger.add(
-            log_path,
-            rotation="100 MB",
-            retention="30 days",
-            compression="zip",
-            level="INFO",
-            format=serialize,
-            enqueue=True  # Асинхронная запись
+            log_file_path,
+            rotation="100 MB",  # Ротация при достижении 100 MB
+            retention="30 days",  # Хранить логи за последние 30 дней
+            compression="zip",  # Сжимать старые логи
+            level="INFO",  # Уровень для записи в файл (можно сделать строже, чем LOG_LEVEL)
+            format=serialize,  # Всегда JSON в файле
+            enqueue=True,  # Асинхронная запись для производительности
+            # Не фильтруем uvicorn.access для файла, т.к. там он может быть полезен
+            backtrace=True,  # Пишем трейсбеки в файл всегда
+            diagnose=False  # Диагностику в файл не пишем
         )
 
-    # SQLAlchemy логи (только в DEBUG)
+    # Настройка логирования SQLAlchemy (только в DEBUG)
     if settings.DEBUG:
-        logger.add(
-            sys.stderr,
-            level="INFO",
-            filter=lambda record: "sqlalchemy" in record["extra"],
-            format="<magenta>SQL:</magenta> {message}",
-            colorize=True
-        )
+        logger.enable("sqlalchemy.engine")  # Включаем логгер SQLAlchemy
+        # Можно настроить отдельный обработчик для SQL, если нужно форматирование
+        # logger.add(
+        #     sys.stderr,
+        #     level="INFO", # Уровень INFO для SQL запросов
+        #     filter=lambda record: record["name"] == "sqlalchemy.engine.Engine",
+        #     format="<magenta>SQL:</magenta> {message}",
+        #     colorize=True
+        # )
+    else:
+        logger.disable("sqlalchemy.engine")  # Отключаем SQL логи в production
+
+    logger.info(f"Loguru сконфигурирован. Уровень: {settings.LOG_LEVEL}. Режим DEBUG: {settings.DEBUG}")
 
 
-# Инициализация при импорте
+# Инициализация логирования при импорте модуля
 configure_logging()
 
-# Для удобного импорта
+# Экспортируем настроенный логгер для использования в других модулях
 log = logger
