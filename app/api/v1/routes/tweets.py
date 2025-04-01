@@ -9,7 +9,7 @@ from app.core.database import get_db_session
 from app.core.exceptions import TweetValidationError
 from app.models.user import User
 from app.schemas.tweet import TweetCreate, TweetResponse
-from app.services.tweet import TweetService
+from app.services.tweet_service import TweetService
 
 router = APIRouter(prefix="/tweets", tags=["tweets"])
 

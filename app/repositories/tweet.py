@@ -10,7 +10,7 @@ from app.core.logging import log
 from app.models import Like, Media, Tweet, User  # Импортируем все нужные модели
 from app.repositories.base import BaseRepository
 # Импортируем внутреннюю схему для базового метода create
-# (предполагается, что она создана в schemas/tweet.py)
+# (предполагается, что она создана в schemas/tweet_service.py)
 from app.schemas.tweet import TweetCreateInternal  # Убедитесь, что эта схема существует!
 
 

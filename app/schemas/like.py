@@ -1,8 +1,8 @@
 """Схемы Pydantic для модели Like (если нужны)."""
 
 # В соответствии с ТЗ, отдельные схемы для Like не требуются для API ответов.
-# Схема LikeInfo определена в tweet.py.
-# Схема для успешного лайка/анлайка - TweetActionResult в tweet.py.
+# Схема LikeInfo определена в tweet_service.py.
+# Схема для успешного лайка/анлайка - TweetActionResult в tweet_service.py.
 
 # Можно добавить внутренние схемы, если они понадобятся сервисам/репозиториям:
 # from app.schemas.base import BaseModel

@@ -7,7 +7,7 @@ from app.api.v1.dependencies import get_current_user
 from app.core.database import get_db_session
 from app.models.user import User
 from app.schemas.user import UserProfileResponse, UserDetailResponse
-from app.services.user import UserService
+from app.services.user_service import UserService
 
 router = APIRouter(prefix="/users", tags=["users"])
 

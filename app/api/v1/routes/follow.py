@@ -7,7 +7,7 @@ from app.api.v1.dependencies import get_current_user
 from app.core.database import get_db_session
 from app.models.user import User
 from app.schemas.follow import FollowResponse, UserFollowStats
-from app.services.follow import FollowService
+from app.services.follow_service import FollowService
 
 router = APIRouter(prefix="/users", tags=["follow"])
 
