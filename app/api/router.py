@@ -1,15 +1,17 @@
+"""Главный роутер API, агрегирующий роутеры разных версий."""
+
 from fastapi import APIRouter
 
-from app.api.v1.routes import follow
-from app.api.v1.routes import likes
-from app.api.v1.routes import media
-from app.api.v1.routes import tweets
-from app.api.v1.routes import users
+# Импортируем роутер версии v1
+from app.api.v1.router import router_v1
 
-router = APIRouter()
+# Создаем главный роутер API
+api_router = APIRouter()
 
-router.include_router(follow.router)
-router.include_router(likes.router)
-router.include_router(media.router)
-router.include_router(tweets.router)
-router.include_router(users.router)
+# Подключаем роутер v1 с префиксом /v1
+# Теперь все пути v1 будут начинаться с /api/v1/...
+api_router.include_router(router_v1, prefix="/v1")
+
+# Сюда можно будет добавить роутеры для других версий API в будущем
+# from app.api.v2.router import router_v2
+# api_router.include_router(router_v2, prefix="/v2")

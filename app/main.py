@@ -12,9 +12,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.api.router import api_router  # Ваш главный роутер API (/api/v1/...)
+from app.api.router import api_router
 from app.core.config import settings
-from app.core.database import db  # Ваш менеджер БД
+from app.core.database import db
 from app.core.exceptions import setup_exception_handlers  # Наша функция настройки обработчиков
 
 

@@ -1,122 +1,71 @@
-"""Эндпоинты для работы с медиафайлами."""
+"""API роуты для работы с медиафайлами."""
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, UploadFile, status
 
-from app.api.v1.dependencies import get_current_user
-from app.core.database import get_db_session
-from app.models.user import User
-from app.schemas.media import MediaResponse
-from app.services.media_service import MediaService
+# Импортируем зависимости, сервисы и схемы
+from app.api.v1.dependencies import CurrentUser, DBSession
+from app.core.exceptions import BadRequestError
+from app.core.logging import log
+from app.services import media_service
+from app.schemas import MediaCreateResult  # Импортируем схему ответа
 
-router = APIRouter(prefix="/media", tags=["media"])
+# Создаем роутер для медиа
+router = APIRouter(prefix="/media", tags=["Media"])  # Добавляем префикс /media
 
 
 @router.post(
-    "/",
-    response_model=MediaResponse,
-    status_code=status.HTTP_201_CREATED
+    "",  # Путь относительно префикса /media, т.е. POST /api/v1/media
+    response_model=MediaCreateResult,
+    status_code=status.HTTP_201_CREATED,
+    summary="Загрузка медиафайла",
+    description="Загружает медиафайл (изображение) и возвращает его ID для последующего прикрепления к твиту.",
 )
 async def upload_media_file(
-        file: UploadFile,
-        current_user: User = Depends(get_current_user),
-        db=Depends(get_db_session)
+        # Зависимости: текущий пользователь (для авторизации) и сессия БД
+        current_user: CurrentUser,
+        db: DBSession,
+        # Данные файла из формы (multipart/form-data)
+        file: UploadFile = File(..., description="Медиафайл для загрузки (jpg, png, gif)")
 ):
-    """Загрузка медиафайла.
+    """
+    Обрабатывает загрузку медиафайла.
+
+    - Проверяет авторизацию пользователя.
+    - Валидирует и сохраняет файл с помощью `media_service`.
+    - Создает запись в БД.
+    - Возвращает ID созданного медиафайла.
 
     Args:
-        file: Файл для загрузки
-        current_user: Авторизованный пользователь
-        db: Сессия БД
+        current_user: Аутентифицированный пользователь (инъекция).
+        db: Сессия БД (инъекция).
+        file: Загружаемый файл (инъекция).
 
     Returns:
-        MediaResponse: Информация о загруженном файле
+        MediaCreateResult: Результат с ID созданного медиа.
 
     Raises:
-        HTTPException: При ошибках валидации файла
+        MediaValidationError: Если файл не прошел валидацию (перехватывается обработчиком).
+        BadRequestError: Если произошла ошибка сохранения файла или БД (перехватывается).
     """
-    service = MediaService(db)
-    try:
-        media = await service.upload_file(
-            user_id=current_user.id,
-            file=file
-        )
-        return MediaResponse(
-            id=media.id,
-            url=media.url
-        )
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+    log.info(f"Пользователь ID {current_user.id} загружает файл: '{file.filename}' ({file.content_type})")
 
-# v2
-# """API эндпоинты для работы с медиа."""
-#
-# from fastapi import APIRouter, Depends, UploadFile, HTTPException
-# from fastapi.responses import FileResponse
-# from sqlalchemy.ext.asyncio import AsyncSession
-#
-# from app.core.database import get_db
-# from app.core.security import get_current_user
-# from app.models.user import User
-# from app.services.media import MediaService
-# from app.schemas.media import MediaResponse
-#
-# router = APIRouter(prefix="/media", tags=["media"])
-#
-#
-# @router.post("", response_model=MediaResponse)
-# async def upload_media(
-#         file: UploadFile,
-#         current_user: User = Depends(get_current_user),
-#         session: AsyncSession = Depends(get_db)
-# ):
-#     """
-#     Загрузка нового медиафайла.
-#
-#     Returns:
-#         MediaResponse: Информация о загруженном файле
-#     """
-#     service = MediaService(session)
-#     media = await service.upload_file(current_user.id, file)
-#     return MediaService.to_response(media)
-#
-#
-# @router.get("/files/{filename}")
-# async def get_media_file(filename: str):
-#     """
-#     Получение медиафайла по имени.
-#
-#     Returns:
-#         FileResponse: Файловый ответ
-#     """
-#     file_path = Path(settings.STORAGE_PATH) / filename
-#     if not file_path.exists():
-#         raise HTTPException(status_code=404, detail="Файл не найден")
-#     return FileResponse(file_path)
-#
-#
-# @router.delete("/{media_id}")
-# async def delete_media(
-#         media_id: int,
-#         current_user: User = Depends(get_current_user),
-#         session: AsyncSession = Depends(get_db)
-# ):
-#     """
-#     Удаление медиафайла.
-#
-#     Returns:
-#         dict: Результат операции
-#     """
-#     service = MediaService(session)
-#     media = await service.get_media_by_id(media_id)
-#
-#     if not media:
-#         raise HTTPException(status_code=404, detail="Медиа не найдено")
-#
-#     if media.user_id != current_user.id:
-#         raise HTTPException(status_code=403, detail="Недостаточно прав")
-#
-#     await service.delete_media(media)
-#     return {"result": True}
+    # Используем try-except на случай непредвиденных ошибок при чтении файла,
+    # хотя основные ошибки (валидация, сохранение) обрабатываются в сервисе
+    try:
+        media = await media_service.save_media_file(
+            db=db,
+            file=file.file,  # Передаем сам файловый объект
+            filename=file.filename or "unknown",  # Используем имя файла или заглушку
+            content_type=file.content_type or "application/octet-stream"
+        )
+    except Exception as e:
+        # Логируем ошибку и позволяем обработчику исключений FastAPI разобраться
+        log.exception(f"Непредвиденная ошибка при обработке загрузки файла от пользователя ID {current_user.id}")
+        # Перевыбрасываем как BadRequestError или позволяем обработчику поймать оригинальное исключение
+        raise BadRequestError(f"Ошибка при обработке файла: {e}") from e
+    finally:
+        # Важно закрыть файл после использования
+        await file.close()
+        log.debug(f"Файл '{file.filename}' закрыт после обработки.")
+
+    return MediaCreateResult(media_id=media.id)  # result=True добавится автоматически Pydantic
