@@ -70,14 +70,14 @@ class MediaService:
 #
 #
 # class MediaService:
-#     def __init__(self, db: AsyncSession):
+#     def __init__(self, session: AsyncSession):
 #         """
 #         Инициализация сервиса.
 #
 #         Args:
-#             db: Асинхронная сессия SQLAlchemy
+#             session: Асинхронная сессия SQLAlchemy
 #         """
-#         self.db = db
+#         self.session = session
 #         self.storage_path = Path(settings.STORAGE_PATH)
 #
 #     async def upload_file(
@@ -119,14 +119,14 @@ class MediaService:
 #             await self._save_file_to_disk(file_name, await file.read())
 #
 #             # Фиксация изменений
-#             self.db.add(media)
-#             await self.db.commit()
-#             await self.db.refresh(media)
+#             self.session.add(media)
+#             await self.session.commit()
+#             await self.session.refresh(media)
 #
 #             return media
 #
 #         except Exception as e:
-#             await self.db.rollback()
+#             await self.session.rollback()
 #             await self._cleanup_file(file_name)
 #             raise MediaValidationError(f"Ошибка загрузки файла: {str(e)}")
 #
@@ -140,7 +140,7 @@ class MediaService:
 #         Returns:
 #             Optional[Media]: Найденный объект или None
 #         """
-#         return await self.db.get(Media, media_id)
+#         return await self.session.get(Media, media_id)
 #
 #     async def delete_media(self, media: Media) -> None:
 #         """
@@ -158,11 +158,11 @@ class MediaService:
 #                 await aiofiles.os.remove(media.path)
 #
 #             # Удаление записи из БД
-#             await self.db.delete(media)
-#             await self.db.commit()
+#             await self.session.delete(media)
+#             await self.session.commit()
 #
 #         except Exception as e:
-#             await self.db.rollback()
+#             await self.session.rollback()
 #             raise MediaValidationError(f"Ошибка удаления файла: {str(e)}")
 #
 #     async def _ensure_storage_dir(self) -> None:

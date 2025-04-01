@@ -70,7 +70,7 @@ async def upload_media_file(
 # async def upload_media(
 #         file: UploadFile,
 #         current_user: User = Depends(get_current_user),
-#         db: AsyncSession = Depends(get_db)
+#         session: AsyncSession = Depends(get_db)
 # ):
 #     """
 #     Загрузка нового медиафайла.
@@ -78,7 +78,7 @@ async def upload_media_file(
 #     Returns:
 #         MediaResponse: Информация о загруженном файле
 #     """
-#     service = MediaService(db)
+#     service = MediaService(session)
 #     media = await service.upload_file(current_user.id, file)
 #     return MediaService.to_response(media)
 #
@@ -101,7 +101,7 @@ async def upload_media_file(
 # async def delete_media(
 #         media_id: int,
 #         current_user: User = Depends(get_current_user),
-#         db: AsyncSession = Depends(get_db)
+#         session: AsyncSession = Depends(get_db)
 # ):
 #     """
 #     Удаление медиафайла.
@@ -109,7 +109,7 @@ async def upload_media_file(
 #     Returns:
 #         dict: Результат операции
 #     """
-#     service = MediaService(db)
+#     service = MediaService(session)
 #     media = await service.get_media_by_id(media_id)
 #
 #     if not media:
