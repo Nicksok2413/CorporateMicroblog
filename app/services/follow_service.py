@@ -3,8 +3,8 @@
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import (BadRequestError, ConflictException,
-                                 ForbiddenException, NotFoundError)
+from app.core.exceptions import (BadRequestError, ConflictError,
+                                 PermissionDeniedError, NotFoundError)
 from app.core.logging import log
 from app.models import User  # Импортируем модель User
 from app.repositories import follow_repo, user_repo  # Импортируем репозитории
@@ -45,7 +45,7 @@ class FollowService:
         """
         if follower_id == following_id:
             log.warning(f"Пользователь ID {follower_id} пытается подписаться/отписаться от себя.")
-            raise ForbiddenException("Вы не можете подписаться на себя.")
+            raise PermissionDeniedError("Вы не можете подписаться на себя.")
 
         # Проверяем, существует ли пользователь, на которого подписываемся
         user_to_follow = await self.user_repo.get(db, id=following_id)
@@ -77,7 +77,7 @@ class FollowService:
         existing_follow = await self.repo.get_follow(db, follower_id=follower_id, following_id=user_to_follow_id)
         if existing_follow:
             log.warning(f"Пользователь ID {follower_id} уже подписан на пользователя ID {user_to_follow_id}.")
-            raise ConflictException("Вы уже подписаны на этого пользователя.")
+            raise ConflictError("Вы уже подписаны на этого пользователя.")
             # return # Или просто выйти без ошибки
 
         try:
@@ -86,7 +86,7 @@ class FollowService:
         except IntegrityError as e:
             # На случай гонки запросов или если проверка выше не сработала
             log.warning(f"Конфликт целостности при подписке ({follower_id} -> {user_to_follow_id}): {e}")
-            raise ConflictException("Не удалось подписаться (возможно, подписка уже существует).") from e
+            raise ConflictError("Не удалось подписаться (возможно, подписка уже существует).") from e
         except Exception as e:
             log.error(f"Ошибка при создании подписки ({follower_id} -> {user_to_follow_id}): {e}", exc_info=True)
             raise BadRequestError("Не удалось подписаться на пользователя.") from e

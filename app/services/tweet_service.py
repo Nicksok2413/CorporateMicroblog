@@ -5,11 +5,11 @@ from typing import List, Optional, Sequence
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import (BadRequestError, ConflictException,
-                                 ForbiddenException, NotFoundError)
+from app.core.exceptions import (BadRequestError, ConflictError,
+                                 PermissionDeniedError, NotFoundError)
 from app.core.logging import log
 from app.models import Media, Tweet, User  # Импортируем модели
-from app.repositories import like_repo, media_repo, tweet_repo  # Импортируем репозитории
+from app.repositories import follow_repo, like_repo, media_repo, tweet_repo  # Импортируем репозитории
 from app.schemas.tweet import (LikeInfo, TweetAuthor, TweetCreateInternal,
                                TweetCreateRequest, TweetFeedResult,
                                TweetInFeed)  # Импортируем схемы
@@ -117,7 +117,7 @@ class TweetService(BaseService[Tweet, type(tweet_repo)]):
         if tweet.author_id != current_user.id:
             log.warning(
                 f"Пользователь ID {current_user.id} не имеет прав на удаление твита ID {tweet_id} (автор ID {tweet.author_id}).")
-            raise ForbiddenException("Вы не можете удалить этот твит.")
+            raise PermissionDeniedError("Вы не можете удалить этот твит.")
 
         deleted_tweet = await self.repo.remove(db, id=tweet_id)
         if not deleted_tweet:
@@ -149,7 +149,7 @@ class TweetService(BaseService[Tweet, type(tweet_repo)]):
         if existing_like:
             log.warning(f"Пользователь ID {current_user.id} уже лайкнул твит ID {tweet_id}.")
             # По ТЗ не ясно, нужно ли кидать ошибку. Можно просто ничего не делать или кинуть Conflict.
-            raise ConflictException("Вы уже лайкнули этот твит.")
+            raise ConflictError("Вы уже лайкнули этот твит.")
             # return # Или просто выйти
 
         try:
@@ -158,7 +158,7 @@ class TweetService(BaseService[Tweet, type(tweet_repo)]):
         except IntegrityError as e:
             # На случай гонки запросов или если проверка выше не сработала
             log.warning(f"Конфликт целостности при лайке твита ID {tweet_id} пользователем ID {current_user.id}: {e}")
-            raise ConflictException("Не удалось поставить лайк (возможно, уже существует).") from e
+            raise ConflictError("Не удалось поставить лайк (возможно, уже существует).") from e
         except Exception as e:
             log.error(f"Ошибка при создании лайка для твита ID {tweet_id} пользователем ID {current_user.id}: {e}",
                       exc_info=True)
