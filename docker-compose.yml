@@ -10,7 +10,7 @@ services:
     volumes:
       - ./static/media:/app/static/media  # Важно для сохранения медиа!
     depends_on:
-      - db
+      - session
   db:
     image: postgres:13
     environment:
