@@ -1,69 +1,46 @@
-"""Модуль для работы с API-ключами в корпоративной системе.
+"""
+Модуль для функций и утилит, связанных с безопасностью.
 
-Содержит:
-- Зависимость для проверки API-ключей
-- Утилиты для демонстрационного режима
+В данном проекте основная логика аутентификации (проверка API ключа)
+реализована как зависимость FastAPI в `app.api.v1.dependencies`,
+так как ей требуется доступ к сессии БД и заголовкам запроса.
+
+Этот файл может содержать:
+- Функции для хеширования и проверки паролей (если потребуется).
+- Функции для работы с JWT (если потребуется).
+- Определения схем безопасности для OpenAPI.
+- Другие утилиты безопасности.
 """
 
-from typing import Annotated
+# Пример функций для работы с паролями (если бы они понадобились)
+# from passlib.context import CryptContext
 
-from fastapi import Depends, Header, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
+# pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-from app.core.config import settings
-from app.core.database import get_db
-from app.models.user import User
-from app.repositories.user import UserRepository
+# def verify_password(plain_password: str, hashed_password: str) -> bool:
+#     """
+#     Проверяет соответствие простого пароля хешированному.
+#
+#     Args:
+#         plain_password: Пароль в открытом виде.
+#         hashed_password: Хешированный пароль из БД.
+#
+#     Returns:
+#         True, если пароли совпадают, иначе False.
+#     """
+#     return pwd_context.verify(plain_password, hashed_password)
 
+# def get_password_hash(password: str) -> str:
+#     """
+#     Генерирует хеш пароля.
+#
+#     Args:
+#         password: Пароль в открытом виде.
+#
+#     Returns:
+#         Хешированный пароль.
+#     """
+#     return pwd_context.hash(password)
 
-async def get_current_user(
-        api_key: Annotated[str, Header(alias=settings.API_KEY_HEADER)] = None,
-        db: AsyncSession = Depends(get_db)
-) -> User:
-    """Зависимость для получения пользователя по API-ключу.
-
-    Args:
-        api_key: Ключ из HTTP-заголовка (любое значение)
-        db: Асинхронная сессия БД
-
-    Returns:
-        User: Пользователь, найденный по ключу
-
-    Raises:
-        HTTPException: Если пользователь не найден (код 403)
-    """
-    if not api_key:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="API key header is required"
-        )
-
-    user_repo = UserRepository(db)
-    user = await user_repo.get_by_api_key(api_key)
-
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="User with this API key not found"
-        )
-
-    return user
-
-
-async def demo_mode_check(
-        current_user: User = Depends(get_current_user)
-) -> User:
-    """Проверка, что пользователь в демо-режиме.
-
-    Args:
-        current_user: Текущий пользователь
-
-    Returns:
-        User: Тот же пользователь (для цепочки зависимостей)
-    """
-    if settings.PRODUCTION and current_user.is_demo:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Demo access restricted in production"
-        )
-    return current_user
+# На данный момент для проекта с API ключами этот файл может быть почти пустым.
+print("Модуль core.security загружен (в основном для будущих расширений).")

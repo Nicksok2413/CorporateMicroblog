@@ -1,27 +1,52 @@
-"""Модель для хранения лайков твитов."""
+"""Модель SQLAlchemy для Like (Лайк)."""
 
-from sqlalchemy import Column, ForeignKey, Integer
-from sqlalchemy.orm import relationship
+from typing import TYPE_CHECKING
 
-from app.models.base import Base
+from sqlalchemy import ForeignKey, UniqueConstraint
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from .base import Base
+
+if TYPE_CHECKING:
+    from .tweet import Tweet
+    from .user import User
 
 
 class Like(Base):
-    """Модель лайка (составной первичный ключ: user_id + tweet_id)."""
+    """
+    Представляет действие 'лайк' от пользователя (User) на твит (Tweet).
 
+    Выступает в роли ассоциативного объекта между User и Tweet для лайков.
+
+    Attributes:
+        user_id: Внешний ключ, ссылающийся на пользователя (User), поставившего лайк
+        tweet_id: Внешний ключ, ссылающийся на твит (Tweet), который был лайкнут
+        user: Связь с объектом лайкнувшего пользователя (User)
+        tweet: Связь с объектом лайкнутого твита (Tweet)
+    """
     __tablename__ = "likes"
 
-    user_id = Column(
-        Integer,
-        ForeignKey("users.id", ondelete="CASCADE"),
-        primary_key=True
+    # Составной первичный ключ гарантирует, что пользователь может лайкнуть твит только один раз.
+    # onDelete=CASCADE гарантирует, что лайки удаляются, если пользователь или твит удалены.
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
     )
-    tweet_id = Column(
-        Integer,
-        ForeignKey("tweets.id", ondelete="CASCADE"),
-        primary_key=True
+    tweet_id: Mapped[int] = mapped_column(
+        ForeignKey("tweets.id", ondelete="CASCADE"), primary_key=True
     )
 
-    # Связи
-    user = relationship("User", back_populates="likes")
-    tweet = relationship("Tweet", back_populates="likes")
+    # Связи (опциональны, но могут быть полезны для навигации)
+    user: Mapped["User"] = relationship(back_populates="likes")
+    tweet: Mapped["Tweet"] = relationship(back_populates="likes")
+
+    # Явное ограничение уникальности (покрывается PK, но хорошо для ясности/возможных изменений)
+    __table_args__ = (UniqueConstraint("user_id", "tweet_id", name="uq_user_tweet_like"),)
+
+    def __repr__(self) -> str:
+        """
+        Возвращает строковое представление объекта Like.
+
+        Returns:
+            Строковое представление действия 'лайк'.
+        """
+        return f"<Like(user_id={self.user_id}, tweet_id={self.tweet_id})>"

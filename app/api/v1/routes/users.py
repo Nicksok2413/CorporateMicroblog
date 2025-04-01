@@ -3,11 +3,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import get_db
-from app.core.security import get_current_user
+from app.api.v1.dependencies import get_current_user
+from app.core.database import get_db_session
 from app.models.user import User
 from app.schemas.user import UserProfileResponse, UserDetailResponse
-from app.services.user import UserService
+from app.services.user_service import UserService
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -18,7 +18,7 @@ router = APIRouter(prefix="/users", tags=["users"])
 )
 async def get_my_profile(
         current_user: User = Depends(get_current_user),
-        db: AsyncSession = Depends(get_db)
+        db: AsyncSession = Depends(get_db_session)
 ):
     """Получить профиль текущего пользователя.
 
@@ -49,7 +49,7 @@ async def get_my_profile(
 async def get_user_profile(
         user_id: int,
         current_user: User = Depends(get_current_user),
-        db: AsyncSession = Depends(get_db)
+        db: AsyncSession = Depends(get_db_session)
 ):
     """Получить профиль другого пользователя.
 

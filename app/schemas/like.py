@@ -1,16 +1,20 @@
-"""Pydantic-схемы для работы с лайками."""
+"""Схемы Pydantic для модели Like (если нужны)."""
 
-from app.schemas.base import BaseSchema
+# В соответствии с ТЗ, отдельные схемы для Like не требуются для API ответов.
+# Схема LikeInfo определена в tweet_service.py.
+# Схема для успешного лайка/анлайка - TweetActionResult в tweet_service.py.
 
+# Можно добавить внутренние схемы, если они понадобятся сервисам/репозиториям:
+# from app.schemas.base import BaseModel
+# class LikeBase(BaseModel):
+#     user_id: int
+#     tweet_id: int
+#
+# class LikeCreate(LikeBase):
+#     pass
+#
+# class LikeOut(LikeBase):
+#     # Можно добавить связи, если нужно
+#     pass
 
-class LikeResponse(BaseSchema):
-    """Схема ответа при работе с лайками.
-
-    Fields:
-        tweet_id: ID твита
-        is_liked: Поставил ли текущий пользователь лайк
-        likes_count: Количество лайков
-    """
-    tweet_id: int
-    is_liked: bool
-    likes_count: int
+# Пока оставляем пустым или удаляем файл.

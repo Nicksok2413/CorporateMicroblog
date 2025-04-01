@@ -1,110 +1,113 @@
 microblog/
-├── .env.example                  # Шаблон конфигурации
-├── .gitignore                    # Игнорируемые файлы
-├── docker-compose.yml            # Композиция сервисов
-├── Dockerfile                    # Образ приложения
-├── requirements.txt              # Зависимости (Production)
-├── requirements-dev.txt          # Зависимости (Development)
-├── alembic.ini                   # Настройки миграций
-├── pytest.ini                    # Настройки тестирования
-├── README.md                     # Документация
-│
-├── app/                          # Основное приложение
-│   ├── __init__.py
-│   ├── main.py                   # Точка входа в приложение
-│   │
-│   ├── api/                      # API роутеры
-│   │   ├── __init__.py
-│   │   ├── router.py             # Агрегация роутеров v1
-│   │   └── v1/                   # Версия API
-│   │       ├── __init__.py
-│   │       ├── dependencies.py   # Зависимости
-│   │       └── routes/           # Маршруты
-│   │         ├── __init__.py
-│   │         ├── users.py        # /users/...
-│   │         ├── tweets.py       # /tweets/...
-│   │         ├── media.py        # /media/...
-│   │         ├── likes.py        # /likes/...
-│   │         └── follow.py       # /follow/...
-│   │
-│   ├── core/                     # Ядро приложения
-│   │   ├── __init__.py
-│   │   ├── config.py             # Настройки приложения
-│   │   ├── database.py           # Подключение к БД
-│   │   ├── exceptions.py         # Обработка исключений
-│   │   ├── logging.py            # Настройка логгера
-│   │   └── security.py           # Аутентификация
-│   │
-│   ├── models/                   # SQLAlchemy модели
-│   │   ├── __init__.py
-│   │   ├── user.py               # Модель для User
-│   │   ├── tweet.py              # Модель для Tweet
-│   │   ├── media.py              # Модель для media
-│   │   ├── like.py               # Модель для like
-│   │   └── follow.py             # Модель для follow
-│   │
-│   ├── schemas/                  # Pydantic схемы
-│   │   ├── __init__.py
-│   │   ├── user.py               # Схема для User
-│   │   ├── tweet.py              # Схема для Tweet
-│   │   ├── media.py              # Схема для media
-│   │   ├── like.py               # Схема для like
-│   │   └── follow.py             # Схема для follow
-│   │
-│   ├── repositories/             # Логика работы с базой данных (CRUD)
-│   │   ├── __init__.py
-│   │   ├── user.py               # Репозиторий для User
-│   │   ├── tweet.py              # Репозиторий для Tweet
-│   │   ├── media.py              # Репозиторий для media
-│   │   ├── like.py               # Репозиторий для like
-│   │   └── follow.py             # Репозиторий для follow
-│   │
-│   ├── services/                 # Бизнес-логика
-│   │   ├── __init__.py
-│   │   ├── user.py
-│   │   ├── tweet.py
-│   │   ├── media.py
-│   │   ├── like.py
-│   │   └── follow.py
-│   │
-│   │
-│   └── utils/                    # Вспомогательные утилиты
-│       ├── __init__.py
-│       ├── file_upload.py
-│       └── pagination.py
-│
-├── migrations/                   # Alembic миграции
-│   ├── versions/
-│   ├── env.py
-│   └── script.py.mako
-│
-├── tests/                        # Тесты
-│   ├── __init__.py
-│   ├── conftest.py               # Фикстуры pytest
-│   ├── unit/                     # Юнит-тесты
-│   │   ├── repositories/
-│   │   │   ├── test_user_repo.py
-│   │   │   └── ...
-│   │   ├── services/
-│   │   │   ├── test_user_service.py
-│   │   │   └── ...
-│   │   └── utils/
-│   │       ├── test_file_upload.py
-│   │       └── ...
-│   └── integration/              # Интеграционные тесты
-│       ├── api/
-│       │   ├── test_users_api.py
-│       │   └── ...
-│       └── database/
-│           └── test_connections.py
-│
-└── static/                       # Статические файлы
-    ├── index.html
-    ├── favicon.ico
-    ├── media/                    # Загруженные медиа
-    │   └── ...
-    ├── css/
-    │   └── ...
-    └── js/
-        └── ...
-
+    ├── .env.example                  # Шаблон конфигурации
+    ├── .gitignore                    # Игнорируемые файлы
+    ├── docker-compose.yml            # Композиция сервисов
+    ├── Dockerfile                    # Образ приложения
+    ├── requirements.txt              # Зависимости (Production)
+    ├── requirements-dev.txt          # Зависимости (Development)
+    ├── alembic.ini                   # Настройки миграций
+    ├── pytest.ini                    # Настройки тестирования
+    ├── README.md                     # Документация
+    │
+    ├── app/                          # Основное приложение
+    │   ├── __init__.py
+    │   ├── main.py                   # Точка входа в приложение
+    │   │
+    │   ├── api/                      # API роутеры
+    │   │   ├── __init__.py
+    │   │   ├── router.py             # Агрегация роутеров v1
+    │   │   └── v1/                   # Версия API
+    │   │       ├── __init__.py
+    │   │       ├── dependencies.py   # Зависимости
+    │   │       └── routes/           # Маршруты
+    │   │         ├── init.py
+    │   │         ├── users.py        # /users/...
+    │   │         ├── tweets.py       # /tweets/...
+    │   │         ├── media.py        # /media/...
+    │   │         ├── likes.py        # /likes/...
+    │   │         └── follow.py       # /follow/...
+    │   │
+    │   ├── core/                     # Ядро приложения
+    │   │   ├── __init__.py
+    │   │   ├── config.py             # Настройки приложения
+    │   │   ├── database.py           # Подключение к БД
+    │   │   ├── exceptions.py         # Обработка исключений
+    │   │   ├── logging.py            # Настройка логгера
+    │   │   └── security.py           # Аутентификация
+    │   │
+    │   ├── models/                   # SQLAlchemy модели
+    │   │   ├── __init__.py
+    │   │   ├── associations.py       # Модели ассоциативных таблиц
+    │   │   ├── base.py               # Базовая модель
+    │   │   ├── user.py               # Модель для User
+    │   │   ├── tweet.py              # Модель для Tweet
+    │   │   ├── media.py              # Модель для media
+    │   │   ├── like.py               # Модель для like
+    │   │   └── follow.py             # Модель для follow
+    │   │
+    │   ├── repositories/             # Логика работы с базой данных (CRUD)
+    │   │   ├── __init__.py
+    │   │   ├── base.py               # Базовый репозиторий
+    │   │   ├── user.py               # Репозиторий для User
+    │   │   ├── tweet.py              # Репозиторий для Tweet
+    │   │   ├── media.py              # Репозиторий для media
+    │   │   ├── like.py               # Репозиторий для like
+    │   │   └── follow.py             # Репозиторий для follow
+    │   │
+    │   ├── schemas/                  # Pydantic схемы
+    │   │   ├── __init__.py
+    │   │   ├── base.py               # Базовая схема
+    │   │   ├── user.py               # Схема для User
+    │   │   ├── tweet.py              # Схема для Tweet
+    │   │   ├── media.py              # Схема для media
+    │   │   ├── like.py               # Схема для like
+    │   │   └── follow.py             # Схема для follow
+    │   │
+    │   ├── services/                 # Бизнес-логика
+    │   │   ├── __init__.py
+    │   │   ├── base.py
+    │   │   ├── user.py
+    │   │   ├── tweet.py
+    │   │   ├── media.py
+    │   │   ├── like.py
+    │   │   └── follow.py
+    │   │
+    │   └── static/                   # Статические файлы
+    │       ├── index.html
+    │       ├── favicon.ico
+    │       ├── media/                # Загруженные медиа
+    │       │   └── ...
+    │       ├── css/
+    │       │   └── ...
+    │       └── js/
+    │           └── ...
+    │
+    ├── migrations/                   # Alembic миграции
+    │   ├── versions/
+    │   ├── env.py
+    │   └── script.py.mako
+    │
+    └── tests/                        # Тесты
+        ├── __init__.py
+        ├── conftest.py               # Фикстуры pytest
+        ├── integration/              # Интеграционные тесты
+        │   ├── api/
+        │   │   ├── test_users_api.py
+        │   │   └── ...
+        │   ├── database/
+        │   │   ├── test_connections.py
+        │   │   └── ...
+        │   └── .../
+        │       ├── ...
+        │       └── ...
+        │
+        └── unit/                     # Юнит-тесты
+            ├── repositories/
+            │   ├── test_user_repo.py
+            │   └── ...
+            ├── services/
+            │   ├── test_user_service.py
+            │   └── ...
+            └── .../
+                ├── ...
+                └── ...

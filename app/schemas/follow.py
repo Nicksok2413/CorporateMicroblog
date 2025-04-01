@@ -1,42 +1,16 @@
-"""Pydantic-схемы для работы с подписками."""
+"""Схемы Pydantic для модели Follow (если нужны)."""
 
-from typing import List
+# В соответствии с ТЗ, отдельные схемы для Follow не требуются для API ответов.
+# Схема BaseUser используется для списков followers/following в UserProfile.
+# Схема для успешной подписки/отписки - ResultTrue в base.py.
 
-from app.schemas.base import BaseSchema
+# Можно добавить внутренние схемы:
+# from app.schemas.base import BaseModel
+# class FollowBase(BaseModel):
+#     follower_id: int
+#     following_id: int
+#
+# class FollowCreate(FollowBase):
+#     pass
 
-
-class FollowStats(BaseSchema):
-    """Схема статистики подписки.
-
-    Fields:
-        id: ID пользователя
-        name: Имя пользователя
-    """
-    id: int
-    name: str
-
-
-class FollowResponse(BaseSchema):
-    """Схема ответа для операций с подписками.
-
-    Fields:
-        user_id: ID целевого пользователя
-        followers_count: Количество подписчиков
-        following_count: Количество подписок
-        is_following: Подписан ли текущий пользователь
-    """
-    user_id: int
-    followers_count: int
-    following_count: int
-    is_following: bool
-
-
-class UserFollowStats(BaseSchema):
-    """Детализированная статистика подписок.
-
-    Fields:
-        followers: Список подписчиков
-        following: Список подписок
-    """
-    followers: List[FollowStats]
-    following: List[FollowStats]
+# Пока оставляем пустым или удаляем файл.

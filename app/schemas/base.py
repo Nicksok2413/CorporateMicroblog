@@ -1,14 +1,41 @@
-"""Базовые схемы для всех моделей."""
+"""Базовые схемы Pydantic, используемые в приложении."""
 
-from pydantic import BaseModel
-from datetime import datetime
+from typing import Any, Dict, Optional
+
+from pydantic import BaseModel, ConfigDict
 
 
-class BaseSchema(BaseModel):
-    """Базовая схема с общими настройками."""
+class TunedModel(BaseModel):
+    """
+    Базовая модель Pydantic с настройками для работы с ORM.
 
-    class Config:
-        from_attributes = True
-        json_encoders = {
-            datetime: lambda v: v.isoformat()
-        }
+    Включает `from_attributes=True` для преобразования объектов SQLAlchemy в схемы.
+    """
+    # ConfigDict используется в Pydantic V2 вместо class Config
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ResultTrue(BaseModel):
+    """
+    Стандартная схема для успешного ответа без дополнительных данных.
+
+    Fields:
+        result (bool): Всегда True для этой схемы.
+    """
+    result: bool = True
+
+
+class ResultFalseWithError(BaseModel):
+    """
+    Стандартная схема для ответа об ошибке.
+
+    Fields:
+        result (bool): Всегда False для этой схемы.
+        error_type (str): Строковый идентификатор типа ошибки.
+        error_message (Any): Сообщение или детали ошибки.
+        extra_info (Optional[Dict[str, Any]]): Дополнительная информация об ошибке (опционально).
+    """
+    result: bool = False
+    error_type: str
+    error_message: Any  # Может быть строкой или сложной структурой (например, ошибки валидации)
+    extra_info: Optional[Dict[str, Any]] = None  # Добавлено для передачи доп. данных из исключений

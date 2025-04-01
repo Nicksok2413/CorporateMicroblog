@@ -1,124 +1,185 @@
-"""Репозиторий для работы с подписками в БД."""
+"""Репозиторий для работы с моделью Follow."""
 
-from sqlalchemy import func, select
+from typing import List, Optional, Sequence
+
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
+from app.core.logging import log
 from app.models.follow import Follow
-from app.models.user import User
+from app.models.user import User  # Нужен для загрузки связей
 
 
 class FollowRepository:
-    def __init__(self, sessiob: AsyncSession):
-        self.session = sessiob
+    """
+    Репозиторий для управления подписками пользователей.
+    """
+    model = Follow
 
-    async def get_follow_stats(self, user_id: int) -> tuple[int, int]:
-        """Возвращает статистику подписок пользователя.
+    async def get_follow(self, db: AsyncSession, *, follower_id: int, following_id: int) -> Optional[Follow]:
+        """
+        Проверяет наличие подписки одного пользователя на другого.
 
         Args:
-            user_id: ID пользователя
+            db: Асинхронная сессия SQLAlchemy.
+            follower_id: ID пользователя, который подписывается.
+            following_id: ID пользователя, на которого подписываются.
 
         Returns:
-            tuple: (followers_count, following_count)
+            Optional[Follow]: Объект Follow, если подписка существует, иначе None.
         """
-        followers = await self.session.execute(
-            select(func.count())
-            .where(Follow.followed_id == user_id)
+        log.debug(f"Проверка подписки: follower_id={follower_id}, following_id={following_id}")
+        statement = select(self.model).where(
+            self.model.follower_id == follower_id,
+            self.model.following_id == following_id
         )
-        following = await self.session.execute(
-            select(func.count())
-            .where(Follow.follower_id == user_id)
-        )
-        return followers.scalar_one(), following.scalar_one()
+        result = await db.execute(statement)
+        return result.scalars().first()
 
-    async def is_following(self, follower_id: int, followed_id: int) -> bool:
-        """Проверяет наличие подписки.
+    async def create_follow(self, db: AsyncSession, *, follower_id: int, following_id: int) -> Follow:
+        """
+        Создает запись о подписке.
 
         Args:
-            follower_id: ID подписчика
-            followed_id: ID целевого пользователя
+            db: Асинхронная сессия SQLAlchemy.
+            follower_id: ID пользователя-подписчика.
+            following_id: ID пользователя, на которого подписываются.
 
         Returns:
-            bool: True если подписка существует
-        """
-        result = await self.session.execute(
-            select(Follow)
-            .where(Follow.follower_id == follower_id)
-            .where(Follow.followed_id == followed_id)
-        )
-        return result.scalar_one_or_none() is not None
-
-    async def add_follow(self, follower_id: int, followed_id: int):
-        """Добавляет подписку.
-
-        Args:
-            follower_id: ID подписчика
-            followed_id: ID целевого пользователя
+            Follow: Созданный объект Follow.
 
         Raises:
-            ValueError: При попытке подписаться на себя
-                      или если подписка уже существует
+            SQLAlchemyError: В случае ошибки базы данных.
         """
-        if follower_id == followed_id:
-            raise ValueError("Нельзя подписаться на самого себя")
+        log.debug(f"Создание подписки: follower_id={follower_id}, following_id={following_id}")
+        # Проверка на подписку на себя должна быть на уровне сервиса или API,
+        # хотя и в БД есть CheckConstraint
+        db_obj = self.model(follower_id=follower_id, following_id=following_id)
+        db.add(db_obj)
+        try:
+            await db.commit()
+            log.info(f"Подписка успешно создана: follower_id={follower_id}, following_id={following_id}")
+            return db_obj
+        except Exception as e:
+            await db.rollback()
+            log.error(f"Ошибка при создании подписки (follower_id={follower_id}, following_id={following_id}): {e}",
+                      exc_info=True)
+            raise e
 
-        if await self.is_following(follower_id, followed_id):
-            raise ValueError("Подписка уже существует")
-
-        follow = Follow(follower_id=follower_id, followed_id=followed_id)
-        self.session.add(follow)
-        await self.session.commit()
-
-    async def remove_follow(self, follower_id: int, followed_id: int):
-        """Удаляет подписку.
+    async def remove_follow(self, db: AsyncSession, *, follower_id: int, following_id: int) -> bool:
+        """
+        Удаляет запись о подписке.
 
         Args:
-            follower_id: ID подписчика
-            followed_id: ID целевого пользователя
+            db: Асинхронная сессия SQLAlchemy.
+            follower_id: ID пользователя-подписчика.
+            following_id: ID пользователя, на которого подписаны.
+
+        Returns:
+            bool: True, если подписка была найдена и удалена, иначе False.
 
         Raises:
-            ValueError: Если подписка не найдена
+            SQLAlchemyError: В случае ошибки базы данных при удалении.
         """
-        result = await self.session.execute(
+        log.debug(f"Удаление подписки: follower_id={follower_id}, following_id={following_id}")
+        statement = delete(self.model).where(
+            self.model.follower_id == follower_id,
+            self.model.following_id == following_id
+        )
+        try:
+            result = await db.execute(statement)
+            await db.commit()
+            if result.rowcount > 0:
+                log.info(f"Подписка успешно удалена: follower_id={follower_id}, following_id={following_id}")
+                return True
+            else:
+                log.warning(f"Подписка для удаления не найдена: follower_id={follower_id}, following_id={following_id}")
+                return False
+        except Exception as e:
+            await db.rollback()
+            log.error(f"Ошибка при удалении подписки (follower_id={follower_id}, following_id={following_id}): {e}",
+                      exc_info=True)
+            raise e
+
+    async def get_following_ids(self, db: AsyncSession, *, follower_id: int) -> List[int]:
+        """
+        Получает список ID пользователей, на которых подписан данный пользователь.
+
+        Args:
+            db: Асинхронная сессия SQLAlchemy.
+            follower_id: ID пользователя-подписчика.
+
+        Returns:
+            List[int]: Список ID пользователей, на которых он подписан.
+        """
+        log.debug(f"Получение ID подписок для пользователя {follower_id}")
+        statement = select(self.model.following_id).where(self.model.follower_id == follower_id)
+        result = await db.execute(statement)
+        ids = result.scalars().all()
+        log.debug(f"Пользователь {follower_id} подписан на {len(ids)} пользователей.")
+        return list(ids)  # Преобразуем в list
+
+    async def get_follower_ids(self, db: AsyncSession, *, following_id: int) -> List[int]:
+        """
+        Получает список ID пользователей, которые подписаны на данного пользователя.
+
+        Args:
+            db: Асинхронная сессия SQLAlchemy.
+            following_id: ID пользователя, чьих подписчиков ищем.
+
+        Returns:
+            List[int]: Список ID подписчиков.
+        """
+        log.debug(f"Получение ID подписчиков для пользователя {following_id}")
+        statement = select(self.model.follower_id).where(self.model.following_id == following_id)
+        result = await db.execute(statement)
+        ids = result.scalars().all()
+        log.debug(f"На пользователя {following_id} подписано {len(ids)} пользователей.")
+        return list(ids)  # Преобразуем в list
+
+    async def get_following_with_users(self, db: AsyncSession, *, follower_id: int) -> Sequence[Follow]:
+        """
+        Получает список подписок пользователя с загрузкой информации о пользователях, на которых он подписан.
+
+        Args:
+            db: Асинхронная сессия SQLAlchemy.
+            follower_id: ID пользователя-подписчика.
+
+        Returns:
+            Sequence[Follow]: Последовательность объектов Follow с загруженным `followed_user`.
+        """
+        log.debug(f"Получение подписок с деталями пользователей для follower_id={follower_id}")
+        stmt = (
             select(Follow)
             .where(Follow.follower_id == follower_id)
-            .where(Follow.followed_id == followed_id)
+            .options(selectinload(Follow.followed_user))  # Загружаем профиль того, на кого подписан
         )
-        follow = result.scalar_one_or_none()
+        res = await db.execute(stmt)
+        # unique() не нужен, т.к. нет join'ов, приводящих к дублированию Follow строк
+        return res.scalars().all()
 
-        if not follow:
-            raise ValueError("Подписка не найдена")
-
-        await self.session.delete(follow)
-        await self.session.commit()
-
-    async def get_followers_list(self, user_id: int) -> list[tuple[int, str]]:
-        """Возвращает список подписчиков.
+    async def get_followers_with_users(self, db: AsyncSession, *, following_id: int) -> Sequence[Follow]:
+        """
+        Получает список подписчиков пользователя с загрузкой информации об этих подписчиках.
 
         Args:
-            user_id: ID пользователя
+            db: Асинхронная сессия SQLAlchemy.
+            following_id: ID пользователя, чьих подписчиков ищем.
 
         Returns:
-            list: Список кортежей (id, name)
+            Sequence[Follow]: Последовательность объектов Follow с загруженным `follower`.
         """
-        result = await self.session.execute(
-            select(User.id, User.name)
-            .join(Follow, User.id == Follow.follower_id)
-            .where(Follow.followed_id == user_id)
+        log.debug(f"Получение подписчиков с деталями пользователей для following_id={following_id}")
+        stmt = (
+            select(Follow)
+            .where(Follow.following_id == following_id)
+            .options(selectinload(Follow.follower))  # Загружаем профиль подписчика
         )
-        return result.all()
+        res = await db.execute(stmt)
+        # unique() не нужен
+        return res.scalars().all()
 
-    async def get_following_list(self, user_id: int) -> list[tuple[int, str]]:
-        """Возвращает список подписок.
 
-        Args:
-            user_id: ID пользователя
-
-        Returns:
-            list: Список кортежей (id, name)
-        """
-        result = await self.session.execute(
-            select(User.id, User.name)
-            .join(Follow, User.id == Follow.followed_id)
-            .where(Follow.follower_id == user_id)
-        )
-        return result.all()
+# Создаем экземпляр репозитория
+follow_repo = FollowRepository()
