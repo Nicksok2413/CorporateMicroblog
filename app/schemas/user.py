@@ -1,70 +1,64 @@
-"""Pydantic-схемы для работы с профилями пользователей."""
+"""Схемы Pydantic для модели User."""
 
-from typing import List
+from typing import List, Optional
 
 from pydantic import Field
 
-from app.schemas.base import BaseSchema
-from app.schemas.follow import UserFollowStats
+from app.schemas.base import ResultTrue, TunedModel
 
 
-class UserBase(BaseSchema):
-    """Базовая схема пользователя.
-
-    Fields:
-        name: Имя пользователя
+# --- Базовые блоки ---
+class BaseUser(TunedModel):
     """
-    name: str = Field(..., max_length=50)
+    Базовая схема пользователя, содержащая только ID и имя.
 
-
-class UserCreate(UserBase):
-    """Схема для создания пользователя.
+    Используется для вложенного представления в других схемах (автор, лайки, подписчики).
 
     Fields:
-        name: Имя пользователя
-        api_key: API-ключ
-    """
-    api_key: str = Field(..., max_length=64)
-
-
-class UserResponse(UserBase):
-    """Схема ответа с данными пользователя.
-
-    Fields:
-        id: ID пользователя
-        name: Имя пользователя
-        is_demo: Является ли демо-пользователем или нет
+        id (int): Уникальный идентификатор пользователя
+        name (str): Имя пользователя
     """
     id: int
-    is_demo: bool
+    name: str
 
 
-class UserProfileResponse(UserResponse):
-    """Схема ответа с профилем пользователя.
+# --- Схемы для API ответов ---
+class UserProfile(TunedModel):
+    """
+    Схема для профиля пользователя.
+
+    Включает информацию о подписчиках и подписках.
 
     Fields:
-        id: ID пользователя
-        name: Имя пользователя
-        followers_count: Количество подписчиков
-        following_count: Количество подписок
-        is_following: Подписан ли текущий пользователь
+        id (int): Уникальный идентификатор пользователя
+        name (str): Имя пользователя
+        followers (List[BaseUser]): Список пользователей, подписанных на этого пользователя
+        following (List[BaseUser]): Список пользователей, на которых подписан этот пользователь
     """
-    followers_count: int
-    following_count: int
-    is_following: bool
+    id: int
+    name: str
+    followers: List[BaseUser] = Field(default_factory=list)
+    following: List[BaseUser] = Field(default_factory=list)
+    # followers: List[BaseUser] = Field(default_factory=Optional[list])
+    # following: List[BaseUser] = Field(default_factory=Optional[list])
 
 
-class UserDetailResponse(UserProfileResponse):
-    """Расширенная схема профиля с деталями подписок.
+class UserProfileResult(ResultTrue):
+    """
+    Схема ответа для эндпоинтов получения профиля пользователя.
 
     Fields:
-        id: ID пользователя
-        name: Имя пользователя
-        followers_count: Количество подписчиков
-        following_count: Количество подписок
-        is_following: Подписан ли текущий пользователь
-        followers: Список подписчиков
-        following: Список подписок
+        result (bool): Всегда True
+        user (UserProfile): Данные профиля пользователя
     """
-    followers: List[UserFollowStats]
-    following: List[UserFollowStats]
+    user: UserProfile
+
+# --- Схемы для создания/обновления (если понадобятся) ---
+# class UserCreate(BaseModel):
+#     """Схема для создания нового пользователя (например, для сидинга)."""
+#     name: str = Field(..., min_length=1, max_length=100)
+#     api_key: str = Field(..., min_length=10) # Пример
+
+# class UserUpdate(BaseModel):
+#     """Схема для обновления данных пользователя (не используется в ТЗ)."""
+#     name: Optional[str] = Field(None, min_length=1, max_length=100)
