@@ -56,5 +56,5 @@ migrations/
 !migrations/script.py.mako
 
 # === Static files ===
-static/media/*  # Исключаем загруженные файлы (храним только в production)
-!static/media/.gitkeep  # Пустой файл для сохранения папки
+app/static/media/*  # Исключаем загруженные файлы (храним только в production)
+!app/static/media/.gitkeep  # Пустой файл для сохранения папки
