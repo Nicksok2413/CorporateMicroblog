@@ -120,14 +120,6 @@ def configure_logging():
     # Настройка логирования SQLAlchemy (только в DEBUG)
     if settings.DEBUG:
         logger.enable("sqlalchemy.engine")  # Включаем логгер SQLAlchemy
-        # Можно настроить отдельный обработчик для SQL, если нужно форматирование
-        # logger.add(
-        #     sys.stderr,
-        #     level="INFO", # Уровень INFO для SQL запросов
-        #     filter=lambda record: record["name"] == "sqlalchemy.engine.Engine",
-        #     format="<magenta>SQL:</magenta> {message}",
-        #     colorize=True
-        # )
     else:
         logger.disable("sqlalchemy.engine")  # Отключаем SQL логи в production
 
