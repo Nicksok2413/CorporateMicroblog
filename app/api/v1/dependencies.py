@@ -1,57 +1,53 @@
-"""Зависимости FastAPI для API v1."""
+"""Зависимости FastAPI для API версии v1."""
 
-from typing import Annotated, Optional  # Используем Annotated для Depends и Header
+from typing import Annotated  # Annotated для современного синтаксиса Depends/Header
 
-from fastapi import Depends, Header, HTTPException, status
+from fastapi import Depends, Header
 from sqlalchemy.ext.asyncio import AsyncSession
 
-# Импортируем сессию БД и репозиторий пользователей
+# Импортируем репозиторий пользователя и функцию получения сессии БД
 from app.core.database import get_db_session
-from app.core.exceptions import PermissionDeniedError  # Используем наше кастомное исключение
+from app.core.exceptions import AuthenticationRequiredError, PermissionDeniedError  # Используем кастомные исключения
 from app.core.logging import log
-from app.models import User  # Импортируем модель User
-from app.repositories import user_repo  # Импортируем репозиторий
+from app.models.user import User  # Импортируем модель User
+from app.repositories import user_repo  # Импортируем репозиторий пользователя
 
-# Определяем тип для инъекции сессии БД для краткости
+# --- Типизация для инъекции зависимостей ---
+
+# Сессия базы данных
 DBSession = Annotated[AsyncSession, Depends(get_db_session)]
 
 
+# --- Зависимость для получения текущего пользователя ---
+
 async def get_current_user(
-        # Получаем значение заголовка api-key. Он опционален на уровне FastAPI,
-        # но мы проверим его наличие вручную.
-        # Используем alias из настроек, если он там задан, или строку напрямую.
-        # from app.core.config import settings # Если API_KEY_HEADER в настройках
-        # api_key: Annotated[Optional[str], Header(alias=settings.API_KEY_HEADER)] = None,
-        db: DBSession,  # Инъекция сессии БД
-        api_key: Annotated[Optional[str], Header(alias="api-key", description="Ключ API пользователя")] = None
+        # Используем Annotated для Header и Depends
+        api_key: Annotated[str | None, Header(description="Ключ API для аутентификации пользователя.")] = None,
+        db: DBSession = Depends(get_db_session)  # Используем типизированную сессию
 ) -> User:
     """
-    Зависимость для получения текущего аутентифицированного пользователя.
+    Зависимость для получения текущего пользователя на основе API ключа.
 
-    Проверяет наличие и валидность API ключа, переданного в заголовке 'api-key'.
+    Проверяет наличие заголовка `api-key` и ищет пользователя в базе данных.
 
     Args:
-        db: Асинхронная сессия базы данных (инъектируется FastAPI).
-        api_key: Значение заголовка 'api-key' (инъектируется FastAPI).
+        api_key (str | None): Значение заголовка `api-key` из запроса.
+        db (AsyncSession): Сессия базы данных, предоставляемая зависимостью `get_db_session`.
 
     Returns:
         User: Объект аутентифицированного пользователя.
 
     Raises:
-        PermissionDeniedError: Если API ключ отсутствует или недействителен.
-                               (Используем 403 Forbidden, как более подходящий для невалидного ключа,
-                               хотя 401 Unauthorized тоже возможен, особенно при отсутствии ключа).
+        AuthenticationRequiredError(401): Если заголовок `api-key` отсутствует.
+        PermissionDeniedError(403): Если пользователь с таким `api-key` не найден в базе данных.
     """
     if api_key is None:
         log.warning("Запрос без API ключа.")
-        # Статус 401 или 403? 401 обычно означает "не аутентифицирован",
-        # 403 - "аутентифицирован, но не авторизован".
-        # При отсутствии ключа 401 выглядит логичнее.
-        # Используем HTTPException для статуса 401, т.к. PermissionDeniedError - это 403.
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="API ключ отсутствует в заголовке 'api-key'.",
-            headers={"WWW-Authenticate": "Header"},  # Необязательный заголовок для 401
+        # Используем кастомное исключение для 401
+        raise AuthenticationRequiredError(
+            detail="Отсутствует заголовок api-key.",
+            # Добавляем заголовок WWW-Authenticate через extra в исключении
+            extra={"headers": {"WWW-Authenticate": "Header"}}
         )
 
     log.debug(f"Попытка аутентификации по API ключу: {api_key[:4]}...{api_key[-4:]}")
@@ -59,12 +55,12 @@ async def get_current_user(
 
     if user is None:
         log.warning(f"Недействительный API ключ: {api_key[:4]}...{api_key[-4:]}")
-        # Если ключ есть, но он неверный - используем 403 Forbidden (PermissionDeniedError)
+        # Используем кастомное исключение для 403
         raise PermissionDeniedError(detail="Недействительный API ключ.")
 
     log.info(f"Пользователь ID {user.id} ({user.name}) аутентифицирован.")
     return user
 
 
-# Определяем тип для инъекции текущего пользователя для краткости
+# --- Типизация для инъекции текущего пользователя ---
 CurrentUser = Annotated[User, Depends(get_current_user)]
