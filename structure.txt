@@ -13,19 +13,20 @@ microblog/
     │   ├── __init__.py
     │   ├── main.py                   # Точка входа в приложение
     │   │
-    │   ├── api/                      # API роутеры
+    │   ├── api/                      # API (роуты, зависимости)
     │   │   ├── __init__.py
-    │   │   ├── router.py             # Агрегация роутеров v1
+    │   │   ├── router.py             # Агрегация API роутеров
     │   │   └── v1/                   # Версия API
     │   │       ├── __init__.py
     │   │       ├── dependencies.py   # Зависимости
+    │   │       ├── router.py         # Агрегация роутеров для API версии v1
     │   │       └── routes/           # Маршруты
     │   │         ├── init.py
     │   │         ├── users.py        # /users/...
     │   │         ├── tweets.py       # /tweets/...
-    │   │         ├── media.py        # /media/...
-    │   │         ├── likes.py        # /likes/...
-    │   │         └── follow.py       # /follow/...
+    │   │         ├── media.py        # /media
+    │   │         ├── likes.py        # /tweets/{tweet_id}/likes
+    │   │         └── follow.py       # /users/{user_id}/follow
     │   │
     │   ├── core/                     # Ядро приложения
     │   │   ├── __init__.py
@@ -65,12 +66,12 @@ microblog/
     │   │
     │   ├── services/                 # Бизнес-логика
     │   │   ├── __init__.py
-    │   │   ├── base.py
-    │   │   ├── user.py
-    │   │   ├── tweet.py
-    │   │   ├── media.py
-    │   │   ├── like.py
-    │   │   └── follow.py
+    │   │   ├── base_service.py
+    │   │   ├── user_service.py
+    │   │   ├── tweet_service.py
+    │   │   ├── media_service.py
+    │   │   ├── like_service.py
+    │   │   └── follow_service.py
     │   │
     │   └── static/                   # Статические файлы
     │       ├── index.html
