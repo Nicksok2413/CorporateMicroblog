@@ -1,4 +1,4 @@
-"""API роуты для работы с твитами."""
+"""API роуты для работы с твитами (создание, удаление, лента)."""
 
 from fastapi import APIRouter, Depends, Path as FastApiPath, status
 
