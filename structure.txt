@@ -33,8 +33,7 @@ microblog/
     │   │   ├── config.py             # Настройки приложения
     │   │   ├── database.py           # Подключение к БД
     │   │   ├── exceptions.py         # Обработка исключений
-    │   │   ├── logging.py            # Настройка логгера
-    │   │   └── security.py           # Аутентификация
+    │   │   └── logging.py            # Настройка логгера
     │   │
     │   ├── models/                   # SQLAlchemy модели
     │   │   ├── __init__.py
@@ -92,22 +91,16 @@ microblog/
         ├── __init__.py
         ├── conftest.py               # Фикстуры pytest
         ├── integration/              # Интеграционные тесты
-        │   ├── api/
-        │   │   ├── test_users_api.py
-        │   │   └── ...
-        │   ├── database/
-        │   │   ├── test_connections.py
+        │   ├── .../
+        │   │   ├── ...
         │   │   └── ...
         │   └── .../
         │       ├── ...
         │       └── ...
         │
         └── unit/                     # Юнит-тесты
-            ├── repositories/
-            │   ├── test_user_repo.py
-            │   └── ...
-            ├── services/
-            │   ├── test_user_service.py
+            ├── .../
+            │   ├── ...
             │   └── ...
             └── .../
                 ├── ...
