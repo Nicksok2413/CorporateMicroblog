@@ -1,22 +1,65 @@
-
----
-
-### 🐳 **Docker-compose.yml** (проверь):
-#```yaml
 services:
-  web:
-    build: .
-    ports: ["8000:8000"]
-    volumes:
-      - ./static/media:/app/static/media  # Важно для сохранения медиа!
-    depends_on:
-      - session
+  # Сервис базы данных PostgreSQL
   db:
-    image: postgres:13
-    environment:
-      POSTGRES_PASSWORD: example
+    image: postgres:15-alpine # Используем легковесный образ
+    container_name: microblog_db
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data/ # Том для персистентности данных
+    env_file:
+      - .env # Загружаем переменные из .env (POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB)
+    ports:
+      # Маппим порт 5433 хоста на 5432 контейнера, чтобы не конфликтовать с локальным Postgres
+      - "5433:5432"
+    environment:
+      # Эти переменные используются Postgres для инициализации БД при первом запуске
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"] # Экранируем $ для shell
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s # Даем время на запуск Postgres перед первой проверкой
+    restart: unless-stopped
+    networks:
+      - microblog_network
+
+  # Сервис приложения FastAPI
+  app:
+    build:
+      context: . # Собираем из Dockerfile в текущей директории
+      dockerfile: Dockerfile
+    container_name: microblog_app
+    volumes:
+      # Монтируем код для live reload (удобно для разработки, можно убрать для чистого production)
+      - ./app:/app/app
+      - ./migrations:/app/migrations
+      - ./alembic.ini:/app/alembic.ini
+      # Том для хранения загруженных медиафайлов
+      - media_volume:/app/static/media
+    ports:
+      - "8000:8000" # Маппим порт 8000 хоста на 8000 контейнера
+    env_file:
+      - .env # Передаем все переменные окружения из .env в приложение
+    depends_on:
+      db:
+        condition: service_healthy # Запускаем приложение только после того, как БД будет готова
+    # Команда для запуска: сначала миграции, потом Uvicorn
+    # Убираем --reload для production
+    command: /bin/sh -c "echo 'Ожидание запуска БД...' && sleep 5 && echo 'Запуск миграций Alembic...' && alembic upgrade head && echo 'Запуск Uvicorn...' && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    # Для разработки с перезагрузкой:
+    # command: /bin/sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    restart: unless-stopped
+    networks:
+      - microblog_network
+
+networks:
+  microblog_network:
+    driver: bridge
 
 volumes:
-  pgdata:
+  postgres_data: # Том для данных PostgreSQL
+    driver: local
+  media_volume: # Том для медиафайлов
+    driver: local
