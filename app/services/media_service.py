@@ -14,7 +14,7 @@ from app.core.logging import log
 from app.models.media import Media
 from app.repositories import media_repo
 from app.schemas.media import MediaCreate
-from app.services.base import BaseService
+from app.services.base_service import BaseService
 
 
 class MediaService(BaseService[Media, type(media_repo)]):

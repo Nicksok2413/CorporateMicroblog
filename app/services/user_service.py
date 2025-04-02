@@ -9,7 +9,7 @@ from app.core.logging import log
 from app.models import Follow, User  # Импортируем модели
 from app.repositories import follow_repo, user_repo  # Импортируем репозитории
 from app.schemas.user import BaseUser, UserProfile  # Импортируем схемы
-from app.services.base import BaseService
+from app.services.base_service import BaseService
 
 
 class UserService(BaseService[User, type(user_repo)]):

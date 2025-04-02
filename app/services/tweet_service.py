@@ -13,7 +13,7 @@ from app.repositories import follow_repo, like_repo, media_repo, tweet_repo  # �
 from app.schemas.tweet import (LikeInfo, TweetAuthor, TweetCreateInternal,
                                TweetCreateRequest, TweetFeedResult,
                                TweetInFeed)  # Импортируем схемы
-from app.services.base import BaseService
+from app.services.base_service import BaseService
 from app.services.media_service import media_service  # Импортируем медиа сервис
 
 
