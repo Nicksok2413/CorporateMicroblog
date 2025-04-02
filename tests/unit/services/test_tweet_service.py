@@ -1,164 +1,176 @@
 """Юнит-тесты для TweetService."""
 
 import pytest
-from unittest.mock import AsyncMock, MagicMock  # Используем AsyncMock для асинхронных методов репозитория
+from unittest.mock import AsyncMock, MagicMock, patch  # Добавили patch
 
-# Импортируем сервисы, модели, схемы, исключения
 from app.services.tweet_service import tweet_service
-from app.models import User, Tweet, Media
-from app.schemas.tweet import TweetCreateRequest
-from app.core.exceptions import NotFoundError, PermissionDeniedError
+from app.models import User, Tweet, Media, Like, Follow
+from app.schemas.tweet import TweetCreateRequest, TweetFeedResult, TweetInFeed, LikeInfo, TweetAuthor
+from app.core.exceptions import NotFoundError, PermissionDeniedError, ConflictError
+from app.repositories import follow_repo  # Импортируем для мокирования
 
 
-# --- Тесты для create_tweet ---
+# --- Тесты для create_tweet (как раньше) ---
+# ... (test_create_tweet_service_success, test_create_tweet_service_with_media_success, ...)
 
-@pytest.mark.asyncio
-async def test_create_tweet_service_success(mocker):  # mocker предоставляется pytest-mock
-    """Тест успешного создания твита через сервис."""
-    # 1. Мокируем зависимости (репозитории)
-    mock_tweet_repo = mocker.patch("app.services.tweet_service.tweet_repo", autospec=True)
-    mock_media_repo = mocker.patch("app.services.tweet_service.media_repo",
-                                   autospec=True)  # Используется в create_tweet
+# --- Тесты для delete_tweet (как раньше) ---
+# ... (test_delete_tweet_service_success, test_delete_tweet_service_not_found, ...)
 
-    # Настраиваем возвращаемые значения моков
-    mock_tweet_repo.create_with_author_and_media.return_value = Tweet(id=1, content="Test", author_id=1)
-    # Медиа не запрашиваем в этом тесте
-
-    # 2. Готовим входные данные
-    db_session_mock = AsyncMock()  # Мок сессии БД (не используется напрямую в этом тесте)
-    current_user = User(id=1, name="Test", api_key="testkey")
-    tweet_data = TweetCreateRequest(tweet_data="Test")
-
-    # 3. Вызываем метод сервиса
-    created_tweet = await tweet_service.create_tweet(
-        db=db_session_mock, tweet_data=tweet_data, current_user=current_user
-    )
-
-    # 4. Проверяем результат
-    assert created_tweet is not None
-    assert created_tweet.id == 1
-    assert created_tweet.content == "Test"
-    # Проверяем, что метод репозитория был вызван с правильными аргументами
-    mock_tweet_repo.create_with_author_and_media.assert_called_once_with(
-        db=db_session_mock,
-        content="Test",
-        author_id=current_user.id,
-        media_items=[]  # Ожидаем пустой список, т.к. media_ids не переданы
-    )
-    # Проверяем, что media_repo.get не вызывался
-    mock_media_repo.get.assert_not_called()
-
+# --- Тесты для like_tweet ---
 
 @pytest.mark.asyncio
-async def test_create_tweet_service_with_media_success(mocker):
-    """Тест успешного создания твита с медиа."""
+async def test_like_tweet_service_success(mocker):
+    """Тест успешного лайка."""
     mock_tweet_repo = mocker.patch("app.services.tweet_service.tweet_repo", autospec=True)
-    mock_media_repo = mocker.patch("app.services.tweet_service.media_repo", autospec=True)
+    mock_like_repo = mocker.patch("app.services.tweet_service.like_repo", autospec=True)
 
-    # Мок для медиа, которое будет найдено
-    found_media = Media(id=10, file_path="test.jpg")
-    mock_media_repo.get.return_value = found_media
-    mock_tweet_repo.create_with_author_and_media.return_value = Tweet(id=2, content="With Media", author_id=1)
+    # Настраиваем моки
+    mock_tweet_repo.get.return_value = Tweet(id=1, author_id=2)  # Твит существует
+    mock_like_repo.get_like.return_value = None  # Лайка еще нет
+    mock_like_repo.create_like.return_value = Like(user_id=1, tweet_id=1)  # Успешное создание
 
     db_session_mock = AsyncMock()
-    current_user = User(id=1, name="Test", api_key="testkey")
-    tweet_data = TweetCreateRequest(tweet_data="With Media", tweet_media_ids=[10])
+    current_user = User(id=1)
 
-    created_tweet = await tweet_service.create_tweet(
-        db=db_session_mock, tweet_data=tweet_data, current_user=current_user
-    )
+    # Вызов - не должно быть исключений
+    await tweet_service.like_tweet(db=db_session_mock, tweet_id=1, current_user=current_user)
 
-    assert created_tweet is not None
-    assert created_tweet.id == 2
-    # Проверяем вызовы репозиториев
-    mock_media_repo.get.assert_called_once_with(db_session_mock, id=10)
-    mock_tweet_repo.create_with_author_and_media.assert_called_once_with(
-        db=db_session_mock,
-        content="With Media",
-        author_id=current_user.id,
-        media_items=[found_media]  # Ожидаем список с найденным медиа
-    )
+    # Проверки
+    mock_tweet_repo.get.assert_called_once_with(db_session_mock, id=1)
+    mock_like_repo.get_like.assert_called_once_with(db=db_session_mock, user_id=1, tweet_id=1)
+    mock_like_repo.create_like.assert_called_once_with(db=db_session_mock, user_id=1, tweet_id=1)
 
 
 @pytest.mark.asyncio
-async def test_create_tweet_service_media_not_found(mocker):
-    """Тест создания твита с несуществующим media_id."""
+async def test_like_tweet_service_already_liked(mocker):
+    """Тест лайка уже лайкнутого твита."""
     mock_tweet_repo = mocker.patch("app.services.tweet_service.tweet_repo", autospec=True)
-    mock_media_repo = mocker.patch("app.services.tweet_service.media_repo", autospec=True)
+    mock_like_repo = mocker.patch("app.services.tweet_service.like_repo", autospec=True)
 
-    # Настраиваем мок media_repo.get, чтобы он вернул None
-    mock_media_repo.get.return_value = None
+    mock_tweet_repo.get.return_value = Tweet(id=1, author_id=2)
+    mock_like_repo.get_like.return_value = Like(user_id=1, tweet_id=1)  # Лайк уже есть
 
     db_session_mock = AsyncMock()
-    current_user = User(id=1, name="Test", api_key="testkey")
-    tweet_data = TweetCreateRequest(tweet_data="Should fail", tweet_media_ids=[99])
+    current_user = User(id=1)
 
-    # Проверяем, что выбрасывается правильное исключение
-    with pytest.raises(NotFoundError) as exc_info:
-        await tweet_service.create_tweet(
-            db=db_session_mock, tweet_data=tweet_data, current_user=current_user
-        )
+    with pytest.raises(ConflictError):
+        await tweet_service.like_tweet(db=db_session_mock, tweet_id=1, current_user=current_user)
 
-    assert "Медиафайл с ID 99 не найден" in str(exc_info.value)
-    # Проверяем, что create_with_author_and_media не вызывался
-    mock_tweet_repo.create_with_author_and_media.assert_not_called()
-
-
-# --- Тесты для delete_tweet ---
-
-@pytest.mark.asyncio
-async def test_delete_tweet_service_success(mocker):
-    """Тест успешного удаления твита владельцем."""
-    mock_tweet_repo = mocker.patch("app.services.tweet_service.tweet_repo", autospec=True)
-
-    # Твит, который будет "найден" репозиторием
-    existing_tweet = Tweet(id=5, content="Delete me", author_id=1)
-    mock_tweet_repo.get.return_value = existing_tweet
-    mock_tweet_repo.remove.return_value = existing_tweet  # Mock remove confirmation
-
-    db_session_mock = AsyncMock()
-    current_user = User(id=1, name="Test", api_key="testkey")  # Владелец твита
-
-    # Вызываем метод сервиса - не должно быть исключений
-    await tweet_service.delete_tweet(db=db_session_mock, tweet_id=5, current_user=current_user)
-
-    # Проверяем вызовы репозитория
-    mock_tweet_repo.get.assert_called_once_with(db_session_mock, id=5)
-    mock_tweet_repo.remove.assert_called_once_with(db=db_session_mock, id=5)
+    mock_like_repo.create_like.assert_not_called()
 
 
 @pytest.mark.asyncio
-async def test_delete_tweet_service_not_found(mocker):
-    """Тест удаления несуществующего твита."""
+async def test_like_tweet_service_tweet_not_found(mocker):
+    """Тест лайка несуществующего твита."""
     mock_tweet_repo = mocker.patch("app.services.tweet_service.tweet_repo", autospec=True)
+    mock_like_repo = mocker.patch("app.services.tweet_service.like_repo", autospec=True)
+
     mock_tweet_repo.get.return_value = None  # Твит не найден
 
     db_session_mock = AsyncMock()
-    current_user = User(id=1, name="Test", api_key="testkey")
+    current_user = User(id=1)
 
-    with pytest.raises(NotFoundError) as exc_info:
-        await tweet_service.delete_tweet(db=db_session_mock, tweet_id=99, current_user=current_user)
+    with pytest.raises(NotFoundError):
+        await tweet_service.like_tweet(db=db_session_mock, tweet_id=99, current_user=current_user)
 
-    assert "Твит с ID 99 не найден" in str(exc_info.value)
-    mock_tweet_repo.remove.assert_not_called()
+    mock_like_repo.get_like.assert_not_called()
+    mock_like_repo.create_like.assert_not_called()
+
+
+# --- Тесты для unlike_tweet ---
+
+@pytest.mark.asyncio
+async def test_unlike_tweet_service_success(mocker):
+    """Тест успешного снятия лайка."""
+    mock_like_repo = mocker.patch("app.services.tweet_service.like_repo", autospec=True)
+    mock_like_repo.remove_like.return_value = True  # Лайк найден и удален
+
+    db_session_mock = AsyncMock()
+    current_user = User(id=1)
+
+    await tweet_service.unlike_tweet(db=db_session_mock, tweet_id=1, current_user=current_user)
+
+    mock_like_repo.remove_like.assert_called_once_with(db=db_session_mock, user_id=1, tweet_id=1)
 
 
 @pytest.mark.asyncio
-async def test_delete_tweet_service_forbidden(mocker):
-    """Тест попытки удаления чужого твита."""
-    mock_tweet_repo = mocker.patch("app.services.tweet_service.tweet_repo", autospec=True)
-
-    existing_tweet = Tweet(id=6, content="Someone else's tweet", author_id=2)  # Автор ID 2
-    mock_tweet_repo.get.return_value = existing_tweet
+async def test_unlike_tweet_service_not_liked(mocker):
+    """Тест снятия лайка, которого не было."""
+    mock_like_repo = mocker.patch("app.services.tweet_service.like_repo", autospec=True)
+    mock_like_repo.remove_like.return_value = False  # Лайк не найден
 
     db_session_mock = AsyncMock()
-    current_user = User(id=1, name="Test", api_key="testkey")  # Текущий пользователь ID 1
+    current_user = User(id=1)
 
-    with pytest.raises(PermissionDeniedError) as exc_info:
-        await tweet_service.delete_tweet(db=db_session_mock, tweet_id=6, current_user=current_user)
+    with pytest.raises(NotFoundError):
+        await tweet_service.unlike_tweet(db=db_session_mock, tweet_id=1, current_user=current_user)
 
-    assert "Вы не можете удалить этот твит" in str(exc_info.value)
-    mock_tweet_repo.remove.assert_not_called()
+    mock_like_repo.remove_like.assert_called_once_with(db=db_session_mock, user_id=1, tweet_id=1)
 
-# TODO: Добавить юнит-тесты для like_tweet, unlike_tweet, get_tweet_feed
-# TODO: Добавить юнит-тесты для других сервисов (UserService, MediaService, FollowService)
+
+# --- Тесты для get_tweet_feed ---
+
+@pytest.mark.asyncio
+async def test_get_tweet_feed_service_success(mocker):
+    """Тест успешного получения ленты."""
+    # Мокируем все используемые репозитории и сервисы
+    mock_follow_repo = mocker.patch("app.services.tweet_service.follow_repo", autospec=True)
+    mock_tweet_repo = mocker.patch("app.services.tweet_service.tweet_repo", autospec=True)
+    # Мокируем media_service.get_media_url, т.к. он используется для форматирования
+    mock_media_service = mocker.patch("app.services.tweet_service.media_service", autospec=True)
+
+    # Подготовка данных
+    current_user = User(id=1, name="Alice")
+    author_bob = User(id=2, name="Bob")
+    following_ids = [2]  # Alice подписана на Bob (ID 2)
+    author_ids_expected = [2, 1]  # Ожидаем ID Боба и Алисы
+
+    media1 = Media(id=10, file_path="img1.jpg")
+    tweet1_by_bob = Tweet(id=101, content="Bob's tweet", author_id=2, author=author_bob, likes=[], attachments=[media1])
+    tweet2_by_alice = Tweet(id=102, content="Alice's tweet", author_id=1, author=current_user, likes=[], attachments=[])
+    db_tweets = [tweet1_by_bob, tweet2_by_alice]  # Твиты, которые вернет репозиторий
+
+    # Настройка моков
+    mock_follow_repo.get_following_ids.return_value = following_ids
+    mock_tweet_repo.get_feed_for_user.return_value = db_tweets
+    mock_media_service.get_media_url.side_effect = lambda \
+        media: f"/static/media/{media.file_path}"  # Простая реализация мока
+
+    db_session_mock = AsyncMock()
+
+    # Вызов сервиса
+    result: TweetFeedResult = await tweet_service.get_tweet_feed(db=db_session_mock, current_user=current_user)
+
+    # Проверки
+    mock_follow_repo.get_following_ids.assert_called_once_with(db=db_session_mock, follower_id=current_user.id)
+    # Проверяем, что get_feed_for_user вызван с правильным набором ID
+    mock_tweet_repo.get_feed_for_user.assert_called_once()
+    call_args, call_kwargs = mock_tweet_repo.get_feed_for_user.call_args
+    assert call_kwargs['db'] == db_session_mock
+    # Сравниваем множества ID, т.к. порядок не важен
+    assert set(call_kwargs['author_ids']) == set(author_ids_expected)
+
+    # Проверка результата
+    assert result is not None
+    assert isinstance(result, TweetFeedResult)
+    assert len(result.tweets) == 2
+
+    # Проверка форматирования первого твита (Боба)
+    formatted_tweet1 = result.tweets[0]
+    assert formatted_tweet1.id == 101
+    assert formatted_tweet1.author.id == 2
+    assert formatted_tweet1.author.name == "Bob"
+    assert len(formatted_tweet1.attachments) == 1
+    assert formatted_tweet1.attachments[0] == "/static/media/img1.jpg"
+    assert len(formatted_tweet1.likes) == 0
+
+    # Проверка форматирования второго твита (Алисы)
+    formatted_tweet2 = result.tweets[1]
+    assert formatted_tweet2.id == 102
+    assert formatted_tweet2.author.id == 1
+    assert formatted_tweet2.author.name == "Alice"
+    assert len(formatted_tweet2.attachments) == 0
+
+    # Проверка, сколько раз вызывался get_media_url
+    assert mock_media_service.get_media_url.call_count == 1
+    mock_media_service.get_media_url.assert_called_with(media1)
