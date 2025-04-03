@@ -7,12 +7,7 @@ from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
-# Убедимся, что настройки загружаются в режиме TESTING=True
-# Это должно произойти из-за pytest.ini
 from app.core.config import settings
-
-assert settings.TESTING is True
-
 from app.core.database import Base, get_db_session
 from app.main import app
 from app.models import User

@@ -4,7 +4,7 @@ import asyncio
 from typing import AsyncGenerator, Generator
 
 import pytest
-import pytest_asyncio  # Импортируем для использования асинхронных фикстур
+import pytest_asyncio
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import (AsyncEngine, AsyncSession,
@@ -13,13 +13,8 @@ from sqlalchemy.ext.asyncio import (AsyncEngine, AsyncSession,
 # Импортируем ключевые компоненты приложения
 from app.core.config import settings
 from app.core.database import get_db_session
-from app.main import app as main_app  # Импортируем основной экземпляр FastAPI
+from app.main import app as main_app
 from app.models import Base, Follow, Like, Media, Tweet, User
-
-# --- Базовая настройка ---
-# Указываем pytest использовать asyncio для всех тестов
-# (Если не указано в pytest.ini asyncio_mode = auto)
-pytestmark = pytest.mark.asyncio
 
 
 # --- Фикстуры для работы с БД ---
@@ -45,18 +40,13 @@ async def test_db_engine() -> AsyncGenerator[AsyncEngine, None]:
     engine = create_async_engine(settings.EFFECTIVE_DATABASE_URL, echo=False)  # echo=False для тестов
     # Создаем все таблицы
     async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)  # Удаляем старые таблицы
-        await conn.run_sync(Base.metadata.create_all)  # Создаем новые
+        await conn.run_sync(Base.metadata.drop_all)
+        await conn.run_sync(Base.metadata.create_all)
     print(f"\nТестовая БД инициализирована: {settings.EFFECTIVE_DATABASE_URL}")
     yield engine
     # Закрываем движок после завершения всех тестов сессии
     await engine.dispose()
     print(f"\nТестовая БД закрыта: {settings.EFFECTIVE_DATABASE_URL}")
-    # Можно удалить файл БД, если он создавался
-    # import os
-    # db_path = settings.EFFECTIVE_DATABASE_URL.split("///")[-1]
-    # if os.path.exists(db_path):
-    #     os.remove(db_path)
 
 
 @pytest_asyncio.fixture(scope="function")  # Сессия на каждую функцию для изоляции
@@ -78,7 +68,7 @@ async def db_session(test_db_engine: AsyncEngine) -> AsyncGenerator[AsyncSession
 # --- Фикстуры для FastAPI приложения и HTTP клиента ---
 
 @pytest.fixture(scope="session")  # Достаточно одной сессии для приложения
-def test_app(db_session: AsyncSession) -> FastAPI:  # Зависит от db_session для переопределения
+def test_app(db_session: AsyncSession) -> FastAPI:
     """Создает экземпляр FastAPI приложения для тестов с переопределенной зависимостью БД."""
 
     # Функция для переопределения зависимости get_db_session
