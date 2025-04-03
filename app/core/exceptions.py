@@ -185,9 +185,6 @@ def setup_exception_handlers(app: FastAPI):
     app.add_exception_handler(MicroblogHTTPException, microblog_exception_handler)
     # Обработчик для ошибок валидации Pydantic
     app.add_exception_handler(RequestValidationError, validation_exception_handler)
-    # Обработчик для стандартного HTTPException (если он где-то используется напрямую)
-    # Убедитесь, что он не конфликтует с MicroblogHTTPException, если тот наследуется от него
-    # app.add_exception_handler(HTTPException, http_exception_handler) # Возможно, не нужен, если все ошибки через MicroblogHTTPException
-    # Обработчик для всех остальных непредвиденных исключений (всегда последний)
+    # Обработчик для всех остальных непредвиденных исключений
     app.add_exception_handler(Exception, generic_exception_handler)
     log.info("Обработчики исключений настроены.")
