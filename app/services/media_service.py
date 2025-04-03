@@ -148,8 +148,8 @@ class MediaService(BaseService[Media, type(media_repo)]):
         Returns:
             str: Полный URL медиафайла.
         """
-        # TODO: Рассмотреть использование настроек SERVER_HOST для абсолютных URL
-        url = f"{settings.MEDIA_URL_PREFIX.rstrip('/')}/{media.file_path}"
+        # Убираем / с конца префикса и начала пути файла, если они есть, чтобы избежать двойного //
+        url = f"{settings.MEDIA_URL_PREFIX.rstrip('/')}/{media.file_path.lstrip('/')}"
         log.debug(f"Сгенерирован URL для медиа ID {media.id}: {url}")
         return url
 

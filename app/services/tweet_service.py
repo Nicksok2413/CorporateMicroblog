@@ -81,7 +81,6 @@ class TweetService(BaseService[Tweet, type(tweet_repo)]):
                 if not media:
                     log.warning(f"Медиа с ID {media_id} не найдено при создании твита.")
                     raise NotFoundError(f"Медиафайл с ID {media_id} не найден.")
-                # TODO: Проверка, что медиа еще не использовано? (Если требуется)
                 media_attachments.append(media)
 
         # Используем специфичный метод репозитория для создания с медиа
@@ -93,9 +92,8 @@ class TweetService(BaseService[Tweet, type(tweet_repo)]):
                 media_items=media_attachments
             )
             return tweet
-        except Exception as e:
-            # Ошибка уже залогирована в репозитории
-            raise BadRequestError("Не удалось создать твит.") from e
+        except Exception as exc:
+            raise BadRequestError("Не удалось создать твит.") from exc
 
     async def delete_tweet(self, db: AsyncSession, *, tweet_id: int, current_user: User):
         """
@@ -155,14 +153,14 @@ class TweetService(BaseService[Tweet, type(tweet_repo)]):
         try:
             await like_repo.create_like(db, user_id=current_user.id, tweet_id=tweet_id)
             log.success(f"Лайк от пользователя ID {current_user.id} на твит ID {tweet_id} успешно поставлен.")
-        except IntegrityError as e:
+        except IntegrityError as exc:
             # На случай гонки запросов или если проверка выше не сработала
-            log.warning(f"Конфликт целостности при лайке твита ID {tweet_id} пользователем ID {current_user.id}: {e}")
-            raise ConflictError("Не удалось поставить лайк (возможно, уже существует).") from e
-        except Exception as e:
-            log.error(f"Ошибка при создании лайка для твита ID {tweet_id} пользователем ID {current_user.id}: {e}",
+            log.warning(f"Конфликт целостности при лайке твита ID {tweet_id} пользователем ID {current_user.id}: {exc}")
+            raise ConflictError("Не удалось поставить лайк (возможно, уже существует).") from exc
+        except Exception as exc:
+            log.error(f"Ошибка при создании лайка для твита ID {tweet_id} пользователем ID {current_user.id}: {exc}",
                       exc_info=True)
-            raise BadRequestError("Не удалось поставить лайк.") from e
+            raise BadRequestError("Не удалось поставить лайк.") from exc
 
     async def unlike_tweet(self, db: AsyncSession, *, tweet_id: int, current_user: User):
         """
@@ -223,7 +221,6 @@ class TweetService(BaseService[Tweet, type(tweet_repo)]):
             # Формируем информацию об авторе
             author_info = TweetAuthor.model_validate(tweet.author)
             # Формируем информацию о лайках
-            # Важно: Адаптировать под схему LikeInfo, если она требует 'user_id', а не 'id'
             likes_info = [LikeInfo.model_validate(like.user) for like in tweet.likes]
 
             feed_tweets.append(
