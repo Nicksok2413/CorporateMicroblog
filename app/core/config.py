@@ -4,8 +4,10 @@ from functools import cached_property
 from pathlib import Path
 from typing import Optional
 
-from pydantic import Field, computed_field, field_validator
+from pydantic import Field, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from app.core.logging import log
 
 
 class Settings(BaseSettings):
@@ -25,7 +27,6 @@ class Settings(BaseSettings):
         POSTGRES_HOST: Хост PostgreSQL
         POSTGRES_PORT: Порт PostgreSQL
         TEST_DB_URL: URL тестовой БД (SQLite по умолчанию)
-        DATABASE_URL: Динамически генерируемый DSN для PostgreSQL.
         STORAGE_PATH: Директория для хранения медиафайлов (строка)
         MEDIA_URL_PREFIX: Префикс URL для доступа к медиафайлам через статику FastAPI/Nginx
         STORAGE_PATH_OBJ: Директория для хранения медиафайлов (Path объект)
@@ -43,8 +44,7 @@ class Settings(BaseSettings):
     POSTGRES_USER: str = Field(..., description="Имя пользователя PostgreSQL")
     POSTGRES_PASSWORD: str = Field(..., description="Пароль PostgreSQL")
     POSTGRES_DB: str = Field(..., description="Имя базы данных")
-    POSTGRES_HOST: str = Field("db",
-                               description="Хост PostgreSQL (имя сервиса в Docker)")  # Изменено на 'db' для Docker
+    POSTGRES_HOST: str = Field("db", description="Хост PostgreSQL (имя сервиса в Docker)")
     POSTGRES_PORT: int = Field(5432, description="Порт PostgreSQL")
     TEST_DB_URL: str = Field("sqlite+aiosqlite:///./test.db", description="URL тестовой БД (Async SQLite)")
 
@@ -67,7 +67,7 @@ class Settings(BaseSettings):
 
     # Настройки безопасности
     API_KEY_HEADER: str = Field("api-key", description="HTTP-заголовок с API-ключом")
-    SECRET_KEY: str = Field(..., min_length=32, description="Секретный ключ")
+    SECRET_KEY: str = Field(..., description="Секретный API-ключ")
 
     # Настройки логирования
     LOG_LEVEL: str = Field("INFO", description="Уровень логирования")
@@ -80,25 +80,18 @@ class Settings(BaseSettings):
         extra="ignore",  # Игнорировать лишние переменные окружения
     )
 
-    @field_validator("LOG_LEVEL", mode='before')
-    @classmethod
-    def uppercase_log_level(cls, value: str) -> str:
-        """Приводит LOG_LEVEL к верхнему регистру."""
-        return value.upper()
-
     @computed_field(repr=False)  # Скрываем из стандартного вывода repr, так как содержит пароль
     @cached_property
-    def DATABASE_URL(self) -> str:  # Возвращаем строку, а не PostgresDsn, для совместимости с create_async_engine
+    def DATABASE_URL(self) -> str:
         """
         Динамически генерируемый URL для PostgreSQL.
 
         Returns:
             str: Строка подключения к основной БД.
         """
-        # Собираем DSN вручную для asyncpg
-        dsn = (f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@"
+        db_url = (f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@"
                f"{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}")
-        return dsn
+        return db_url
 
     @computed_field
     @cached_property
@@ -124,27 +117,15 @@ class Settings(BaseSettings):
         try:
             self.STORAGE_PATH_OBJ.mkdir(parents=True, exist_ok=True)
         except OSError as exc:
-            # Логирование здесь еще не настроено, используем print
-            print(f"Warning: Не удалось создать директорию медиа {self.STORAGE_PATH_OBJ}: {exc}")
+            log.error(f"Не удалось создать директорию медиа {self.STORAGE_PATH_OBJ}: {exc}")
 
         # Создаем директорию логов, если LOG_FILE задан
         if self.LOG_FILE:
             try:
                 self.LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
             except OSError as exc:
-                print(f"Warning: Не удалось создать директорию для лог-файла {self.LOG_FILE.parent}: {exc}")
+                log.error(f"Не удалось создать директорию для лог-файла {self.LOG_FILE.parent}: {exc}")
 
 
 # Кэшированный экземпляр настроек
 settings = Settings()
-
-# Вывод некоторых настроек для проверки (сработает при импорте)
-print("--- Загружены настройки ---")
-print(f"Режим DEBUG: {settings.DEBUG}")
-print(f"Режим TESTING: {settings.TESTING}")
-print(f"Режим PRODUCTION: {settings.PRODUCTION}")
-print(
-    f"Эффективный URL БД: {'*' * 5}{settings.EFFECTIVE_DATABASE_URL[-20:]}" if settings.EFFECTIVE_DATABASE_URL else "Not Set")
-print(f"Путь к медиа: {settings.STORAGE_PATH_OBJ}")
-print(f"Уровень логов: {settings.LOG_LEVEL}")
-print("-------------------------")

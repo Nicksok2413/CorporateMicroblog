@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
 from app.core.config import settings
 from app.core.logging import log
-from app.models.base import Base  # Нужен для init_db
+from app.models.base import Base
 
 
 class Database:
@@ -65,8 +65,7 @@ class Database:
         )
 
         await self._verify_connection()
-        log.success(
-            f"Подключение к базе данных '{settings.POSTGRES_DB if not settings.TESTING else 'Test DB'}' установлено.")
+        log.success(f"Подключение к базе данных установлено.")
 
     async def disconnect(self):
         """Корректное закрытие подключения к базе данных."""
@@ -155,15 +154,10 @@ async def init_db():
     if settings.TESTING and settings.EFFECTIVE_DATABASE_URL.startswith("sqlite"):
         log.info("Используется SQLite, создание таблиц...")
         async with db.engine.begin() as conn:
-            # Удаляем старые таблицы перед созданием новых (только для тестов!)
             await conn.run_sync(Base.metadata.drop_all)
             await conn.run_sync(Base.metadata.create_all)
         log.success("Таблицы для тестовой БД (SQLite) созданы.")
     elif not settings.PRODUCTION:
         log.warning("init_db() не рекомендуется использовать вне тестового режима с SQLite. Используйте Alembic.")
-        # Можно добавить создание таблиц и для Postgres в dev, если очень нужно, но лучше Alembic
-        # async with db.engine.begin() as conn:
-        #     await conn.run_sync(Base.metadata.create_all)
-        # log.info("Таблицы базы данных инициализированы (не рекомендуется для production)")
     else:
         log.error("Попытка вызова init_db() в production режиме! Используйте Alembic.")
