@@ -32,7 +32,7 @@ async def test_like_tweet_service_success(mocker):
     current_user = User(id=1)
 
     # Вызов - не должно быть исключений
-    await tweet_service.like_tweet(db=db_session_mock, tweet_id=1, current_user=current_user)
+    await tweet_service.like_tweet(db=db_session_mock, current_user=current_user, tweet_id=1)
 
     # Проверки
     mock_tweet_repo.get.assert_called_once_with(db_session_mock, id=1)
@@ -53,7 +53,7 @@ async def test_like_tweet_service_already_liked(mocker):
     current_user = User(id=1)
 
     with pytest.raises(ConflictError):
-        await tweet_service.like_tweet(db=db_session_mock, tweet_id=1, current_user=current_user)
+        await tweet_service.like_tweet(db=db_session_mock, current_user=current_user, tweet_id=1)
 
     mock_like_repo.create_like.assert_not_called()
 
@@ -70,7 +70,7 @@ async def test_like_tweet_service_tweet_not_found(mocker):
     current_user = User(id=1)
 
     with pytest.raises(NotFoundError):
-        await tweet_service.like_tweet(db=db_session_mock, tweet_id=99, current_user=current_user)
+        await tweet_service.like_tweet(db=db_session_mock, current_user=current_user, tweet_id=99)
 
     mock_like_repo.get_like.assert_not_called()
     mock_like_repo.create_like.assert_not_called()
@@ -87,7 +87,7 @@ async def test_unlike_tweet_service_success(mocker):
     db_session_mock = AsyncMock()
     current_user = User(id=1)
 
-    await tweet_service.unlike_tweet(db=db_session_mock, tweet_id=1, current_user=current_user)
+    await tweet_service.unlike_tweet(db=db_session_mock, current_user=current_user, tweet_id=1)
 
     mock_like_repo.remove_like.assert_called_once_with(db=db_session_mock, user_id=1, tweet_id=1)
 
@@ -102,7 +102,7 @@ async def test_unlike_tweet_service_not_liked(mocker):
     current_user = User(id=1)
 
     with pytest.raises(NotFoundError):
-        await tweet_service.unlike_tweet(db=db_session_mock, tweet_id=1, current_user=current_user)
+        await tweet_service.unlike_tweet(db=db_session_mock, current_user=current_user, tweet_id=1)
 
     mock_like_repo.remove_like.assert_called_once_with(db=db_session_mock, user_id=1, tweet_id=1)
 

@@ -60,9 +60,11 @@ class UserService(BaseService[User, type(user_repo)]):
             NotFoundError: Если пользователь не найден.
         """
         user = await self.get_user_by_id(db, user_id)
+
         if not user:
             log.warning(f"Пользователь с ID {user_id} не найден.")
             raise NotFoundError(f"Пользователь с ID {user_id} не найден.")
+
         return user
 
     async def get_user_profile(self, db: AsyncSession, user_id: int) -> UserProfile:

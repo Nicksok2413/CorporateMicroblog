@@ -38,6 +38,7 @@ class TweetService(BaseService[Tweet, type(tweet_repo)]):
             NotFoundError: Если твит не найден.
         """
         log.debug(f"Поиск твита ID {tweet_id}{' с деталями' if load_details else ''}")
+
         if load_details:
             tweet = await self.repo.get_with_details(db, id=tweet_id)
         else:
@@ -51,17 +52,17 @@ class TweetService(BaseService[Tweet, type(tweet_repo)]):
     async def create_tweet(
             self,
             db: AsyncSession,
+            current_user: User,
             *,
-            tweet_data: TweetCreateRequest,
-            current_user: User
+            tweet_data: TweetCreateRequest
     ) -> Tweet:
         """
         Создает новый твит для указанного пользователя.
 
         Args:
             db: Сессия БД.
-            tweet_data: Данные для создания твита из API запроса.
             current_user: Пользователь, создающий твит.
+            tweet_data: Данные для создания твита из API запроса.
 
         Returns:
             Созданный объект твита.
@@ -72,6 +73,7 @@ class TweetService(BaseService[Tweet, type(tweet_repo)]):
         """
         log.info(f"Пользователь ID {current_user.id} создает твит.")
         media_attachments: List[Media] = []
+
         if tweet_data.tweet_media_ids:
             log.debug(f"Прикрепление медиа ID: {tweet_data.tweet_media_ids}")
             for media_id in tweet_data.tweet_media_ids:
@@ -81,7 +83,6 @@ class TweetService(BaseService[Tweet, type(tweet_repo)]):
                     raise NotFoundError(f"Медиафайл с ID {media_id} не найден.")
                 media_attachments.append(media)
 
-        # Используем специфичный метод репозитория для создания с медиа
         try:
             tweet = await self.repo.create_with_author_and_media(
                 db=db,
@@ -93,14 +94,14 @@ class TweetService(BaseService[Tweet, type(tweet_repo)]):
         except Exception as exc:
             raise BadRequestError("Не удалось создать твит.") from exc
 
-    async def delete_tweet(self, db: AsyncSession, *, tweet_id: int, current_user: User):
+    async def delete_tweet(self, db: AsyncSession, current_user: User, *, tweet_id: int):
         """
         Удаляет твит, если он принадлежит текущему пользователю.
 
         Args:
             db: Сессия БД.
-            tweet_id: ID твита для удаления.
             current_user: Пользователь, выполняющий действие.
+            tweet_id: ID твита для удаления.
 
         Raises:
             NotFoundError: Если твит не найден.
@@ -116,20 +117,22 @@ class TweetService(BaseService[Tweet, type(tweet_repo)]):
             raise PermissionDeniedError("Вы не можете удалить этот твит.")
 
         deleted_tweet = await self.repo.remove(db, obj_id=tweet_id)
+
         if not deleted_tweet:
             # Это не должно произойти после _get_tweet_or_404, но для надежности
             log.error(f"Не удалось удалить твит ID {tweet_id} после проверки прав.")
             raise BadRequestError("Не удалось удалить твит.")
+
         log.success(f"Твит ID {tweet_id} успешно удален пользователем ID {current_user.id}.")
 
-    async def like_tweet(self, db: AsyncSession, *, tweet_id: int, current_user: User):
+    async def like_tweet(self, db: AsyncSession, current_user: User, *, tweet_id: int):
         """
         Ставит лайк на твит от имени текущего пользователя.
 
         Args:
             db: Сессия БД.
-            tweet_id: ID твита.
             current_user: Пользователь, ставящий лайк.
+            tweet_id: ID твита.
 
         Raises:
             NotFoundError: Если твит не найден.
@@ -144,9 +147,7 @@ class TweetService(BaseService[Tweet, type(tweet_repo)]):
         existing_like = await like_repo.get_like(db, user_id=current_user.id, tweet_id=tweet_id)
         if existing_like:
             log.warning(f"Пользователь ID {current_user.id} уже лайкнул твит ID {tweet_id}.")
-            # По ТЗ не ясно, нужно ли кидать ошибку. Можно просто ничего не делать или кинуть Conflict.
             raise ConflictError("Вы уже лайкнули этот твит.")
-            # return # Или просто выйти
 
         try:
             await like_repo.create_like(db, user_id=current_user.id, tweet_id=tweet_id)
@@ -160,28 +161,27 @@ class TweetService(BaseService[Tweet, type(tweet_repo)]):
                       exc_info=True)
             raise BadRequestError("Не удалось поставить лайк.") from exc
 
-    async def unlike_tweet(self, db: AsyncSession, *, tweet_id: int, current_user: User):
+    async def unlike_tweet(self, db: AsyncSession, current_user: User, *, tweet_id: int):
         """
         Убирает лайк с твита от имени текущего пользователя.
 
         Args:
             db: Сессия БД.
-            tweet_id: ID твита.
             current_user: Пользователь, убирающий лайк.
+            tweet_id: ID твита.
 
         Raises:
             NotFoundError: Если лайк для удаления не найден (твит не лайкнут этим пользователем).
             BadRequestError: При ошибке удаления лайка.
         """
         log.info(f"Пользователь ID {current_user.id} убирает лайк с твита ID {tweet_id}")
-        # Проверка существования твита не обязательна, т.к. remove_like вернет False, если твита нет
 
         removed = await like_repo.remove_like(db, user_id=current_user.id, tweet_id=tweet_id)
+
         if not removed:
             log.warning(f"Лайк от пользователя ID {current_user.id} на твит ID {tweet_id} не найден для удаления.")
-            # По ТЗ нужно вернуть success=true, даже если лайка не было? Или 404?
-            # Возвращаем ошибку, если лайка не было.
             raise NotFoundError("Лайк не найден или уже удален.")
+
         log.success(f"Лайк от пользователя ID {current_user.id} на твит ID {tweet_id} успешно удален.")
 
     async def get_tweet_feed(self, db: AsyncSession, *, current_user: User) -> TweetFeedResult:

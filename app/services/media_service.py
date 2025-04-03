@@ -22,21 +22,20 @@ class MediaService(BaseService[Media, type(media_repo)]):
     Отвечает за сохранение файлов, создание записей в БД.
     """
     ALLOWED_CONTENT_TYPES = ["image/jpeg", "image/png", "image/gif"]
-    MAX_FILE_SIZE_MB = 10  # Максимальный размер файла в мегабайтах
 
-    async def _validate_file(self, file: IO[bytes], filename: str, content_type: str):
+    async def _validate_file(self, filename: str, content_type: str):
         """
-        Валидирует загружаемый файл по типу и размеру.
+        Валидирует загружаемый файл по типу.
 
         Args:
-            file: Файловый объект (из UploadFile).
             filename: Имя файла.
             content_type: MIME-тип файла.
 
         Raises:
-            MediaValidationError: Если тип файла не разрешен или размер превышен.
+            MediaValidationError: Если тип файла не разрешен.
         """
         log.debug(f"Валидация файла: name='{filename}', type='{content_type}'")
+
         if content_type not in self.ALLOWED_CONTENT_TYPES:
             msg = f"Недопустимый тип файла '{content_type}'. Разрешены: {', '.join(self.ALLOWED_CONTENT_TYPES)}"
             log.warning(msg)
@@ -84,7 +83,7 @@ class MediaService(BaseService[Media, type(media_repo)]):
             MediaValidationError: При ошибке валидации файла.
             BadRequestError: При ошибке сохранения файла или записи в БД.
         """
-        await self._validate_file(file, filename, content_type)
+        await self._validate_file(filename, content_type)
 
         unique_filename = self._generate_unique_filename(filename)
         save_path = settings.STORAGE_PATH_OBJ / unique_filename
@@ -98,8 +97,8 @@ class MediaService(BaseService[Media, type(media_repo)]):
                 while content := file.read(1024 * 1024):  # Читаем по 1MB
                     await out_file.write(content)
             log.success(f"Файл '{unique_filename}' успешно сохранен.")
-        except Exception as e:
-            log.error(f"Ошибка при сохранении файла '{unique_filename}': {e}", exc_info=True)
+        except Exception as exc:
+            log.error(f"Ошибка при сохранении файла '{unique_filename}': {exc}", exc_info=True)
             # Попытка удалить частично сохраненный файл, если он есть
             if save_path.exists():
                 try:
@@ -107,7 +106,7 @@ class MediaService(BaseService[Media, type(media_repo)]):
                     log.info(f"Удален частично сохраненный файл '{unique_filename}'.")
                 except OSError as unlink_err:
                     log.error(f"Не удалось удалить частично сохраненный файл '{unique_filename}': {unlink_err}")
-            raise BadRequestError("Ошибка при сохранении файла.") from e
+            raise BadRequestError("Ошибка при сохранении файла.") from exc
 
         # Создаем запись в БД
         try:
@@ -115,8 +114,8 @@ class MediaService(BaseService[Media, type(media_repo)]):
             media = await self.repo.create(db=db, obj_in=media_in)
             log.info(f"Запись для медиа ID {media.id} (файл '{unique_filename}') создана в БД.")
             return media
-        except Exception as e:
-            log.error(f"Ошибка при создании записи Media в БД для файла '{unique_filename}': {e}", exc_info=True)
+        except Exception as exc:
+            log.error(f"Ошибка при создании записи Media в БД для файла '{unique_filename}': {exc}", exc_info=True)
             # Если запись в БД не удалась, удаляем сохраненный файл
             if save_path.exists():
                 try:
@@ -124,7 +123,7 @@ class MediaService(BaseService[Media, type(media_repo)]):
                     log.info(f"Удален файл '{unique_filename}', т.к. не удалось создать запись в БД.")
                 except OSError as unlink_err:
                     log.error(f"Не удалось удалить файл '{unique_filename}' после ошибки БД: {unlink_err}")
-            raise BadRequestError("Ошибка при сохранении информации о медиафайле.") from e
+            raise BadRequestError("Ошибка при сохранении информации о медиафайле.") from exc
 
     def get_media_url(self, media: Media) -> str:
         """
@@ -140,19 +139,6 @@ class MediaService(BaseService[Media, type(media_repo)]):
         url = f"{settings.MEDIA_URL_PREFIX.rstrip('/')}/{media.file_path.lstrip('/')}"
         log.debug(f"Сгенерирован URL для медиа ID {media.id}: {url}")
         return url
-
-    async def get_media_by_id(self, db: AsyncSession, media_id: int) -> Optional[Media]:
-        """
-        Получает медиа по ID.
-
-        Args:
-            db: Сессия БД.
-            media_id: ID медиа.
-
-        Returns:
-            Найденный медиафайл или None.
-        """
-        return await self.repo.get(db, media_id)
 
 
 # Создаем экземпляр сервиса

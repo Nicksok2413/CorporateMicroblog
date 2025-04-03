@@ -47,7 +47,7 @@ async def like_a_tweet(
         BadRequestError: При ошибке сохранения лайка.
     """
     log.info(f"Запрос на лайк твита ID {tweet_id} от пользователя ID {current_user.id}")
-    await tweet_service.like_tweet(db=db, tweet_id=tweet_id, current_user=current_user)
+    await tweet_service.like_tweet(db=db, current_user=current_user, tweet_id=tweet_id)
     return TweetActionResult()
 
 
@@ -82,5 +82,5 @@ async def unlike_a_tweet(
         BadRequestError: При ошибке удаления лайка.
     """
     log.info(f"Запрос на снятие лайка с твита ID {tweet_id} от пользователя ID {current_user.id}")
-    await tweet_service.unlike_tweet(db=db, tweet_id=tweet_id, current_user=current_user)
+    await tweet_service.unlike_tweet(db=db, current_user=current_user, tweet_id=tweet_id)
     return TweetActionResult()

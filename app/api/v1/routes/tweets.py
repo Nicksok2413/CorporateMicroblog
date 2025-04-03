@@ -42,7 +42,7 @@ async def create_new_tweet(
     """
     log.info(f"Запрос на создание твита от пользователя ID {current_user.id}")
     tweet = await tweet_service.create_tweet(
-        db=db, tweet_data=tweet_in, current_user=current_user
+        db=db, current_user=current_user, tweet_data=tweet_in
     )
     return TweetCreateResult(tweet_id=tweet.id)
 
@@ -111,6 +111,5 @@ async def delete_existing_tweet(
         BadRequestError: При ошибке удаления из БД.
     """
     log.info(f"Запрос на удаление твита ID {tweet_id} от пользователя ID {current_user.id}")
-    await tweet_service.delete_tweet(db=db, tweet_id=tweet_id, current_user=current_user)
-    # Если сервис не вызвал исключение, удаление прошло успешно
+    await tweet_service.delete_tweet(db=db, current_user=current_user, tweet_id=tweet_id)
     return TweetActionResult()  # result=True по умолчанию
