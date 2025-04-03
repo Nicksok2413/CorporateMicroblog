@@ -1,11 +1,11 @@
 """Юнит-тесты для UserService."""
 
 import pytest
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock
 
 from app.services.user_service import user_service
 from app.models import User, Follow
-from app.schemas.user import UserProfile, BaseUser
+from app.schemas.user import UserProfile
 from app.core.exceptions import NotFoundError
 
 

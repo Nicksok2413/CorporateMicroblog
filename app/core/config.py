@@ -4,7 +4,7 @@ from functools import cached_property
 from pathlib import Path
 from typing import Optional
 
-from pydantic import Field, PostgresDsn, computed_field, field_validator
+from pydantic import Field, computed_field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -139,7 +139,7 @@ class Settings(BaseSettings):
 settings = Settings()
 
 # Вывод некоторых настроек для проверки (сработает при импорте)
-print(f"--- Загружены настройки ---")
+print("--- Загружены настройки ---")
 print(f"Режим DEBUG: {settings.DEBUG}")
 print(f"Режим TESTING: {settings.TESTING}")
 print(f"Режим PRODUCTION: {settings.PRODUCTION}")
@@ -147,4 +147,4 @@ print(
     f"Эффективный URL БД: {'*' * 5}{settings.EFFECTIVE_DATABASE_URL[-20:]}" if settings.EFFECTIVE_DATABASE_URL else "Not Set")
 print(f"Путь к медиа: {settings.STORAGE_PATH_OBJ}")
 print(f"Уровень логов: {settings.LOG_LEVEL}")
-print(f"-------------------------")
+print("-------------------------")

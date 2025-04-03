@@ -4,8 +4,7 @@ import pytest
 from httpx import AsyncClient
 from fastapi import status
 
-from app.models import Follow, Like, Tweet, User  # Добавили Like
-from app.schemas import TweetFeedResult, TweetCreateResult, TweetActionResult
+from app.models import Follow, Like, Tweet, User
 
 
 # --- Тесты для POST /tweets (без изменений) ---
@@ -115,10 +114,6 @@ async def test_unlike_tweet_success(async_client: AsyncClient, test_user_bob: Us
     assert response.status_code == status.HTTP_200_OK
     json_response = response.json()
     assert json_response["result"] is True
-
-    # Проверим, что лайк исчез (через профиль Алисы или Боба)
-    response_profile = await async_client.get(f"/api/v1/users/{test_user_alice.id}")
-    # ... (нужно добавить тесты профиля)
 
 
 @pytest.mark.asyncio

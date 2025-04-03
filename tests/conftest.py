@@ -12,9 +12,9 @@ from sqlalchemy.ext.asyncio import (AsyncEngine, AsyncSession,
 
 # Импортируем ключевые компоненты приложения
 from app.core.config import settings
-from app.core.database import Database, get_db_session  # Импортируем класс и зависимость
+from app.core.database import get_db_session
 from app.main import app as main_app  # Импортируем основной экземпляр FastAPI
-from app.models import Base, Follow, Like, Media, Tweet, User  # Импортируем Base для работы с метаданными
+from app.models import Base, Follow, Like, Media, Tweet, User
 
 # --- Базовая настройка ---
 # Указываем pytest использовать asyncio для всех тестов

@@ -5,8 +5,6 @@ from httpx import AsyncClient
 from fastapi import status
 
 from app.models import User, Follow
-from app.schemas import UserProfileResult, ResultTrue
-
 
 # --- Тесты для GET /users/me ---
 

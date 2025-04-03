@@ -84,6 +84,7 @@ class TweetAuthor(BaseUser):
     pass  # Наследует id, name
 
 
+# noinspection PyDataclass
 class TweetInFeed(TunedModel):
     """
     Схема представления одного твита в ленте.
@@ -105,6 +106,7 @@ class TweetInFeed(TunedModel):
     created_at: datetime.datetime  # Добавим дату создания для полезности
 
 
+# noinspection PyDataclass
 class TweetFeedResult(ResultTrue):
     """
     Схема ответа для эндпоинта получения ленты твитов.

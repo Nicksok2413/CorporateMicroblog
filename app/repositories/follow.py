@@ -8,7 +8,6 @@ from sqlalchemy.orm import selectinload
 
 from app.core.logging import log
 from app.models.follow import Follow
-from app.models.user import User  # Нужен для загрузки связей
 
 
 class FollowRepository:

@@ -1,11 +1,9 @@
 """Основной файл приложения FastAPI для сервиса микроблогов."""
 
-# 1. Сначала импортируем и настраиваем логирование
+# Сначала импортируем и настраиваем логирование
 from app.core.logging import log
 
-# 2. Импортируем остальные компоненты ядра и FastAPI
 from contextlib import asynccontextmanager
-from pathlib import Path # Для работы с путями
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware

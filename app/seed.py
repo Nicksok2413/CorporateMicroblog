@@ -8,22 +8,19 @@ import asyncio
 import sys
 from pathlib import Path
 
+from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
+
+# Используем менеджер БД и модели/репозитории/сервисы
+from app.core.database import Database
+from app.core.logging import log
+from app.models import Follow, Like, Media, Tweet, User
+from app.repositories import (follow_repo, like_repo,
+                              user_repo)
+
 # Добавляем путь к проекту, чтобы можно было импортировать из app
 project_root = Path(__file__).parent
 sys.path.append(str(project_root))
-
-from sqlalchemy import select
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.ext.asyncio import AsyncSession
-
-# Используем менеджер БД и модели/репозитории/сервисы
-from app.core.database import Database, db as global_db  # Импортируем класс и экземпляр
-from app.core.logging import log
-from app.models import Follow, Like, Media, Tweet, User
-from app.repositories import (follow_repo, like_repo, media_repo, tweet_repo,
-                              user_repo)
-# Настройки нужны для URL базы данных
-from app.core.config import settings
 
 # Данные для сидинга
 SEED_USERS = [
@@ -191,7 +188,6 @@ async def seed_data():
 
             # 5. Создание лайков
             log.info("Создание лайков...")
-            likes_to_add = []
             if tweets_map:
                 tweet_ids = list(tweets_map.keys())
                 likes_data = [

@@ -1,11 +1,9 @@
 """Сервис для работы с медиафайлами."""
-
-import os
 import uuid
 from pathlib import Path
-from typing import IO, Optional, Tuple
+from typing import IO, Optional
 
-import aiofiles  # Используем aiofiles для асинхронной записи
+import aiofiles
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
@@ -43,16 +41,6 @@ class MediaService(BaseService[Media, type(media_repo)]):
             msg = f"Недопустимый тип файла '{content_type}'. Разрешены: {', '.join(self.ALLOWED_CONTENT_TYPES)}"
             log.warning(msg)
             raise MediaValidationError(detail=msg)
-
-        # Проверка размера (примерная)
-        # file.seek(0, os.SEEK_END) # Перемещаемся в конец файла
-        # file_size = file.tell() # Получаем размер
-        # file.seek(0) # Возвращаемся в начало
-        # max_size = self.MAX_FILE_SIZE_MB * 1024 * 1024
-        # if file_size > max_size:
-        #     msg = f"Файл '{filename}' слишком большой ({file_size / 1024 / 1024:.2f} MB). Максимальный размер: {self.MAX_FILE_SIZE_MB} MB."
-        #     log.warning(msg)
-        #     raise MediaValidationError(detail=msg)
 
         log.debug(f"Файл '{filename}' прошел валидацию.")
 

@@ -1,7 +1,7 @@
 """Юнит-тесты для FollowService."""
 
 import pytest
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock
 
 from app.services.follow_service import follow_service
 from app.models import User, Follow

@@ -1,13 +1,12 @@
 """Юнит-тесты для TweetService."""
 
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch  # Добавили patch
+from unittest.mock import AsyncMock
 
 from app.services.tweet_service import tweet_service
-from app.models import User, Tweet, Media, Like, Follow
-from app.schemas.tweet import TweetCreateRequest, TweetFeedResult, TweetInFeed, LikeInfo, TweetAuthor
-from app.core.exceptions import NotFoundError, PermissionDeniedError, ConflictError
-from app.repositories import follow_repo  # Импортируем для мокирования
+from app.models import User, Tweet, Media, Like
+from app.schemas.tweet import TweetFeedResult
+from app.core.exceptions import NotFoundError, ConflictError
 
 
 # --- Тесты для create_tweet (как раньше) ---

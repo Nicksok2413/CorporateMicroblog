@@ -1,7 +1,7 @@
 services:
   # Сервис базы данных PostgreSQL
   db:
-    image: postgres:15-alpine # Используем легковесный образ
+    image: postgres:17-alpine # Используем легковесный образ
     container_name: microblog_db
     volumes:
       - postgres_data:/var/lib/postgresql/data/ # Том для персистентности данных

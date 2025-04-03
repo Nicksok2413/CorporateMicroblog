@@ -6,8 +6,7 @@ import pytest
 from httpx import AsyncClient
 from fastapi import status
 
-from app.models import User, Media
-from app.schemas import MediaCreateResult
+from app.models import User
 
 
 @pytest.mark.asyncio

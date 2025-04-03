@@ -8,13 +8,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.exceptions import (BadRequestError, ConflictError,
                                  PermissionDeniedError, NotFoundError)
 from app.core.logging import log
-from app.models import Media, Tweet, User  # Импортируем модели
-from app.repositories import follow_repo, like_repo, media_repo, tweet_repo  # Импортируем репозитории
-from app.schemas.tweet import (LikeInfo, TweetAuthor, TweetCreateInternal,
-                               TweetCreateRequest, TweetFeedResult,
-                               TweetInFeed)  # Импортируем схемы
+from app.models import Media, Tweet, User
+from app.repositories import follow_repo, like_repo, media_repo, tweet_repo
+from app.schemas.tweet import LikeInfo, TweetAuthor, TweetCreateRequest, TweetFeedResult, TweetInFeed
 from app.services.base_service import BaseService
-from app.services.media_service import media_service  # Импортируем медиа сервис
+from app.services.media_service import media_service
 
 
 class TweetService(BaseService[Tweet, type(tweet_repo)]):

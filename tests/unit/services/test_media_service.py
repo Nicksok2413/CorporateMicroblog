@@ -1,15 +1,14 @@
 """Юнит-тесты для MediaService."""
 
 import io
-from pathlib import Path
 
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch, mock_open
+from unittest.mock import AsyncMock, patch
 
 from app.services.media_service import media_service
 from app.models import Media
 from app.schemas.media import MediaCreate
-from app.core.exceptions import MediaValidationError, BadRequestError
+from app.core.exceptions import MediaValidationError
 from app.core.config import settings  # Нужен для пути сохранения
 
 
