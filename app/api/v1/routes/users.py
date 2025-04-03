@@ -54,7 +54,7 @@ async def get_my_profile(
 )
 async def get_user_profile_by_id(
         # Аутентификация НЕ ТРЕБУЕТСЯ по ТЗ для этого эндпоинта
-        db: DBSession = Depends(),
+        db: DBSession,
         user_id: int = FastApiPath(..., description="ID пользователя для просмотра профиля", gt=0),
 ):
     """

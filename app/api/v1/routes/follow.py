@@ -25,8 +25,8 @@ router = APIRouter(tags=["Follows"])
     }
 )
 async def follow_a_user(
-        current_user: CurrentUser = Depends(),
-        db: DBSession = Depends(),
+        current_user: CurrentUser,
+        db: DBSession,
         user_id: int = FastApiPath(..., description="ID пользователя, на которого нужно подписаться", gt=0),
 ):
     """
@@ -63,8 +63,8 @@ async def follow_a_user(
     }
 )
 async def unfollow_a_user(
-        current_user: CurrentUser = Depends(),
-        db: DBSession = Depends(),
+        current_user: CurrentUser,
+        db: DBSession,
         user_id: int = FastApiPath(..., description="ID пользователя, от которого нужно отписаться", gt=0),
 ):
     """

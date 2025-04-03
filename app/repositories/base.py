@@ -179,15 +179,15 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
                 await db.commit()
                 log.info(f"Успешно удален {self.model.__name__} с ID: {obj_id}")
                 return obj
-            except IntegrityError as e:
+            except IntegrityError as exc:
                 # Это маловероятно при удалении, но возможно при сложных каскадах
                 await db.rollback()
-                log.error(f"Ошибка целостности при удалении {self.model.__name__} (ID: {obj_id}): {e}")
-                raise e
-            except SQLAlchemyError as e:
+                log.error(f"Ошибка целостности при удалении {self.model.__name__} (ID: {obj_id}): {exc}")
+                raise exc
+            except SQLAlchemyError as exc:
                 await db.rollback()
-                log.error(f"Ошибка БД при удалении {self.model.__name__} (ID: {obj_id}): {e}")
-                raise e
+                log.error(f"Ошибка БД при удалении {self.model.__name__} (ID: {obj_id}): {exc}")
+                raise exc
         else:
             log.warning(f"{self.model.__name__} с ID {obj_id} не найден для удаления.")
             return None

@@ -26,8 +26,8 @@ router = APIRouter(tags=["Likes"])
     }
 )
 async def like_a_tweet(
-        current_user: CurrentUser = Depends(),
-        db: DBSession = Depends(),
+        current_user: CurrentUser,
+        db: DBSession,
         tweet_id: int = FastApiPath(..., description="ID твита для лайка", gt=0),
 ):
     """
@@ -62,8 +62,8 @@ async def like_a_tweet(
     }
 )
 async def unlike_a_tweet(
-        current_user: CurrentUser = Depends(),
-        db: DBSession = Depends(),
+        current_user: CurrentUser,
+        db: DBSession,
         tweet_id: int = FastApiPath(..., gt=0, description="ID твита для снятия лайка"),
 ):
     """

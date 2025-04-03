@@ -21,7 +21,6 @@ router = APIRouter(prefix="/media", tags=["Media"])  # Добавляем пре
     description="Загружает медиафайл (изображение) и возвращает его ID для последующего прикрепления к твиту.",
 )
 async def upload_media_file(
-        # Зависимости: текущий пользователь (для авторизации) и сессия БД
         current_user: CurrentUser,
         db: DBSession,
         # Данные файла из формы (multipart/form-data)

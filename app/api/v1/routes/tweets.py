@@ -88,8 +88,8 @@ async def get_tweets_feed(
     }
 )
 async def delete_existing_tweet(
-        current_user: CurrentUser = Depends(),  # Используем Depends() как альтернативу аннотации
-        db: DBSession = Depends(),  # Используем Depends() как альтернативу аннотации
+        current_user: CurrentUser,
+        db: DBSession,
         tweet_id: int = FastApiPath(..., description="ID твита для удаления", gt=0),  # Валидация параметра пути
 ):
     """
