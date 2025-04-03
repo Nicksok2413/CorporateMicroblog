@@ -11,7 +11,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from app.core.logging import log
-from app.schemas.base import ResultFalseWithError  # Импортируем базовую схему ошибки
+from app.schemas.base import ResultFalseWithError
 
 
 class MicroblogHTTPException(HTTPException):

@@ -10,11 +10,11 @@ from app.models import User, Tweet, Like
 pytestmark = pytest.mark.asyncio
 
 
-# --- Тесты для POST /api/v1/tweets/{tweet_id}/likes ---
+# --- Тесты для POST /api_old/v1/tweets/{tweet_id}/likes ---
 
 async def test_like_tweet_success(client: AsyncClient, test_user1: User, test_tweet_user2: Tweet,
                                   auth_headers_user1: dict, db_session: AsyncSession):
-    response = await client.post(f"/api/v1/tweets/{test_tweet_user2.id}/likes", headers=auth_headers_user1)
+    response = await client.post(f"/api_old/v1/tweets/{test_tweet_user2.id}/likes", headers=auth_headers_user1)
     assert response.status_code == status.HTTP_201_CREATED
     data = response.json()
     assert data["result"] is True
@@ -29,9 +29,9 @@ async def test_like_tweet_success(client: AsyncClient, test_user1: User, test_tw
 async def test_like_tweet_already_liked(client: AsyncClient, test_user1: User, test_tweet_user2: Tweet,
                                         auth_headers_user1: dict, db_session: AsyncSession):
     # Like it once first
-    await client.post(f"/api/v1/tweets/{test_tweet_user2.id}/likes", headers=auth_headers_user1)
+    await client.post(f"/api_old/v1/tweets/{test_tweet_user2.id}/likes", headers=auth_headers_user1)
     # Try to like again
-    response = await client.post(f"/api/v1/tweets/{test_tweet_user2.id}/likes", headers=auth_headers_user1)
+    response = await client.post(f"/api_old/v1/tweets/{test_tweet_user2.id}/likes", headers=auth_headers_user1)
     assert response.status_code == status.HTTP_409_CONFLICT
     data = response.json()
     assert data["result"] is False
@@ -39,7 +39,7 @@ async def test_like_tweet_already_liked(client: AsyncClient, test_user1: User, t
 
 
 async def test_like_tweet_not_found(client: AsyncClient, test_user1: User, auth_headers_user1: dict):
-    response = await client.post("/api/v1/tweets/9999/likes", headers=auth_headers_user1)
+    response = await client.post("/api_old/v1/tweets/9999/likes", headers=auth_headers_user1)
     assert response.status_code == status.HTTP_404_NOT_FOUND
     data = response.json()
     assert data["result"] is False
@@ -47,22 +47,22 @@ async def test_like_tweet_not_found(client: AsyncClient, test_user1: User, auth_
 
 
 async def test_like_tweet_unauthorized(client: AsyncClient, test_tweet_user1: Tweet):
-    response = await client.post(f"/api/v1/tweets/{test_tweet_user1.id}/likes")  # No headers
+    response = await client.post(f"/api_old/v1/tweets/{test_tweet_user1.id}/likes")  # No headers
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 
 async def test_like_tweet_invalid_key(client: AsyncClient, test_tweet_user1: Tweet):
     headers = {"api-key": "invalidkey"}
-    response = await client.post(f"/api/v1/tweets/{test_tweet_user1.id}/likes", headers=headers)
+    response = await client.post(f"/api_old/v1/tweets/{test_tweet_user1.id}/likes", headers=headers)
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
-# --- Тесты для DELETE /api/v1/tweets/{tweet_id}/likes ---
+# --- Тесты для DELETE /api_old/v1/tweets/{tweet_id}/likes ---
 
 async def test_unlike_tweet_success(client: AsyncClient, test_user2: User, test_tweet_user1: Tweet,
                                     test_like_user2_on_tweet1: Like, auth_headers_user2: dict,
                                     db_session: AsyncSession):
-    response = await client.delete(f"/api/v1/tweets/{test_tweet_user1.id}/likes", headers=auth_headers_user2)
+    response = await client.delete(f"/api_old/v1/tweets/{test_tweet_user1.id}/likes", headers=auth_headers_user2)
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert data["result"] is True
@@ -75,7 +75,7 @@ async def test_unlike_tweet_success(client: AsyncClient, test_user2: User, test_
 async def test_unlike_tweet_not_liked(client: AsyncClient, test_user1: User, test_tweet_user2: Tweet,
                                       auth_headers_user1: dict):
     # User 1 tries to unlike User 2's tweet which they haven't liked
-    response = await client.delete(f"/api/v1/tweets/{test_tweet_user2.id}/likes", headers=auth_headers_user1)
+    response = await client.delete(f"/api_old/v1/tweets/{test_tweet_user2.id}/likes", headers=auth_headers_user1)
     assert response.status_code == status.HTTP_404_NOT_FOUND
     data = response.json()
     assert data["result"] is False
@@ -85,7 +85,7 @@ async def test_unlike_tweet_not_liked(client: AsyncClient, test_user1: User, tes
 
 async def test_unlike_tweet_not_found(client: AsyncClient, test_user1: User, auth_headers_user1: dict):
     # Try to unlike a non-existent tweet
-    response = await client.delete("/api/v1/tweets/9999/likes", headers=auth_headers_user1)
+    response = await client.delete("/api_old/v1/tweets/9999/likes", headers=auth_headers_user1)
     # This will likely also result in a 404 because the like won't exist
     assert response.status_code == status.HTTP_404_NOT_FOUND
     data = response.json()
@@ -94,11 +94,11 @@ async def test_unlike_tweet_not_found(client: AsyncClient, test_user1: User, aut
 
 
 async def test_unlike_tweet_unauthorized(client: AsyncClient, test_tweet_user1: Tweet):
-    response = await client.delete(f"/api/v1/tweets/{test_tweet_user1.id}/likes")  # No headers
+    response = await client.delete(f"/api_old/v1/tweets/{test_tweet_user1.id}/likes")  # No headers
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 
 async def test_unlike_tweet_invalid_key(client: AsyncClient, test_tweet_user1: Tweet):
     headers = {"api-key": "invalidkey"}
-    response = await client.delete(f"/api/v1/tweets/{test_tweet_user1.id}/likes", headers=headers)
+    response = await client.delete(f"/api_old/v1/tweets/{test_tweet_user1.id}/likes", headers=headers)
     assert response.status_code == status.HTTP_403_FORBIDDEN

@@ -1,142 +1,95 @@
-"""Юнит-тесты для FollowService."""
-
+# tests/unit/test_follow_service.py
 import pytest
-from unittest.mock import AsyncMock
-
-from app.services.follow_service import follow_service
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.services import follow_service, user_service  # Need user_service for checks
 from app.models import User, Follow
-from app.core.exceptions import PermissionDeniedError, NotFoundError, ConflictError
+from app.core.exceptions import PermissionDeniedError, NotFoundError, ConflictError, BadRequestError
+from app.repositories import follow_repo  # To potentially mock repo methods
+from unittest.mock import patch, AsyncMock
+
+# Маркер
+pytestmark = pytest.mark.asyncio
 
 
-@pytest.mark.asyncio
-async def test_follow_user_service_success(mocker):
-    """Тест успешной подписки."""
-    mock_user_repo = mocker.patch("app.services.follow_service.user_repo", autospec=True)
-    mock_follow_repo = mocker.patch("app.services.follow_service.follow_repo", autospec=True)
+# --- Тесты для FollowService._validate_follow_action ---
+# (Тестируем через публичные методы follow/unfollow)
 
-    # Данные
-    current_user = User(id=1)
-    user_to_follow = User(id=2)
+# --- Тесты для FollowService.follow_user ---
 
-    # Настройка моков
-    mock_user_repo.get.return_value = user_to_follow  # Целевой пользователь существует
-    mock_follow_repo.get_follow.return_value = None  # Подписки еще нет
-    mock_follow_repo.create_follow.return_value = Follow(follower_id=1, following_id=2)
-
-    db_session_mock = AsyncMock()
-
-    # Вызов - не должно быть исключений
-    await follow_service.follow_user(
-        db=db_session_mock, current_user=current_user, user_to_follow_id=2
-    )
-
-    # Проверки
-    mock_user_repo.get.assert_called_once_with(db_session_mock, id=2)
-    mock_follow_repo.get_follow.assert_called_once_with(db=db_session_mock, follower_id=1, following_id=2)
-    mock_follow_repo.create_follow.assert_called_once_with(db=db_session_mock, follower_id=1, following_id=2)
+async def test_follow_user_service_success(db_session: AsyncSession, test_user1: User, test_user2: User):
+    await follow_service.follow_user(db=db_session, current_user=test_user1, user_to_follow_id=test_user2.id)
+    # Verify in DB
+    follow = await follow_repo.get_follow(db=db_session, follower_id=test_user1.id, following_id=test_user2.id)
+    assert follow is not None
 
 
-@pytest.mark.asyncio
-async def test_follow_user_service_self(mocker):
-    """Тест подписки на себя."""
-    mock_user_repo = mocker.patch("app.services.follow_service.user_repo", autospec=True)
-    mock_follow_repo = mocker.patch("app.services.follow_service.follow_repo", autospec=True)
-
-    current_user = User(id=1)
-    db_session_mock = AsyncMock()
-
-    with pytest.raises(PermissionDeniedError):
-        await follow_service.follow_user(
-            db=db_session_mock, current_user=current_user, user_to_follow_id=1
-        )
-
-    mock_user_repo.get.assert_not_called()
-    mock_follow_repo.get_follow.assert_not_called()
-    mock_follow_repo.create_follow.assert_not_called()
+async def test_follow_user_service_already_following(db_session: AsyncSession, test_user1: User, test_user2: User,
+                                                     test_follow_user1_on_user2: Follow):
+    with pytest.raises(ConflictError) as excinfo:
+        await follow_service.follow_user(db=db_session, current_user=test_user1, user_to_follow_id=test_user2.id)
+    assert "уже подписаны" in str(excinfo.value)
 
 
-@pytest.mark.asyncio
-async def test_follow_user_service_target_not_found(mocker):
-    """Тест подписки на несуществующего пользователя."""
-    mock_user_repo = mocker.patch("app.services.follow_service.user_repo", autospec=True)
-    mock_follow_repo = mocker.patch("app.services.follow_service.follow_repo", autospec=True)
-
-    current_user = User(id=1)
-    mock_user_repo.get.return_value = None  # Целевой пользователь не найден
-
-    db_session_mock = AsyncMock()
-
-    with pytest.raises(NotFoundError):
-        await follow_service.follow_user(
-            db=db_session_mock, current_user=current_user, user_to_follow_id=99
-        )
-
-    mock_follow_repo.get_follow.assert_not_called()
-    mock_follow_repo.create_follow.assert_not_called()
+async def test_follow_user_service_self(db_session: AsyncSession, test_user1: User):
+    with pytest.raises(PermissionDeniedError) as excinfo:
+        await follow_service.follow_user(db=db_session, current_user=test_user1, user_to_follow_id=test_user1.id)
+    assert "не можете подписаться на себя" in str(excinfo.value)
 
 
-@pytest.mark.asyncio
-async def test_follow_user_service_already_following(mocker):
-    """Тест повторной подписки."""
-    mock_user_repo = mocker.patch("app.services.follow_service.user_repo", autospec=True)
-    mock_follow_repo = mocker.patch("app.services.follow_service.follow_repo", autospec=True)
-
-    current_user = User(id=1)
-    user_to_follow = User(id=2)
-    mock_user_repo.get.return_value = user_to_follow
-    mock_follow_repo.get_follow.return_value = Follow(follower_id=1, following_id=2)  # Подписка уже есть
-
-    db_session_mock = AsyncMock()
-
-    with pytest.raises(ConflictError):
-        await follow_service.follow_user(
-            db=db_session_mock, current_user=current_user, user_to_follow_id=2
-        )
-
-    mock_follow_repo.create_follow.assert_not_called()
+async def test_follow_user_service_target_not_found(db_session: AsyncSession, test_user1: User):
+    with pytest.raises(NotFoundError) as excinfo:
+        await follow_service.follow_user(db=db_session, current_user=test_user1, user_to_follow_id=9999)
+    assert "Пользователь с ID 9999 не найден" in str(excinfo.value)
 
 
-# --- Тесты для unfollow_user ---
-
-@pytest.mark.asyncio
-async def test_unfollow_user_service_success(mocker):
-    """Тест успешной отписки."""
-    mock_user_repo = mocker.patch("app.services.follow_service.user_repo", autospec=True)
-    mock_follow_repo = mocker.patch("app.services.follow_service.follow_repo", autospec=True)
-
-    current_user = User(id=1)
-    user_to_unfollow = User(id=2)
-    mock_user_repo.get.return_value = user_to_unfollow
-    mock_follow_repo.remove_follow.return_value = True  # Подписка найдена и удалена
-
-    db_session_mock = AsyncMock()
-
-    await follow_service.unfollow_user(
-        db=db_session_mock, current_user=current_user, user_to_unfollow_id=2
-    )
-
-    mock_user_repo.get.assert_called_once_with(db_session_mock, id=2)
-    mock_follow_repo.remove_follow.assert_called_once_with(db=db_session_mock, follower_id=1, following_id=2)
+async def test_follow_user_service_db_error(db_session: AsyncSession, test_user1: User, test_user2: User):
+    # Mock repo.create_follow to raise an error
+    with patch.object(follow_repo, 'create_follow', new_callable=AsyncMock) as mock_create:
+        mock_create.side_effect = Exception("DB write failed")
+        with pytest.raises(BadRequestError) as excinfo:
+            await follow_service.follow_user(db=db_session, current_user=test_user1, user_to_follow_id=test_user2.id)
+        assert "Не удалось подписаться" in str(excinfo.value)
 
 
-@pytest.mark.asyncio
-async def test_unfollow_user_service_not_following(mocker):
-    """Тест отписки, если не был подписан."""
-    mock_user_repo = mocker.patch("app.services.follow_service.user_repo", autospec=True)
-    mock_follow_repo = mocker.patch("app.services.follow_service.follow_repo", autospec=True)
+# --- Тесты для FollowService.unfollow_user ---
 
-    current_user = User(id=1)
-    user_to_unfollow = User(id=2)
-    mock_user_repo.get.return_value = user_to_unfollow
-    mock_follow_repo.remove_follow.return_value = False  # Подписка не найдена
+async def test_unfollow_user_service_success(db_session: AsyncSession, test_user1: User, test_user2: User,
+                                             test_follow_user1_on_user2: Follow):
+    await follow_service.unfollow_user(db=db_session, current_user=test_user1, user_to_unfollow_id=test_user2.id)
+    # Verify in DB
+    follow = await follow_repo.get_follow(db=db_session, follower_id=test_user1.id, following_id=test_user2.id)
+    assert follow is None
 
-    db_session_mock = AsyncMock()
 
-    with pytest.raises(NotFoundError):
-        await follow_service.unfollow_user(
-            db=db_session_mock, current_user=current_user, user_to_unfollow_id=2
-        )
+async def test_unfollow_user_service_not_following(db_session: AsyncSession, test_user1: User, test_user2: User):
+    with pytest.raises(NotFoundError) as excinfo:
+        await follow_service.unfollow_user(db=db_session, current_user=test_user1, user_to_unfollow_id=test_user2.id)
+    assert "не подписаны" in str(excinfo.value)
 
-    mock_follow_repo.remove_follow.assert_called_once_with(db=db_session_mock, follower_id=1, following_id=2)
 
-# TODO: Добавить тесты для _validate_follow_action (хотя они косвенно покрываются другими тестами)
+async def test_unfollow_user_service_self(db_session: AsyncSession, test_user1: User):
+    with pytest.raises(PermissionDeniedError) as excinfo:
+        await follow_service.unfollow_user(db=db_session, current_user=test_user1, user_to_unfollow_id=test_user1.id)
+    assert "не можете подписаться на себя" in str(excinfo.value)  # Check message consistency
+
+
+async def test_unfollow_user_service_target_not_found(db_session: AsyncSession, test_user1: User):
+    with pytest.raises(NotFoundError) as excinfo:
+        await follow_service.unfollow_user(db=db_session, current_user=test_user1, user_to_unfollow_id=9999)
+    assert "Пользователь с ID 9999 не найден" in str(excinfo.value)
+
+
+async def test_unfollow_user_service_db_error(db_session: AsyncSession, test_user1: User, test_user2: User,
+                                              test_follow_user1_on_user2: Follow):
+    # Mock repo.remove_follow to simulate an error after finding the follow
+    with patch.object(follow_repo, 'remove_follow', new_callable=AsyncMock) as mock_remove:
+        # Simulate DB error during delete, even though remove_follow itself might return bool
+        # The service doesn't explicitly catch errors from remove_follow,
+        # relying on the repository or SQLAlchemy to raise them.
+        # Let's assume remove_follow raises for this test.
+        mock_remove.side_effect = Exception("DB delete failed")
+        with pytest.raises(Exception) as excinfo:  # Catch generic Exception or specific SQLAlchemyError if known
+            await follow_service.unfollow_user(db=db_session, current_user=test_user1,
+                                               user_to_unfollow_id=test_user2.id)
+        # Depending on actual error handling, assert BadRequestError or the original DB error
+        # assert "Failed to unfollow" in str(excinfo.value)

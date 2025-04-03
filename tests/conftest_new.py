@@ -1,4 +1,3 @@
-# tests/conftest.py (Напоминание о необходимых фикстурах)
 import asyncio
 from typing import AsyncGenerator, Generator, List
 
@@ -56,7 +55,7 @@ async def client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
             pass
 
     app.dependency_overrides[get_db_session] = override_get_db
-    async with AsyncClient(app=app, base_url="http://testserver") as test_client:  # Убрал /api/v1 из base_url
+    async with AsyncClient(app=app, base_url="http://testserver") as test_client:  # Убрал /api_old/v1 из base_url
         yield test_client
     app.dependency_overrides.clear()
 

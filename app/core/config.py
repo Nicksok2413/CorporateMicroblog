@@ -90,7 +90,7 @@ class Settings(BaseSettings):
             str: Строка подключения к основной БД.
         """
         db_url = (f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@"
-               f"{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}")
+                  f"{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}")
         return db_url
 
     @computed_field
@@ -104,6 +104,11 @@ class Settings(BaseSettings):
         """
         return self.TEST_DB_URL if self.TESTING else self.DATABASE_URL
 
+    @computed_field
+    @cached_property
+    def EFFECTIVE_STORAGE_PATH(self) -> str:
+        return "./test_media" if self.TESTING else self.STORAGE_PATH
+
     def model_post_init(self, __context) -> None:
         """
         Пост-инициализация модели для создания директорий.
@@ -111,16 +116,19 @@ class Settings(BaseSettings):
         Args:
             __context: Контекст инициализации.
         """
-        # Преобразуем STORAGE_PATH в Path и сохраняем в STORAGE_PATH_OBJ
-        self.STORAGE_PATH_OBJ = Path(self.STORAGE_PATH)
-        # Создаем директорию медиа
+        effective_path_str = self.EFFECTIVE_STORAGE_PATH  # Используем вычисляемый путь
+        self.STORAGE_PATH_OBJ = Path(effective_path_str)
+
         try:
             self.STORAGE_PATH_OBJ.mkdir(parents=True, exist_ok=True)
+            log.info(f"Создана директория: {self.STORAGE_PATH_OBJ}")
         except OSError as exc:
-            log.error(f"Не удалось создать директорию медиа {self.STORAGE_PATH_OBJ}: {exc}")
+            log.error(f"Не удалось создать директорию {self.STORAGE_PATH_OBJ}: {exc}")
 
         # Создаем директорию логов, если LOG_FILE задан
         if self.LOG_FILE:
+            if isinstance(self.LOG_FILE, str):  # На всякий случай
+                self.LOG_FILE = Path(self.LOG_FILE)
             try:
                 self.LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
             except OSError as exc:

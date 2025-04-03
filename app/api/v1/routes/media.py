@@ -14,7 +14,7 @@ router = APIRouter(prefix="/media", tags=["Media"])  # Добавляем пре
 
 
 @router.post(
-    "",  # Путь относительно префикса /media, т.е. POST /api/v1/media
+    "",  # Путь относительно префикса /media, т.е. POST /api_old/v1/media
     response_model=MediaCreateResult,
     status_code=status.HTTP_201_CREATED,
     summary="Загрузка медиафайла",

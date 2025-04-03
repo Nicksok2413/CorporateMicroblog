@@ -15,7 +15,7 @@ router = APIRouter(tags=["Likes"])
 
 
 @router.post(
-    # Полный путь будет /api/v1/tweets/{tweet_id}/likes
+    # Полный путь будет /api_old/v1/tweets/{tweet_id}/likes
     "/tweets/{tweet_id}/likes",
     response_model=TweetActionResult,
     status_code=status.HTTP_201_CREATED,  # 201 или 200? 201 если ресурс 'лайк' создается
@@ -52,7 +52,7 @@ async def like_a_tweet(
 
 
 @router.delete(
-    # Полный путь будет /api/v1/tweets/{tweet_id}/likes
+    # Полный путь будет /api_old/v1/tweets/{tweet_id}/likes
     "/tweets/{tweet_id}/likes",
     response_model=TweetActionResult,
     status_code=status.HTTP_200_OK,

@@ -1,16 +1,15 @@
 """Зависимости FastAPI для API версии v1."""
 
-from typing import Annotated  # Annotated для современного синтаксиса Depends/Header
+from typing import Annotated
 
 from fastapi import Depends, Header
 from sqlalchemy.ext.asyncio import AsyncSession
 
-# Импортируем репозиторий пользователя и функцию получения сессии БД
 from app.core.database import get_db_session
-from app.core.exceptions import AuthenticationRequiredError, PermissionDeniedError  # Используем кастомные исключения
+from app.core.exceptions import AuthenticationRequiredError, PermissionDeniedError
 from app.core.logging import log
-from app.models.user import User  # Импортируем модель User
-from app.repositories import user_repo  # Импортируем репозиторий пользователя
+from app.models.user import User
+from app.repositories import user_repo
 
 # --- Типизация для инъекции зависимостей ---
 

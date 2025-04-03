@@ -6,8 +6,6 @@ from pathlib import Path
 
 from loguru import logger
 
-from app.core.config import settings
-
 
 def serialize(record):
     """
@@ -76,6 +74,8 @@ def configure_logging():
     - Опциональный вывод в файл с ротацией для production.
     - Специальная обработка логов SQLAlchemy в режиме DEBUG.
     """
+    from app.core.config import settings
+
     # Удаляем стандартный обработчик, чтобы избежать дублирования
     logger.remove()
 
@@ -127,7 +127,7 @@ def configure_logging():
 
 
 # Инициализация логирования при импорте модуля
-configure_logging()
+# configure_logging()
 
 # Экспортируем настроенный логгер для использования в других модулях
 log = logger

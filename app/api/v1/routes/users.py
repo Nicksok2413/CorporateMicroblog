@@ -2,18 +2,17 @@
 
 from fastapi import APIRouter, Path as FastApiPath, status
 
-# Импортируем зависимости, сервисы и схемы
 from app.api.v1.dependencies import CurrentUser, DBSession
 from app.core.logging import log
-from app.services import user_service  # Импортируем сервисы
-from app.schemas import UserProfileResult  # Импортируем схемы
+from app.services import user_service
+from app.schemas import UserProfileResult
 
 # Создаем роутер для пользователей
 router = APIRouter(prefix="/users", tags=["Users"])
 
 
 @router.get(
-    "/me",  # GET /api/v1/users/me
+    "/me",  # GET /api_old/v1/users/me
     response_model=UserProfileResult,
     status_code=status.HTTP_200_OK,
     summary="Получение профиля текущего пользователя",
@@ -42,7 +41,7 @@ async def get_my_profile(
 
 
 @router.get(
-    # Полный путь /api/v1/users/{user_id}
+    # Полный путь /api_old/v1/users/{user_id}
     "/{user_id}",
     response_model=UserProfileResult,
     status_code=status.HTTP_200_OK,

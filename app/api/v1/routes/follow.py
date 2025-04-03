@@ -2,18 +2,17 @@
 
 from fastapi import APIRouter, Path as FastApiPath, status
 
-# Импортируем зависимости, сервисы и схемы
 from app.api.v1.dependencies import CurrentUser, DBSession
 from app.core.logging import log
-from app.schemas import ResultTrue  # Общий успешный ответ
-from app.services import follow_service  # Сервис для подписок
+from app.schemas import ResultTrue
+from app.services import follow_service
 
 # Роутер для подписок
 router = APIRouter(tags=["Follows"])
 
 
 @router.post(
-    # Полный путь /api/v1/users/{user_id}/follow
+    # Полный путь /api_old/v1/users/{user_id}/follow
     "/users/{user_id}/follow",
     response_model=ResultTrue,
     status_code=status.HTTP_201_CREATED,  # Ресурс 'подписка' создается
@@ -52,7 +51,7 @@ async def follow_a_user(
 
 
 @router.delete(
-    # Полный путь /api/v1/users/{user_id}/follow
+    # Полный путь /api_old/v1/users/{user_id}/follow
     "/users/{user_id}/follow",
     response_model=ResultTrue,
     status_code=status.HTTP_200_OK,

@@ -1,77 +1,103 @@
-"""Юнит-тесты для UserService."""
-
+# tests/unit/test_user_service.py
 import pytest
-from unittest.mock import AsyncMock
-
-from app.services.user_service import user_service
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.services import user_service, follow_service  # Импортируем оба сервиса
 from app.models import User, Follow
-from app.schemas.user import UserProfile
 from app.core.exceptions import NotFoundError
+from app.schemas.user import BaseUser
+
+# Маркер
+pytestmark = pytest.mark.asyncio
 
 
-@pytest.mark.asyncio
-async def test_get_user_profile_service_success(mocker):
-    """Тест успешного получения профиля пользователя."""
-    # Моки репозиториев
-    mock_user_repo = mocker.patch("app.services.user_service.user_repo", autospec=True)
-    mock_follow_repo = mocker.patch("app.services.user_service.follow_repo", autospec=True)
+# --- Тесты для UserService ---
 
-    # Данные
-    target_user_id = 1
-    target_user = User(id=target_user_id, name="Alice")
-    follower_user = User(id=2, name="Bob")
-    following_user = User(id=3, name="Charlie")
+async def test_get_user_by_id_success(db_session: AsyncSession, test_user1: User):
+    user = await user_service.get_user_by_id(db_session, test_user1.id)
+    assert user is not None
+    assert user.id == test_user1.id
+    assert user.name == test_user1.name
 
-    # Настройка моков
-    mock_user_repo.get.return_value = target_user
-    # Мок для get_following_with_users (на кого подписана Alice)
-    mock_follow_repo.get_following_with_users.return_value = [
-        Follow(follower_id=target_user_id, following_id=following_user.id, followed_user=following_user)
-    ]
-    # Мок для get_followers_with_users (кто подписан на Alice)
-    mock_follow_repo.get_followers_with_users.return_value = [
-        Follow(follower_id=follower_user.id, following_id=target_user_id, follower=follower_user)
-    ]
 
-    db_session_mock = AsyncMock()
+async def test_get_user_by_id_not_found(db_session: AsyncSession):
+    user = await user_service.get_user_by_id(db_session, 999)
+    assert user is None
 
-    # Вызов сервиса
-    profile: UserProfile = await user_service.get_user_profile(db=db_session_mock, user_id=target_user_id)
 
-    # Проверки
-    assert profile is not None
-    assert profile.id == target_user_id
-    assert profile.name == "Alice"
+async def test_get_user_by_api_key_success(db_session: AsyncSession, test_user1: User):
+    user = await user_service.get_user_by_api_key(db_session, test_user1.api_key)
+    assert user is not None
+    assert user.id == test_user1.id
 
-    # Проверка списка подписок (following)
+
+async def test_get_user_by_api_key_not_found(db_session: AsyncSession):
+    user = await user_service.get_user_by_api_key(db_session, "nonexistentkey")
+    assert user is None
+
+
+async def test_get_user_or_404_success(db_session: AsyncSession, test_user1: User):
+    user = await user_service._get_user_or_404(db_session, test_user1.id)
+    assert user is not None
+    assert user.id == test_user1.id
+
+
+async def test_get_user_or_404_raises_not_found(db_session: AsyncSession):
+    with pytest.raises(NotFoundError) as excinfo:
+        await user_service._get_user_or_404(db_session, 999)
+    assert "Пользователь с ID 999 не найден" in str(excinfo.value)
+
+
+# --- Тесты для UserService.get_user_profile ---
+
+async def test_get_user_profile_no_follows(db_session: AsyncSession, test_user1: User):
+    profile = await user_service.get_user_profile(db_session, test_user1.id)
+    assert profile.id == test_user1.id
+    assert profile.name == test_user1.name
+    assert profile.followers == []
+    assert profile.following == []
+
+
+async def test_get_user_profile_with_following(db_session: AsyncSession, test_user1: User, test_user2: User,
+                                               test_follow_user1_on_user2: Follow):
+    profile = await user_service.get_user_profile(db_session, test_user1.id)
+    assert profile.id == test_user1.id
     assert len(profile.following) == 1
-    assert profile.following[0].id == following_user.id
-    assert profile.following[0].name == "Charlie"
+    assert isinstance(profile.following[0], BaseUser)
+    assert profile.following[0].id == test_user2.id
+    assert profile.following[0].name == test_user2.name
+    assert profile.followers == []
 
-    # Проверка списка подписчиков (followers)
+
+async def test_get_user_profile_with_followers(db_session: AsyncSession, test_user1: User, test_user2: User,
+                                               test_follow_user2_on_user1: Follow):  # Need this fixture
+    # Fixture 'test_follow_user2_on_user1' follows user1 from user2
+    profile = await user_service.get_user_profile(db_session, test_user1.id)
+    assert profile.id == test_user1.id
+    assert profile.following == []
     assert len(profile.followers) == 1
-    assert profile.followers[0].id == follower_user.id
-    assert profile.followers[0].name == "Bob"
-
-    # Проверка вызовов репозиториев
-    mock_user_repo.get.assert_called_once_with(db_session_mock, target_user_id)
-    mock_follow_repo.get_following_with_users.assert_called_once_with(db=db_session_mock, follower_id=target_user_id)
-    mock_follow_repo.get_followers_with_users.assert_called_once_with(db=db_session_mock, following_id=target_user_id)
+    assert isinstance(profile.followers[0], BaseUser)
+    assert profile.followers[0].id == test_user2.id
+    assert profile.followers[0].name == test_user2.name
 
 
-@pytest.mark.asyncio
-async def test_get_user_profile_service_not_found(mocker):
-    """Тест получения профиля несуществующего пользователя."""
-    mock_user_repo = mocker.patch("app.services.user_service.user_repo", autospec=True)
-    mock_follow_repo = mocker.patch("app.services.user_service.follow_repo", autospec=True)
+async def test_get_user_profile_with_both(
+        db_session: AsyncSession,
+        test_user1: User,
+        test_user2: User,
+        test_user3_no_tweets: User,
+        test_follow_user1_on_user2: Follow,  # user1 follows user2
+        test_follow_user3_on_user1: Follow,  # user3 follows user1 - need fixture
+):
+    profile = await user_service.get_user_profile(db_session, test_user1.id)
+    assert profile.id == test_user1.id
 
-    mock_user_repo.get.return_value = None  # Пользователь не найден
+    assert len(profile.following) == 1
+    assert profile.following[0].id == test_user2.id
 
-    db_session_mock = AsyncMock()
+    assert len(profile.followers) == 1
+    assert profile.followers[0].id == test_user3_no_tweets.id
 
+
+async def test_get_user_profile_raises_not_found(db_session: AsyncSession):
     with pytest.raises(NotFoundError):
-        await user_service.get_user_profile(db=db_session_mock, user_id=99)
-
-    # Убедимся, что репозитории подписок не вызывались
-    mock_follow_repo.get_following_with_users.assert_not_called()
-    mock_follow_repo.get_followers_with_users.assert_not_called()
+        await user_service.get_user_profile(db_session, 999)

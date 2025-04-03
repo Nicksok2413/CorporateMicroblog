@@ -14,7 +14,7 @@ router = APIRouter(prefix="/tweets", tags=["Tweets"])
 
 
 @router.post(
-    "",  # POST /api/v1/tweets
+    "",  # POST /api_old/v1/tweets
     response_model=TweetCreateResult,
     status_code=status.HTTP_201_CREATED,
     summary="Создание нового твита",
@@ -48,7 +48,7 @@ async def create_new_tweet(
 
 
 @router.get(
-    "",  # GET /api/v1/tweets
+    "",  # GET /api_old/v1/tweets
     response_model=TweetFeedResult,
     status_code=status.HTTP_200_OK,
     summary="Получение ленты твитов",
@@ -77,7 +77,7 @@ async def get_tweets_feed(
 
 
 @router.delete(
-    "/{tweet_id}",  # DELETE /api/v1/tweets/{tweet_id}
+    "/{tweet_id}",  # DELETE /api_old/v1/tweets/{tweet_id}
     response_model=TweetActionResult,
     status_code=status.HTTP_200_OK,  # Или 204 No Content, но тогда response_model не нужен
     summary="Удаление твита",

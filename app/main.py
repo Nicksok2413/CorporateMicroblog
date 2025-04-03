@@ -117,8 +117,8 @@ async def root():
     return {
         "message": f"Добро пожаловать в {settings.PROJECT_NAME}!",
         "api_version": f"{settings.API_VERSION}",
-        "documentation_swagger": "/docs", # Ссылка на Swagger
-        "documentation_redoc": "/redoc",   # Ссылка на ReDoc
+        "documentation_swagger": "/docs",
+        "documentation_redoc": "/redoc",
         "status": "operational",
         "debug_mode": settings.DEBUG,
     }
