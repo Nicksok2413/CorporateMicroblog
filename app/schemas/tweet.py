@@ -94,7 +94,6 @@ class TweetInFeed(TunedModel):
         attachments (List[str]): Список URL прикрепленных медиафайлов.
         author (TweetAuthor): Информация об авторе твита.
         likes (List[LikeInfo]): Список пользователей, лайкнувших твит.
-        created_at (datetime.datetime): Дата и время создания твита (добавлено для информации).
     """
     id: int
     content: str

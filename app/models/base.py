@@ -1,6 +1,6 @@
 """Базовое определение модели для SQLAlchemy."""
 
-from sqlalchemy import MetaData
+# from sqlalchemy import MetaData
 from sqlalchemy.orm import DeclarativeBase
 
 # convention = {

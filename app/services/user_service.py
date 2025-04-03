@@ -6,9 +6,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import NotFoundError
 from app.core.logging import log
-from app.models import Follow, User  # Импортируем модели
-from app.repositories import follow_repo, user_repo  # Импортируем репозитории
-from app.schemas.user import BaseUser, UserProfile  # Импортируем схемы
+from app.models import Follow, User
+from app.repositories import follow_repo, user_repo
+from app.schemas.user import BaseUser, UserProfile
 from app.services.base_service import BaseService
 
 

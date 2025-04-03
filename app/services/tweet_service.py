@@ -228,7 +228,6 @@ class TweetService(BaseService[Tweet, type(tweet_repo)]):
                     attachments=attachment_urls,
                     author=author_info,
                     likes=likes_info,
-                    created_at=tweet.created_at
                 )
             )
 

@@ -65,7 +65,7 @@ class Database:
         )
 
         await self._verify_connection()
-        log.success(f"Подключение к базе данных установлено.")
+        log.success("Подключение к базе данных установлено.")
 
     async def disconnect(self):
         """Корректное закрытие подключения к базе данных."""

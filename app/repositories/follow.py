@@ -52,19 +52,17 @@ class FollowRepository:
             SQLAlchemyError: В случае ошибки базы данных.
         """
         log.debug(f"Создание подписки: follower_id={follower_id}, following_id={following_id}")
-        # Проверка на подписку на себя должна быть на уровне сервиса или API,
-        # хотя и в БД есть CheckConstraint
         db_obj = self.model(follower_id=follower_id, following_id=following_id)
         db.add(db_obj)
+
         try:
             await db.commit()
             log.info(f"Подписка успешно создана: follower_id={follower_id}, following_id={following_id}")
             return db_obj
-        except Exception as e:
+        except Exception as exc:
             await db.rollback()
-            log.error(f"Ошибка при создании подписки (follower_id={follower_id}, following_id={following_id}): {e}",
-                      exc_info=True)
-            raise e
+            log.error(f"Ошибка при создании подписки: {exc}", exc_info=True)
+            raise exc
 
     async def remove_follow(self, db: AsyncSession, *, follower_id: int, following_id: int) -> bool:
         """
@@ -86,20 +84,21 @@ class FollowRepository:
             self.model.follower_id == follower_id,
             self.model.following_id == following_id
         )
+
         try:
             result = await db.execute(statement)
             await db.commit()
-            if result.rowcount > 0:
+
+            if result.rowcount() > 0:
                 log.info(f"Подписка успешно удалена: follower_id={follower_id}, following_id={following_id}")
                 return True
             else:
                 log.warning(f"Подписка для удаления не найдена: follower_id={follower_id}, following_id={following_id}")
                 return False
-        except Exception as e:
+        except Exception as exc:
             await db.rollback()
-            log.error(f"Ошибка при удалении подписки (follower_id={follower_id}, following_id={following_id}): {e}",
-                      exc_info=True)
-            raise e
+            log.error(f"Ошибка при удалении подписки: {exc}", exc_info=True)
+            raise exc
 
     async def get_following_ids(self, db: AsyncSession, *, follower_id: int) -> List[int]:
         """
@@ -117,7 +116,7 @@ class FollowRepository:
         result = await db.execute(statement)
         ids = result.scalars().all()
         log.debug(f"Пользователь {follower_id} подписан на {len(ids)} пользователей.")
-        return list(ids)  # Преобразуем в list
+        return list(ids)
 
     async def get_follower_ids(self, db: AsyncSession, *, following_id: int) -> List[int]:
         """
@@ -135,7 +134,7 @@ class FollowRepository:
         result = await db.execute(statement)
         ids = result.scalars().all()
         log.debug(f"На пользователя {following_id} подписано {len(ids)} пользователей.")
-        return list(ids)  # Преобразуем в list
+        return list(ids)
 
     async def get_following_with_users(self, db: AsyncSession, *, follower_id: int) -> Sequence[Follow]:
         """
@@ -155,7 +154,6 @@ class FollowRepository:
             .options(selectinload(Follow.followed_user))  # Загружаем профиль того, на кого подписан
         )
         res = await db.execute(stmt)
-        # unique() не нужен, т.к. нет join'ов, приводящих к дублированию Follow строк
         return res.scalars().all()
 
     async def get_followers_with_users(self, db: AsyncSession, *, following_id: int) -> Sequence[Follow]:
@@ -176,7 +174,6 @@ class FollowRepository:
             .options(selectinload(Follow.follower))  # Загружаем профиль подписчика
         )
         res = await db.execute(stmt)
-        # unique() не нужен
         return res.scalars().all()
 
 

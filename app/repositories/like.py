@@ -54,14 +54,15 @@ class LikeRepository:
         log.debug(f"Создание лайка: user_id={user_id}, tweet_id={tweet_id}")
         db_obj = self.model(user_id=user_id, tweet_id=tweet_id)
         db.add(db_obj)
+
         try:
             await db.commit()
             log.info(f"Лайк успешно создан: user_id={user_id}, tweet_id={tweet_id}")
             return db_obj
-        except Exception as e:
+        except Exception as exc:
             await db.rollback()
-            log.error(f"Ошибка при создании лайка (user_id={user_id}, tweet_id={tweet_id}): {e}", exc_info=True)
-            raise e
+            log.error(f"Ошибка при создании лайка (user_id={user_id}, tweet_id={tweet_id}): {exc}", exc_info=True)
+            raise exc
 
     async def remove_like(self, db: AsyncSession, *, user_id: int, tweet_id: int) -> bool:
         """
@@ -83,20 +84,22 @@ class LikeRepository:
             self.model.user_id == user_id,
             self.model.tweet_id == tweet_id
         )
+
         try:
             result = await db.execute(statement)
             await db.commit()
+
             # result.rowcount > 0 означает, что строка была удалена
-            if result.rowcount > 0:
+            if result.rowcount() > 0:
                 log.info(f"Лайк успешно удален: user_id={user_id}, tweet_id={tweet_id}")
                 return True
             else:
                 log.warning(f"Лайк для удаления не найден: user_id={user_id}, tweet_id={tweet_id}")
                 return False
-        except Exception as e:
+        except Exception as exc:
             await db.rollback()
-            log.error(f"Ошибка при удалении лайка (user_id={user_id}, tweet_id={tweet_id}): {e}", exc_info=True)
-            raise e
+            log.error(f"Ошибка при удалении лайка (user_id={user_id}, tweet_id={tweet_id}): {exc}", exc_info=True)
+            raise exc
 
 
 # Создаем экземпляр репозитория

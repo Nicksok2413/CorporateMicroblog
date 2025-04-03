@@ -13,11 +13,7 @@ from app.schemas.tweet import TweetCreateInternal
 
 
 class TweetRepository(BaseRepository[Tweet, TweetCreateInternal, None]):
-    """
-    Репозиторий для выполнения CRUD операций с моделью Tweet.
-    """
-
-    # Базовый метод create унаследован и ожидает TweetCreateInternal
+    """Репозиторий для выполнения CRUD операций с моделью Tweet."""
 
     async def create_with_author_and_media(
             self,
@@ -53,17 +49,18 @@ class TweetRepository(BaseRepository[Tweet, TweetCreateInternal, None]):
             db_obj.attachments.extend(media_items)
 
         db.add(db_obj)
+
         try:
             await db.commit()
-            # Обновляем объект, чтобы получить связанные данные, если нужно
+            # Обновляем объект, чтобы получить связанные данные
             # Особенно важно для many-to-many, чтобы увидеть attachments
             await db.refresh(db_obj, attribute_names=['attachments'])
             log.info(f"Успешно создан твит ID {db_obj.id} для автора {author_id}.")
             return db_obj
-        except Exception as e:  # Ловим общую ошибку для отката
+        except Exception as exc:
             await db.rollback()
-            log.error(f"Ошибка при создании твита для автора {author_id}: {e}", exc_info=True)
-            raise e  # Передаем исключение выше
+            log.error(f"Ошибка при создании твита для автора {author_id}: {exc}", exc_info=True)
+            raise exc
 
     async def get_feed_for_user(
             self,
@@ -104,7 +101,7 @@ class TweetRepository(BaseRepository[Tweet, TweetCreateInternal, None]):
         statement = (
             select(Tweet)
             .where(Tweet.author_id.in_(author_ids))
-            # Присоединяем подзапрос с количеством лайков (LEFT JOIN)
+            # Присоединяем подзапрос с количеством лайков
             .outerjoin(like_count_subquery, Tweet.id == like_count_subquery.c.tweet_id)
             # Используем selectinload для эффективной загрузки связей
             .options(
@@ -114,8 +111,7 @@ class TweetRepository(BaseRepository[Tweet, TweetCreateInternal, None]):
             )
             # Сортировка: сначала по количеству лайков (NULLS LAST), затем по дате создания
             .order_by(
-                desc(func.coalesce(like_count_subquery.c.like_count, 0)),  # Сортировка по лайкам, NULL -> 0
-                desc(Tweet.created_at)  # Вторичная сортировка по дате
+                desc(func.coalesce(like_count_subquery.c.like_count, 0))  # Сортировка по лайкам, NULL -> 0
             )
             .offset(offset)
             .limit(limit)

@@ -4,7 +4,7 @@
 и функции для их корректной обработки и преобразования в HTTP-ответы.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError

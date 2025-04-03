@@ -9,12 +9,7 @@ from app.models.user import User
 from app.repositories.base import BaseRepository
 
 
-# Схемы Create/Update для User пока не определены и не требуются по ТЗ
-# Если понадобятся, нужно будет их создать и импортировать
-# from app.schemas.user import UserCreate, UserUpdate
-
-
-class UserRepository(BaseRepository[User, None, None]):  # Оставляем None для схем
+class UserRepository(BaseRepository[User, None, None]):
     """
     Репозиторий для выполнения CRUD операций с моделью User.
 
@@ -32,11 +27,8 @@ class UserRepository(BaseRepository[User, None, None]):  # Оставляем No
         Returns:
             Optional[User]: Найденный пользователь или None.
         """
-        statement = select(self.model).where(self.model.api_key == api_key)
-        result = await db.execute(statement)
+        result = await db.execute(select(self.model).where(self.model.api_key == api_key))
         return result.scalars().first()
-
-    # Можно добавить другие методы при необходимости
 
 
 # Создаем экземпляр репозитория для использования в других частях приложения
