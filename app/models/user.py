@@ -5,7 +5,7 @@ from typing import List, TYPE_CHECKING
 from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from .base import Base
+from app.models.base import Base
 
 if TYPE_CHECKING:
     from .follow import Follow
@@ -53,12 +53,3 @@ class User(Base):
         back_populates="followed_user",
         cascade="all, delete-orphan",
     )
-
-    def __repr__(self) -> str:
-        """
-        Возвращает строковое представление объекта User.
-
-        Returns:
-            Строковое представление пользователя.
-        """
-        return f"<User(id={self.id}, name='{self.name}')>"

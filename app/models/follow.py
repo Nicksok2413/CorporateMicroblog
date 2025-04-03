@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 from sqlalchemy import CheckConstraint, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from .base import Base
+from app.models.base import Base
 
 if TYPE_CHECKING:
     from .user import User
@@ -26,7 +26,7 @@ class Follow(Base):
     __tablename__ = "follows"
 
     # Составной первичный ключ гарантирует, что пользователь подписывается на другого только один раз.
-    # onDelete=CASCADE гарантирует, что записи о подписках удаляются, если любой из пользователей удален.
+    # CASCADE гарантирует, что записи о подписках удаляются, если любой из пользователей удален.
     follower_id: Mapped[int] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
     )
@@ -48,12 +48,3 @@ class Follow(Base):
         # Запрет пользователям подписываться на самих себя.
         CheckConstraint("follower_id != following_id", name="ck_follow_no_self_follow"),
     )
-
-    def __repr__(self) -> str:
-        """
-        Возвращает строковое представление объекта Follow.
-
-        Returns:
-            Строковое представление отношения подписки.
-        """
-        return f"<Follow(follower={self.follower_id}, following={self.following_id})>"

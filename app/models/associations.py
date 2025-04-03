@@ -2,9 +2,9 @@
 
 from sqlalchemy import Column, ForeignKey, Integer, Table
 
-from .base import Base
+from app.models.base import Base
 
-# Ассоциативная таблица для связи многие-ко-многим между Tweets и Media
+# Ассоциативная таблица для связи many-to-many между Tweets и Media
 tweet_media_association_table = Table(
     "tweet_media_association",
     Base.metadata,

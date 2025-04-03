@@ -99,7 +99,7 @@ def configure_logging():
     if not log_file_path and settings.PRODUCTION:
         # По умолчанию пишем в logs/app.log в production, если LOG_FILE не задан явно
         log_file_path = Path("logs") / "app.log"
-        # Создаем директорию, если нужно (на случай, если post_init в config не сработал)
+        # Создаем директорию, если нужно (на случай, если model_post_init в config не сработал)
         log_file_path.parent.mkdir(parents=True, exist_ok=True)
 
     if log_file_path:
@@ -109,7 +109,7 @@ def configure_logging():
             rotation="100 MB",  # Ротация при достижении 100 MB
             retention="30 days",  # Хранить логи за последние 30 дней
             compression="zip",  # Сжимать старые логи
-            level="INFO",  # Уровень для записи в файл (можно сделать строже, чем LOG_LEVEL)
+            level=settings.LOG_LEVEL,  # Уровень для записи в файл
             format=serialize,  # Всегда JSON в файле
             enqueue=True,  # Асинхронная запись для производительности
             # Не фильтруем uvicorn.access для файла, т.к. там он может быть полезен

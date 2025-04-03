@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from .base import Base
+from app.models.base import Base
 
 if TYPE_CHECKING:
     from .tweet import Tweet
@@ -27,7 +27,7 @@ class Like(Base):
     __tablename__ = "likes"
 
     # Составной первичный ключ гарантирует, что пользователь может лайкнуть твит только один раз.
-    # onDelete=CASCADE гарантирует, что лайки удаляются, если пользователь или твит удалены.
+    # CASCADE гарантирует, что лайки удаляются, если пользователь или твит удалены.
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
     )
@@ -39,14 +39,5 @@ class Like(Base):
     user: Mapped["User"] = relationship(back_populates="likes")
     tweet: Mapped["Tweet"] = relationship(back_populates="likes")
 
-    # Явное ограничение уникальности (покрывается PK, но хорошо для ясности/возможных изменений)
+    # Явное ограничение уникальности (покрывается составным первичным ключом, но хорошо для ясности)
     __table_args__ = (UniqueConstraint("user_id", "tweet_id", name="uq_user_tweet_like"),)
-
-    def __repr__(self) -> str:
-        """
-        Возвращает строковое представление объекта Like.
-
-        Returns:
-            Строковое представление действия 'лайк'.
-        """
-        return f"<Like(user_id={self.user_id}, tweet_id={self.tweet_id})>"
