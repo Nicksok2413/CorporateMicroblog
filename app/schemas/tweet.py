@@ -1,6 +1,5 @@
 """Схемы Pydantic для модели Tweet."""
 
-import datetime
 from typing import List, Optional
 
 from pydantic import Field
@@ -81,7 +80,7 @@ class TweetAuthor(BaseUser):
         id (int): ID автора.
         name (str): Имя автора.
     """
-    pass  # Наследует id, name
+    pass
 
 
 # noinspection PyDataclass
@@ -99,11 +98,9 @@ class TweetInFeed(TunedModel):
     """
     id: int
     content: str
-    # attachments будет списком URL, формируемым в сервисе/эндпоинте
     attachments: List[str] = Field(default_factory=list)
     author: TweetAuthor
     likes: List[LikeInfo] = Field(default_factory=list)
-    created_at: datetime.datetime  # Добавим дату создания для полезности
 
 
 # noinspection PyDataclass

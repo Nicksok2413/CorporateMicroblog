@@ -38,4 +38,4 @@ class MediaOut(TunedModel):
         url (str): Ссылка на медиафайл
     """
     id: int
-    url: str  # Поле URL будет формироваться в сервисе или эндпоинте
+    url: str
