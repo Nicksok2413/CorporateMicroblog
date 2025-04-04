@@ -12,7 +12,7 @@ from app.core.database import Base, get_db_session
 from app.main import app
 from app.models import User, Tweet, Media, Follow, Like
 
-# --- Базовые фикстуры (как в предыдущем ответе) ---
+# --- Базовые фикстуры ---
 test_engine = create_async_engine(settings.EFFECTIVE_DATABASE_URL, poolclass=NullPool)
 TestingSessionLocal = async_sessionmaker(autocommit=False, autoflush=False, bind=test_engine, class_=AsyncSession,
                                          expire_on_commit=False)
@@ -35,7 +35,7 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
         yield session
         # Важно откатывать изменения после каждого теста для изоляции
         await session.rollback()
-        await session.close()  # Закрываем сессию
+        await session.close()
 
 
 @pytest.fixture(scope="session")

@@ -100,7 +100,7 @@ if settings.STORAGE_PATH_OBJ and settings.STORAGE_PATH_OBJ.is_dir():
     media_directory = settings.STORAGE_PATH_OBJ
 
     log.info(f"Монтирование статики: URL '{media_url_prefix}' -> Директория '{settings.STORAGE_PATH_OBJ}'")
-    app.mount(media_url_prefix, StaticFiles(directory=settings.media_directory), name=media_static_name)
+    app.mount(media_url_prefix, StaticFiles(directory=media_directory), name=media_static_name)
 else:
     log.warning(f"Директория для медиафайлов '{settings.STORAGE_PATH}' не найдена или не настроена."
                 f" Раздача медиа будет недоступна.")

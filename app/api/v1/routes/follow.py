@@ -11,10 +11,9 @@ router = APIRouter(tags=["Follows"])
 
 
 @router.post(
-    # Полный путь /api/v1/users/{user_id}/follow
     "/users/{user_id}/follow",
     response_model=ResultTrue,
-    status_code=status.HTTP_201_CREATED,  # Ресурс 'подписка' создается
+    status_code=status.HTTP_201_CREATED,
     summary="Подписаться на пользователя",
     responses={
         status.HTTP_404_NOT_FOUND: {"description": "Пользователь для подписки не найден"},
@@ -50,7 +49,6 @@ async def follow_a_user(
 
 
 @router.delete(
-    # Полный путь /api_old/v1/users/{user_id}/follow
     "/users/{user_id}/follow",
     response_model=ResultTrue,
     status_code=status.HTTP_200_OK,

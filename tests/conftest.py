@@ -10,7 +10,6 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import (AsyncEngine, AsyncSession,
                                     async_sessionmaker, create_async_engine)
 
-# Импортируем ключевые компоненты приложения
 from app.core.config import settings
 from app.core.database import get_db_session
 from app.main import app as main_app
@@ -38,7 +37,7 @@ async def test_db_engine() -> AsyncGenerator[AsyncEngine, None]:
         pytest.fail("Тесты ожидают SQLite в качестве тестовой БД (TEST_DB_URL).")
 
     engine = create_async_engine(settings.EFFECTIVE_DATABASE_URL, echo=False)  # echo=False для тестов
-    # Создаем все таблицы
+
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)

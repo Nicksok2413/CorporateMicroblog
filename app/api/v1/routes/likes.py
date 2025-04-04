@@ -2,23 +2,18 @@
 
 from fastapi import APIRouter, Path as FastApiPath, status
 
-# Импортируем зависимости, сервисы и схемы
 from app.api.v1.dependencies import CurrentUser, DBSession
 from app.core.logging import log
 from app.schemas import TweetActionResult  # Общий ответ для лайка/анлайка
 from app.services import tweet_service  # Логика лайков находится в TweetService
 
-# Роутер для лайков
-# Префикс будет добавлен при подключении роутера,
-# поэтому здесь указываем только относительный путь от /tweets/{tweet_id}
 router = APIRouter(tags=["Likes"])
 
 
 @router.post(
-    # Полный путь будет /api_old/v1/tweets/{tweet_id}/likes
     "/tweets/{tweet_id}/likes",
     response_model=TweetActionResult,
-    status_code=status.HTTP_201_CREATED,  # 201 или 200? 201 если ресурс 'лайк' создается
+    status_code=status.HTTP_201_CREATED,
     summary="Поставить лайк твиту",
     responses={
         status.HTTP_404_NOT_FOUND: {"description": "Твит не найден"},
@@ -52,7 +47,6 @@ async def like_a_tweet(
 
 
 @router.delete(
-    # Полный путь будет /api_old/v1/tweets/{tweet_id}/likes
     "/tweets/{tweet_id}/likes",
     response_model=TweetActionResult,
     status_code=status.HTTP_200_OK,

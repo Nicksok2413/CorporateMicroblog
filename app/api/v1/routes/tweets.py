@@ -2,28 +2,26 @@
 
 from fastapi import APIRouter, Path as FastApiPath, status
 
-# Импортируем зависимости, сервисы и схемы
 from app.api.v1.dependencies import CurrentUser, DBSession
 from app.core.logging import log
-from app.services import tweet_service  # Импортируем сервис твитов
+from app.services import tweet_service
 from app.schemas import (TweetActionResult, TweetCreateRequest,
                          TweetCreateResult, TweetFeedResult)
 
-# Создаем роутер для твитов
 router = APIRouter(prefix="/tweets", tags=["Tweets"])
 
 
 @router.post(
-    "",  # POST /api_old/v1/tweets
+    "",
     response_model=TweetCreateResult,
     status_code=status.HTTP_201_CREATED,
     summary="Создание нового твита",
     description="Позволяет аутентифицированному пользователю опубликовать новый твит, опционально прикрепив медиа.",
 )
 async def create_new_tweet(
-        tweet_in: TweetCreateRequest,  # Данные из тела запроса (валидируются Pydantic)
-        current_user: CurrentUser,  # Аутентифицированный пользователь
-        db: DBSession,  # Сессия БД
+        tweet_in: TweetCreateRequest,
+        current_user: CurrentUser,
+        db: DBSession,
 ):
     """
     Создает новый твит для текущего пользователя.
