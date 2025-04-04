@@ -6,16 +6,16 @@
 
 Экспортирует экземпляры репозиториев для использования в слое сервисов.
 """
-from .user import user_repo
-from .tweet import tweet_repo
-from .media import media_repo
-from .like import like_repo
-from .follow import follow_repo
+from .follow import FollowRepository
+from .like import LikeRepository
+from .media import MediaRepository
+from .tweet import TweetRepository
+from .user import UserRepository
 
-__all__ = [
-    "user_repo",
-    "tweet_repo",
-    "media_repo",
-    "like_repo",
-    "follow_repo",
-]
+# __all__ = [
+#     "user_repo",
+#     "tweet_repo",
+#     "media_repo",
+#     "like_repo",
+#     "follow_repo",
+# ]

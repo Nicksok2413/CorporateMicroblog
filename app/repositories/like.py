@@ -36,9 +36,9 @@ class LikeRepository:
         result = await db.execute(statement)
         return result.scalars().first()
 
-    async def create_like(self, db: AsyncSession, *, user_id: int, tweet_id: int) -> Like:
+    async def add_like(self, db: AsyncSession, *, user_id: int, tweet_id: int) -> Like:
         """
-        Создает запись о лайке.
+        Создает и добавляет объект Like в сессию.
 
         Args:
             db: Асинхронная сессия SQLAlchemy.
@@ -47,26 +47,15 @@ class LikeRepository:
 
         Returns:
             Like: Созданный объект Like.
-
-        Raises:
-            SQLAlchemyError: В случае ошибки базы данных.
         """
-        log.debug(f"Создание лайка: user_id={user_id}, tweet_id={tweet_id}")
+        log.debug(f"Подготовка к добавлению лайка: user_id={user_id}, tweet_id={tweet_id}")
         db_obj = self.model(user_id=user_id, tweet_id=tweet_id)
         db.add(db_obj)
-
-        try:
-            await db.commit()
-            log.info(f"Лайк успешно создан: user_id={user_id}, tweet_id={tweet_id}")
-            return db_obj
-        except Exception as exc:
-            await db.rollback()
-            log.error(f"Ошибка при создании лайка (user_id={user_id}, tweet_id={tweet_id}): {exc}", exc_info=True)
-            raise exc
+        return db_obj
 
     async def remove_like(self, db: AsyncSession, *, user_id: int, tweet_id: int) -> bool:
         """
-        Удаляет запись о лайке.
+        Выполняет удаление записи о лайке напрямую в БД (без загрузки объекта).
 
         Args:
             db: Асинхронная сессия SQLAlchemy.
@@ -74,33 +63,15 @@ class LikeRepository:
             tweet_id: ID твита.
 
         Returns:
-            bool: True, если лайк был найден и удален, иначе False.
-
-        Raises:
-            SQLAlchemyError: В случае ошибки базы данных при удалении.
+            bool: True, если команда delete выполнена (не гарантирует, что строка была),
+                  False при ошибке (но ошибка должна перехватываться выше).
+                  Сервис должен проверить rowcount после коммита.
         """
-        log.debug(f"Удаление лайка: user_id={user_id}, tweet_id={tweet_id}")
+        log.debug(f"Подготовка к удалению лайка: user_id={user_id}, tweet_id={tweet_id}")
         statement = delete(self.model).where(
             self.model.user_id == user_id,
             self.model.tweet_id == tweet_id
-        )
+        ).returning(self.model.user_id) # Добавим returning, чтобы потом проверить rowcount
 
-        try:
-            result = await db.execute(statement)
-            await db.commit()
-
-            # result.rowcount > 0 означает, что строка была удалена
-            if result.rowcount() > 0:
-                log.info(f"Лайк успешно удален: user_id={user_id}, tweet_id={tweet_id}")
-                return True
-            else:
-                log.warning(f"Лайк для удаления не найден: user_id={user_id}, tweet_id={tweet_id}")
-                return False
-        except Exception as exc:
-            await db.rollback()
-            log.error(f"Ошибка при удалении лайка (user_id={user_id}, tweet_id={tweet_id}): {exc}", exc_info=True)
-            raise exc
-
-
-# Создаем экземпляр репозитория
-like_repo = LikeRepository()
+        await db.execute(statement)
+        return True

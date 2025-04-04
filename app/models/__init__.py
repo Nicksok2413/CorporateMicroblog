@@ -13,12 +13,12 @@ from .tweet import Tweet
 from .user import User
 
 # Можно определить __all__, если хотим явно указать экспортируемые имена
-__all__ = [
-    "Base",
-    "User",
-    "Tweet",
-    "Media",
-    "Like",
-    "Follow",
-    "tweet_media_association_table",
-]
+# __all__ = [
+#     "Base",
+#     "User",
+#     "Tweet",
+#     "Media",
+#     "Like",
+#     "Follow",
+#     "tweet_media_association_table",
+# ]

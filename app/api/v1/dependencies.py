@@ -8,8 +8,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db_session
 from app.core.exceptions import AuthenticationRequiredError, PermissionDeniedError
 from app.core.logging import log
-from app.models.user import User
-from app.repositories import user_repo
+from app.models import Media, Tweet, User
+from app.repositories import (
+    FollowRepository, LikeRepository, MediaRepository, TweetRepository, UserRepository
+)
+from app.services import (
+    FollowService, MediaService, TweetService, UserService
+)
 
 # --- Типизация для инъекции зависимостей ---
 
@@ -17,10 +22,90 @@ from app.repositories import user_repo
 DBSession = Annotated[AsyncSession, Depends(get_db_session)]
 
 
+# --- Фабрики Репозиториев ---
+
+def get_follow_repository() -> FollowRepository:
+    # FollowRepository не зависит от модели в конструкторе
+    return FollowRepository()
+
+
+def get_like_repository() -> LikeRepository:
+    # LikeRepository не зависит от модели в конструкторе
+    return LikeRepository()
+
+
+def get_media_repository() -> MediaRepository:
+    return MediaRepository(Media)
+
+
+def get_tweet_repository() -> TweetRepository:
+    return TweetRepository(Tweet)
+
+
+def get_user_repository() -> UserRepository:
+    return UserRepository(User)
+
+
+# Типизация для репозиториев
+FollowRepo = Annotated[FollowRepository, Depends(get_follow_repository)]
+LikeRepo = Annotated[LikeRepository, Depends(get_like_repository)]
+MediaRepo = Annotated[MediaRepository, Depends(get_media_repository)]
+TweetRepo = Annotated[TweetRepository, Depends(get_tweet_repository)]
+UserRepo = Annotated[UserRepository, Depends(get_user_repository)]
+
+
+# --- Фабрики Сервисов ---
+
+# FollowService зависит от FollowRepo и UserRepo
+def get_follow_service(
+        repo: FollowRepo,
+        user_repo: UserRepo
+) -> FollowService:
+    return FollowService(repo=repo, user_repository=user_repo)
+
+
+# MediaService зависит только от MediaRepo
+def get_media_service(repo: MediaRepo) -> MediaService:
+    return MediaService(repo=repo)
+
+
+# TweetService зависит от многих репозиториев и MediaService
+def get_tweet_service(
+        repo: TweetRepo,
+        media_repo: MediaRepo,
+        like_repo: LikeRepo,
+        follow_repo: FollowRepo,
+        media_svc: Annotated[MediaService, Depends(get_media_service)]  # Зависит от другого сервиса
+) -> TweetService:
+    return TweetService(
+        repo=repo,
+        media_repo=media_repo,
+        like_repo=like_repo,
+        follow_repo=follow_repo,
+        media_service=media_svc
+    )
+
+
+# UserService зависит от UserRepo и FollowRepo
+def get_user_service(
+        repo: UserRepo,
+        follow_repo: FollowRepo
+) -> UserService:
+    return UserService(repo=repo, follow_repo=follow_repo)
+
+
+# Типизация для сервисов
+FollowSvc = Annotated[FollowService, Depends(get_follow_service)]
+MediaSvc = Annotated[MediaService, Depends(get_media_service)]
+TweetSvc = Annotated[TweetService, Depends(get_tweet_service)]
+UserSvc = Annotated[UserService, Depends(get_user_service)]
+
+
 # --- Зависимость для получения текущего пользователя ---
 
 async def get_current_user(
         db: DBSession,
+        user_repo: UserRepo,
         api_key: Annotated[str | None, Header(description="Ключ API для аутентификации пользователя.")] = None
 ) -> User:
     """
@@ -41,10 +126,8 @@ async def get_current_user(
     """
     if api_key is None:
         log.warning("Запрос без API ключа.")
-        # Используем кастомное исключение для 401
         raise AuthenticationRequiredError(
             detail="Отсутствует заголовок api-key.",
-            # Добавляем заголовок WWW-Authenticate через extra в исключении
             extra={"headers": {"WWW-Authenticate": "Header"}}
         )
 
@@ -53,7 +136,6 @@ async def get_current_user(
 
     if user is None:
         log.warning(f"Недействительный API ключ: {api_key[:4]}...{api_key[-4:]}")
-        # Используем кастомное исключение для 403
         raise PermissionDeniedError(detail="Недействительный API ключ.")
 
     log.info(f"Пользователь ID {user.id} ({user.name}) аутентифицирован.")

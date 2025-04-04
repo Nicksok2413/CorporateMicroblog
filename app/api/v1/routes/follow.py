@@ -1,11 +1,11 @@
 """API роуты для подписок пользователей."""
 
-from fastapi import APIRouter, Path as FastApiPath, status
+from fastapi import APIRouter, Depends, Path as FastApiPath, status
 
-from app.api.v1.dependencies import CurrentUser, DBSession
+from app.api.v1.dependencies import CurrentUser, DBSession, FollowSvc, get_follow_service
 from app.core.logging import log
 from app.schemas import ResultTrue
-from app.services import follow_service
+from app.services import FollowService
 
 router = APIRouter(tags=["Follows"])
 
@@ -24,6 +24,7 @@ router = APIRouter(tags=["Follows"])
 async def follow_a_user(
         current_user: CurrentUser,
         db: DBSession,
+        follow_service: FollowSvc,
         user_id: int = FastApiPath(..., description="ID пользователя, на которого нужно подписаться", gt=0),
 ):
     """
@@ -61,6 +62,7 @@ async def follow_a_user(
 async def unfollow_a_user(
         current_user: CurrentUser,
         db: DBSession,
+        follow_service: FollowSvc,
         user_id: int = FastApiPath(..., description="ID пользователя, от которого нужно отписаться", gt=0),
 ):
     """

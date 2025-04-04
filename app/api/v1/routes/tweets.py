@@ -1,10 +1,10 @@
 """API роуты для работы с твитами (создание, удаление, лента)."""
 
-from fastapi import APIRouter, Path as FastApiPath, status
+from fastapi import APIRouter, Depends, Path as FastApiPath, status
 
-from app.api.v1.dependencies import CurrentUser, DBSession
+from app.api.v1.dependencies import CurrentUser, DBSession, TweetSvc, get_tweet_service
 from app.core.logging import log
-from app.services import tweet_service
+from app.services import TweetService
 from app.schemas import (TweetActionResult, TweetCreateRequest,
                          TweetCreateResult, TweetFeedResult)
 
@@ -22,6 +22,7 @@ async def create_new_tweet(
         tweet_in: TweetCreateRequest,
         current_user: CurrentUser,
         db: DBSession,
+        tweet_service: TweetSvc,
 ):
     """
     Создает новый твит для текущего пользователя.
@@ -55,9 +56,7 @@ async def create_new_tweet(
 async def get_tweets_feed(
         current_user: CurrentUser,
         db: DBSession,
-        # Можно добавить параметры пагинации (limit, offset), если нужно
-        # limit: int = Query(50, gt=0, le=100),
-        # offset: int = Query(0, ge=0),
+        tweet_service: TweetSvc,
 ):
     """
     Возвращает ленту твитов для текущего пользователя.
@@ -88,6 +87,7 @@ async def get_tweets_feed(
 async def delete_existing_tweet(
         current_user: CurrentUser,
         db: DBSession,
+        tweet_service: TweetSvc,
         tweet_id: int = FastApiPath(..., description="ID твита для удаления", gt=0),
 ):
     """

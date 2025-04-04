@@ -1,11 +1,11 @@
 """API роуты для лайков твитов."""
 
-from fastapi import APIRouter, Path as FastApiPath, status
+from fastapi import APIRouter, Depends, Path as FastApiPath, status
 
-from app.api.v1.dependencies import CurrentUser, DBSession
+from app.api.v1.dependencies import CurrentUser, DBSession, TweetSvc, get_tweet_service
 from app.core.logging import log
 from app.schemas import TweetActionResult  # Общий ответ для лайка/анлайка
-from app.services import tweet_service  # Логика лайков находится в TweetService
+from app.services import TweetService  # Логика лайков находится в TweetService
 
 router = APIRouter(tags=["Likes"])
 
@@ -23,6 +23,7 @@ router = APIRouter(tags=["Likes"])
 async def like_a_tweet(
         current_user: CurrentUser,
         db: DBSession,
+        tweet_service: TweetSvc,
         tweet_id: int = FastApiPath(..., description="ID твита для лайка", gt=0),
 ):
     """
@@ -58,6 +59,7 @@ async def like_a_tweet(
 async def unlike_a_tweet(
         current_user: CurrentUser,
         db: DBSession,
+        tweet_service: TweetSvc,
         tweet_id: int = FastApiPath(..., gt=0, description="ID твита для снятия лайка"),
 ):
     """
