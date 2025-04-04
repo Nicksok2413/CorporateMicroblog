@@ -9,7 +9,7 @@ from app.models.user import User
 from app.repositories.base import BaseRepository
 
 
-class UserRepository(BaseRepository[User, None, None]):
+class UserRepository(BaseRepository[User, None]):
     """
     Репозиторий для выполнения CRUD операций с моделью User.
 

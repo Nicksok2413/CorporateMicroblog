@@ -12,7 +12,7 @@ from app.repositories.base import BaseRepository
 from app.schemas.tweet import TweetCreateInternal
 
 
-class TweetRepository(BaseRepository[Tweet, TweetCreateInternal, None]):
+class TweetRepository(BaseRepository[Tweet, TweetCreateInternal]):
     """Репозиторий для выполнения CRUD операций с моделью Tweet."""
 
     async def create_with_author_and_media(
