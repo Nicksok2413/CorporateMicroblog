@@ -36,9 +36,9 @@ class FollowRepository:
         result = await db.execute(statement)
         return result.scalars().first()
 
-    async def create_follow(self, db: AsyncSession, *, follower_id: int, following_id: int) -> Follow:
+    async def add_follow(self, db: AsyncSession, *, follower_id: int, following_id: int) -> Follow:
         """
-        Создает запись о подписке.
+        Создает и добавляет объект Follow в сессию.
 
         Args:
             db: Асинхронная сессия SQLAlchemy.
@@ -47,26 +47,15 @@ class FollowRepository:
 
         Returns:
             Follow: Созданный объект Follow.
-
-        Raises:
-            SQLAlchemyError: В случае ошибки базы данных.
         """
-        log.debug(f"Создание подписки: follower_id={follower_id}, following_id={following_id}")
+        log.debug(f"Подготовка к добавлению подписки: follower_id={follower_id}, following_id={following_id}")
         db_obj = self.model(follower_id=follower_id, following_id=following_id)
         db.add(db_obj)
-
-        try:
-            await db.commit()
-            log.info(f"Подписка успешно создана: follower_id={follower_id}, following_id={following_id}")
-            return db_obj
-        except Exception as exc:
-            await db.rollback()
-            log.error(f"Ошибка при создании подписки: {exc}", exc_info=True)
-            raise exc
+        return db_obj
 
     async def remove_follow(self, db: AsyncSession, *, follower_id: int, following_id: int) -> bool:
         """
-        Удаляет запись о подписке.
+        Выполняет удаление записи о подписке напрямую в БД.
 
         Args:
             db: Асинхронная сессия SQLAlchemy.
@@ -74,31 +63,17 @@ class FollowRepository:
             following_id: ID пользователя, на которого подписаны.
 
         Returns:
-            bool: True, если подписка была найдена и удалена, иначе False.
-
-        Raises:
-            SQLAlchemyError: В случае ошибки базы данных при удалении.
+             bool: True, если команда delete выполнена.
+                   Сервис должен проверить rowcount после коммита.
         """
-        log.debug(f"Удаление подписки: follower_id={follower_id}, following_id={following_id}")
+        log.debug(f"Подготовка к удалению подписки: follower_id={follower_id}, following_id={following_id}")
         statement = delete(self.model).where(
             self.model.follower_id == follower_id,
             self.model.following_id == following_id
-        )
+        ).returning(self.model.follower_id) # Добавим returning, чтобы потом проверить rowcount
 
-        try:
-            result = await db.execute(statement)
-            await db.commit()
-
-            if result.rowcount() > 0:
-                log.info(f"Подписка успешно удалена: follower_id={follower_id}, following_id={following_id}")
-                return True
-            else:
-                log.warning(f"Подписка для удаления не найдена: follower_id={follower_id}, following_id={following_id}")
-                return False
-        except Exception as exc:
-            await db.rollback()
-            log.error(f"Ошибка при удалении подписки: {exc}", exc_info=True)
-            raise exc
+        await db.execute(statement)
+        return True
 
     async def get_following_ids(self, db: AsyncSession, *, follower_id: int) -> List[int]:
         """
@@ -175,7 +150,3 @@ class FollowRepository:
         )
         res = await db.execute(stmt)
         return res.scalars().all()
-
-
-# Создаем экземпляр репозитория
-follow_repo = FollowRepository()

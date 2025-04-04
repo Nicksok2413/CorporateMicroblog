@@ -4,7 +4,6 @@ from typing import Any, Generic, List, Optional, Type, TypeVar, Union, Dict
 
 from pydantic import BaseModel
 from sqlalchemy import select
-from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.logging import log
@@ -68,39 +67,38 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         log.debug(f"Найдено {len(instances)} записей {self.model.__name__}.")
         return list(instances)
 
+    async def add(self, db: AsyncSession, *, db_obj: ModelType) -> ModelType:
+        """
+        Добавляет объект модели в сессию. Коммит должен быть вызван отдельно.
+
+        Args:
+            db: Асинхронная сессия SQLAlchemy.
+            db_obj: Экземпляр модели для добавления.
+
+        Returns:
+            ModelType: Добавленный объект модели.
+        """
+        log.debug(f"Добавление {self.model.__name__} в сессию (ID: {getattr(db_obj, 'id', 'new')})")
+        db.add(db_obj)
+        return db_obj
+
     async def create(self, db: AsyncSession, *, obj_in: CreateSchemaType) -> ModelType:
         """
-        Создает новую запись в базе данных.
+        Создает и добавляет новый объект в сессию на основе Pydantic схемы.
+        Коммит должен быть вызван отдельно.
 
         Args:
             db: Асинхронная сессия SQLAlchemy.
             obj_in: Pydantic схема с данными для создания.
 
         Returns:
-            ModelType: Созданный объект модели.
-
-        Raises:
-            SQLAlchemyError: В случае ошибки базы данных при создании.
+            ModelType: Созданный объект модели (еще не в БД).
         """
-        # Используем model_dump() для Pydantic V2
         obj_in_data = obj_in.model_dump()
-        log.debug(f"Создание нового {self.model.__name__} с данными: {obj_in_data}")
+        log.debug(f"Подготовка к созданию {self.model.__name__} с данными: {obj_in_data}")
         db_obj = self.model(**obj_in_data)
-        db.add(db_obj)
-
-        try:
-            await db.commit()
-            await db.refresh(db_obj)
-            log.info(f"Успешно создан {self.model.__name__} с ID: {db_obj.id}")
-            return db_obj
-        except IntegrityError as exc:
-            await db.rollback()
-            log.error(f"Ошибка целостности при создании {self.model.__name__}: {exc}")
-            raise exc
-        except SQLAlchemyError as exc:
-            await db.rollback()
-            log.error(f"Ошибка БД при создании {self.model.__name__}: {exc}")
-            raise exc
+        await self.add(db, db_obj=db_obj)
+        return db_obj
 
     async def update(
             self,
@@ -110,7 +108,7 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             obj_in: Union[UpdateSchemaType, Dict[str, Any]]
     ) -> ModelType:
         """
-        Обновляет существующую запись в базе данных.
+         Обновляет атрибуты существующего объекта модели.
 
         Args:
             db: Асинхронная сессия SQLAlchemy.
@@ -118,16 +116,12 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             obj_in: Pydantic схема или словарь с данными для обновления.
 
         Returns:
-            ModelType: Обновленный объект модели.
-
-        Raises:
-            SQLAlchemyError: В случае ошибки базы данных при обновлении.
+            ModelType: Объект модели с обновленными атрибутами.
         """
         if isinstance(obj_in, dict):
             update_data = obj_in
         else:
-            # exclude_unset=True - обновляем только переданные поля
-            update_data = obj_in.model_dump(exclude_unset=True)
+            update_data = obj_in.model_dump(exclude_unset=True)  # exclude_unset=True - обновляем только переданные поля
 
         log.debug(f"Обновление {self.model.__name__} с ID {db_obj.id}. Данные: {update_data}")
 
@@ -141,54 +135,26 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             else:
                 log.warning(f"Попытка обновить несуществующее поле '{field}' в {self.model.__name__}")
 
-        db.add(db_obj)  # Добавляем объект в сессию (на случай, если он был отсоединен)
-
-        try:
-            await db.commit()
-            await db.refresh(db_obj)
-            log.info(f"Успешно обновлен {self.model.__name__} с ID: {db_obj.id}")
-            return db_obj
-        except IntegrityError as exc:
-            await db.rollback()
-            log.error(f"Ошибка целостности при обновлении {self.model.__name__} (ID: {db_obj.id}): {exc}")
-            raise exc
-        except SQLAlchemyError as exc:
-            await db.rollback()
-            log.error(f"Ошибка БД при обновлении {self.model.__name__} (ID: {db_obj.id}): {exc}")
-            raise exc
+        await self.add(db, db_obj=db_obj)
+        return db_obj
 
     async def remove(self, db: AsyncSession, *, obj_id: Any) -> Optional[ModelType]:
         """
-        Удаляет запись по её ID.
+        Помечает объект для удаления в сессии по его ID.
 
         Args:
             db: Асинхронная сессия SQLAlchemy.
             obj_id: Идентификатор записи для удаления.
 
         Returns:
-            Optional[ModelType]: Удаленный объект модели или None, если не найден.
-
-        Raises:
-            SQLAlchemyError: В случае ошибки базы данных при удалении.
+            Optional[ModelType]: Объект, помеченный для удаления, или None, если не найден.
         """
-        log.debug(f"Удаление {self.model.__name__} по ID: {obj_id}")
+        log.debug(f"Подготовка к удалению {self.model.__name__} по ID: {obj_id}")
         obj = await self.get(db, obj_id=obj_id)
-
         if obj:
-            try:
-                await db.delete(obj)
-                await db.commit()
-                log.info(f"Успешно удален {self.model.__name__} с ID: {obj_id}")
-                return obj
-            except IntegrityError as exc:
-                # Это маловероятно при удалении, но возможно при сложных каскадах
-                await db.rollback()
-                log.error(f"Ошибка целостности при удалении {self.model.__name__} (ID: {obj_id}): {exc}")
-                raise exc
-            except SQLAlchemyError as exc:
-                await db.rollback()
-                log.error(f"Ошибка БД при удалении {self.model.__name__} (ID: {obj_id}): {exc}")
-                raise exc
+            await db.delete(obj)
+            log.debug(f"{self.model.__name__} с ID {obj_id} помечен для удаления.")
+            return obj
         else:
             log.warning(f"{self.model.__name__} с ID {obj_id} не найден для удаления.")
             return None

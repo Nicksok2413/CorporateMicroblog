@@ -29,7 +29,3 @@ class UserRepository(BaseRepository[User, None, None]):
         """
         result = await db.execute(select(self.model).where(self.model.api_key == api_key))
         return result.scalars().first()
-
-
-# Создаем экземпляр репозитория для использования в других частях приложения
-user_repo = UserRepository(User)

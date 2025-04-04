@@ -11,7 +11,3 @@ class MediaRepository(BaseRepository[Media, MediaCreate, None]):
     """
     # В данном случае базовых CRUD достаточно
     pass
-
-
-# Создаем экземпляр репозитория
-media_repo = MediaRepository(Media)

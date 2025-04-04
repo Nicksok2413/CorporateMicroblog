@@ -80,7 +80,7 @@ class FollowService:
             raise ConflictError("Вы уже подписаны на этого пользователя.")
 
         try:
-            await self.repo.create_follow(db, follower_id=follower_id, following_id=user_to_follow_id)
+            await self.repo.add_follow(db, follower_id=follower_id, following_id=user_to_follow_id)
             log.success(f"Пользователь ID {follower_id} успешно подписался на пользователя ID {user_to_follow_id}")
         except IntegrityError as exc:
             # На случай гонки запросов или если проверка выше не сработала

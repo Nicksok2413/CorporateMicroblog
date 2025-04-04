@@ -26,7 +26,7 @@ async def test_like_tweet_service_success(mocker):
     # Настраиваем моки
     mock_tweet_repo.get.return_value = Tweet(id=1, author_id=2)  # Твит существует
     mock_like_repo.get_like.return_value = None  # Лайка еще нет
-    mock_like_repo.create_like.return_value = Like(user_id=1, tweet_id=1)  # Успешное создание
+    mock_like_repo.add_like.return_value = Like(user_id=1, tweet_id=1)  # Успешное создание
 
     db_session_mock = AsyncMock()
     current_user = User(id=1)
@@ -37,7 +37,7 @@ async def test_like_tweet_service_success(mocker):
     # Проверки
     mock_tweet_repo.get.assert_called_once_with(db_session_mock, id=1)
     mock_like_repo.get_like.assert_called_once_with(db=db_session_mock, user_id=1, tweet_id=1)
-    mock_like_repo.create_like.assert_called_once_with(db=db_session_mock, user_id=1, tweet_id=1)
+    mock_like_repo.add_like.assert_called_once_with(db=db_session_mock, user_id=1, tweet_id=1)
 
 
 @pytest.mark.asyncio
@@ -55,7 +55,7 @@ async def test_like_tweet_service_already_liked(mocker):
     with pytest.raises(ConflictError):
         await tweet_service.like_tweet(db=db_session_mock, current_user=current_user, tweet_id=1)
 
-    mock_like_repo.create_like.assert_not_called()
+    mock_like_repo.add_like.assert_not_called()
 
 
 @pytest.mark.asyncio
@@ -73,7 +73,7 @@ async def test_like_tweet_service_tweet_not_found(mocker):
         await tweet_service.like_tweet(db=db_session_mock, current_user=current_user, tweet_id=99)
 
     mock_like_repo.get_like.assert_not_called()
-    mock_like_repo.create_like.assert_not_called()
+    mock_like_repo.add_like.assert_not_called()
 
 
 # --- Тесты для unlike_tweet ---

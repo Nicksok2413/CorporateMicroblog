@@ -21,7 +21,7 @@ async def test_follow_user_service_success(mocker):
     # Настройка моков
     mock_user_repo.get.return_value = user_to_follow  # Целевой пользователь существует
     mock_follow_repo.get_follow.return_value = None  # Подписки еще нет
-    mock_follow_repo.create_follow.return_value = Follow(follower_id=1, following_id=2)
+    mock_follow_repo.add_follow.return_value = Follow(follower_id=1, following_id=2)
 
     db_session_mock = AsyncMock()
 
@@ -33,7 +33,7 @@ async def test_follow_user_service_success(mocker):
     # Проверки
     mock_user_repo.get.assert_called_once_with(db_session_mock, id=2)
     mock_follow_repo.get_follow.assert_called_once_with(db=db_session_mock, follower_id=1, following_id=2)
-    mock_follow_repo.create_follow.assert_called_once_with(db=db_session_mock, follower_id=1, following_id=2)
+    mock_follow_repo.add_follow.assert_called_once_with(db=db_session_mock, follower_id=1, following_id=2)
 
 
 @pytest.mark.asyncio
@@ -52,7 +52,7 @@ async def test_follow_user_service_self(mocker):
 
     mock_user_repo.get.assert_not_called()
     mock_follow_repo.get_follow.assert_not_called()
-    mock_follow_repo.create_follow.assert_not_called()
+    mock_follow_repo.add_follow.assert_not_called()
 
 
 @pytest.mark.asyncio
@@ -72,7 +72,7 @@ async def test_follow_user_service_target_not_found(mocker):
         )
 
     mock_follow_repo.get_follow.assert_not_called()
-    mock_follow_repo.create_follow.assert_not_called()
+    mock_follow_repo.add_follow.assert_not_called()
 
 
 @pytest.mark.asyncio
@@ -93,7 +93,7 @@ async def test_follow_user_service_already_following(mocker):
             db=db_session_mock, current_user=current_user, user_to_follow_id=2
         )
 
-    mock_follow_repo.create_follow.assert_not_called()
+    mock_follow_repo.add_follow.assert_not_called()
 
 
 # --- Тесты для unfollow_user ---

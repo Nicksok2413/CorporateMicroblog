@@ -150,7 +150,7 @@ class TweetService(BaseService[Tweet, type(tweet_repo)]):
             raise ConflictError("Вы уже лайкнули этот твит.")
 
         try:
-            await like_repo.create_like(db, user_id=current_user.id, tweet_id=tweet_id)
+            await like_repo.add_like(db, user_id=current_user.id, tweet_id=tweet_id)
             log.success(f"Лайк от пользователя ID {current_user.id} на твит ID {tweet_id} успешно поставлен.")
         except IntegrityError as exc:
             # На случай гонки запросов или если проверка выше не сработала
