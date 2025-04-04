@@ -13,12 +13,12 @@ from app.core.config import settings
 from app.core.exceptions import BadRequestError, MediaValidationError
 from app.core.logging import log
 from app.models.media import Media
-from app.repositories import media_repo
+from app.repositories import MediaRepository
 from app.schemas.media import MediaCreate
 from app.services.base_service import BaseService
 
 
-class MediaService(BaseService[Media, type(media_repo)]):
+class MediaService(BaseService[Media, MediaRepository]):
     """
     Сервис для управления медиафайлами.
 
@@ -105,7 +105,6 @@ class MediaService(BaseService[Media, type(media_repo)]):
             log.error("Директория для сохранения медиа не определена в настройках!")
             raise BadRequestError("Ошибка конфигурации сервера: не настроено хранилище медиа.")
 
-        # Убедимся, что storage_dir это Path объект
         if isinstance(storage_dir, str):
             storage_dir = Path(storage_dir)
 
@@ -116,44 +115,59 @@ class MediaService(BaseService[Media, type(media_repo)]):
 
         log.info(f"Сохранение медиафайла '{filename}' как '{unique_filename}' в '{save_path}'")
 
-        try:
-            # Асинхронная запись файла
-            async with await aiofiles.open(save_path, 'wb') as out_file:
-                while content := file.read(1024 * 1024):  # Читаем по 1MB
-                    if isinstance(content, bytes):
-                        await out_file.write(content)
-                    else:
-                        log.error(f"Получен некорректный тип данных ({type(content)}) при чтении файла {filename}")
-                        raise TypeError("Ошибка чтения файла: ожидались байты.")
+        media: Optional[Media] = None
 
-            log.success(f"Файл '{unique_filename}' успешно сохранен.")
-        except (IOError, TypeError, Exception) as exc:
-            log.error(f"Ошибка при сохранении файла '{unique_filename}': {exc}", exc_info=True)
-            # Пытаемся удалить частично записанный файл
-            if save_path.exists():
-                try:
-                    save_path.unlink()
-                    log.info(f"Удален частично сохраненный файл '{unique_filename}'.")
-                except OSError as unlink_err:
-                    log.error(f"Не удалось удалить частично сохраненный файл '{unique_filename}': {unlink_err}")
-            raise BadRequestError("Ошибка при сохранении файла.") from exc
-
-        # Создаем запись в БД
         try:
-            media_in = MediaCreate(file_path=relative_path)  # Сохраняем относительный путь
-            media = await self.repo.create(db=db, obj_in=media_in)
-            log.info(f"Запись для медиа ID {media.id} (файл '{unique_filename}') создана в БД.")
-            return media
-        except Exception as exc:
-            log.error(f"Ошибка при создании записи Media в БД для файла '{unique_filename}': {exc}", exc_info=True)
-            # Если запись в БД не удалась, удаляем сохраненный файл
-            if save_path.exists():
-                try:
-                    save_path.unlink()
-                    log.info(f"Удален файл '{unique_filename}', т.к. не удалось создать запись в БД.")
-                except OSError as unlink_err:
-                    log.error(f"Не удалось удалить файл '{unique_filename}' после ошибки БД: {unlink_err}")
-            raise BadRequestError("Ошибка при сохранении информации о медиафайле.") from exc
+            # --- Этап 1: Сохранение файла ---
+            try:
+                # Асинхронная запись файла
+                async with await aiofiles.open(save_path, 'wb') as out_file:
+                    while content := file.read(1024 * 1024):  # Читаем по 1MB
+                        if isinstance(content, bytes):
+                            await out_file.write(content)
+                        else:
+                            log.error(f"Получен некорректный тип данных ({type(content)}) при чтении файла {filename}")
+                            raise TypeError("Ошибка чтения файла: ожидались байты.")
+                log.success(f"Файл '{unique_filename}' успешно сохранен.")
+
+            except (IOError, TypeError, Exception) as io_exc:
+                log.error(f"Ошибка при сохранении файла '{unique_filename}': {io_exc}", exc_info=True)
+                # Пытаемся удалить частично записанный файл
+                if save_path.exists():
+                    try: save_path.unlink()
+                    except OSError: pass
+                raise BadRequestError("Ошибка при сохранении файла.") from io_exc
+
+            # --- Этап 2: Создание записи в БД (в транзакции) ---
+            try:
+                media_in = MediaCreate(file_path=relative_path)  # Сохраняем относительный путь
+                media = await self.repo.create(db=db, obj_in=media_in)
+                await db.commit()
+                await db.refresh(media)
+                log.info(f"Запись для медиа ID {media.id} (файл '{unique_filename}') создана в БД.")
+                return media
+
+            except Exception as db_exc:
+                await db.rollback()  # Откат при ошибке БД
+                log.error(f"Ошибка при создании записи Media в БД для файла '{unique_filename}': {db_exc}", exc_info=True)
+                # Если запись в БД не удалась, удаляем сохраненный файл
+                if save_path.exists():
+                    try:
+                        save_path.unlink()
+                        log.info(f"Удален файл '{unique_filename}', т.к. не удалось создать запись в БД.")
+                    except OSError as unlink_err:
+                        log.error(f"Не удалось удалить файл '{unique_filename}' после ошибки БД: {unlink_err}")
+                raise BadRequestError("Ошибка при сохранении информации о медиафайле.") from db_exc
+
+        except Exception as outer_exc:
+             log.exception(f"Непредвиденная внешняя ошибка при сохранении медиа {filename}: {outer_exc}")
+             # Гарантируем откат, если транзакция была начата
+             await db.rollback()
+             # Попытка удалить файл, если он существует
+             if save_path.exists():
+                 try: save_path.unlink()
+                 except OSError: pass
+             raise BadRequestError("Общая ошибка при сохранении медиа.") from outer_exc
 
     def get_media_url(self, media: Media) -> str:
         """
@@ -182,7 +196,3 @@ class MediaService(BaseService[Media, type(media_repo)]):
             Найденный медиафайл или None.
         """
         return await self.repo.get(db, media_id)
-
-
-# Создаем экземпляр сервиса
-media_service = MediaService(media_repo)

@@ -7,17 +7,21 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.exceptions import NotFoundError
 from app.core.logging import log
 from app.models import Follow, User
-from app.repositories import follow_repo, user_repo
+from app.repositories import FollowRepository, UserRepository
 from app.schemas.user import BaseUser, UserProfile
 from app.services.base_service import BaseService
 
 
-class UserService(BaseService[User, type(user_repo)]):
+class UserService(BaseService[User, UserRepository]):
     """
     Сервис для бизнес-логики, связанной с пользователями.
 
     Включает получение профилей, управление подписками (через FollowService).
     """
+
+    def __init__(self, repo: UserRepository, follow_repo: FollowRepository):
+        super().__init__(repo)
+        self.follow_repo = follow_repo
 
     async def get_user_by_id(self, db: AsyncSession, user_id: int) -> Optional[User]:
         """
@@ -87,8 +91,8 @@ class UserService(BaseService[User, type(user_repo)]):
         user = await self._get_user_or_404(db, user_id)
 
         # Получаем подписки и подписчиков с загруженными данными пользователей
-        following_relations: Sequence[Follow] = await follow_repo.get_following_with_users(db, follower_id=user_id)
-        follower_relations: Sequence[Follow] = await follow_repo.get_followers_with_users(db, following_id=user_id)
+        following_relations: Sequence[Follow] = await self.follow_repo.get_following_with_users(db, follower_id=user_id)
+        follower_relations: Sequence[Follow] = await self.follow_repo.get_followers_with_users(db, following_id=user_id)
 
         # Преобразуем данные в формат схемы BaseUser
         following_list = [BaseUser.model_validate(f.followed_user) for f in following_relations]
@@ -102,7 +106,3 @@ class UserService(BaseService[User, type(user_repo)]):
         )
         log.info(f"Профиль для пользователя ID {user_id} успешно сформирован.")
         return profile
-
-
-# Создаем экземпляр сервиса
-user_service = UserService(user_repo)

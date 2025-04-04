@@ -71,7 +71,7 @@ class FollowRepository:
             self.model.follower_id == follower_id,
             self.model.following_id == following_id
         ).returning(self.model.follower_id) # Добавим returning, чтобы потом проверить rowcount
-
+        # TODO: rowcount в сервисе мы не проверяем
         await db.execute(statement)
         return True
 

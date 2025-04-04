@@ -9,13 +9,13 @@ from app.core.exceptions import (BadRequestError, ConflictError,
                                  PermissionDeniedError, NotFoundError)
 from app.core.logging import log
 from app.models import Media, Tweet, User
-from app.repositories import follow_repo, like_repo, media_repo, tweet_repo
+from app.repositories import FollowRepository, LikeRepository, MediaRepository, TweetRepository
 from app.schemas.tweet import LikeInfo, TweetAuthor, TweetCreateRequest, TweetFeedResult, TweetInFeed
 from app.services.base_service import BaseService
 from app.services.media_service import media_service
 
 
-class TweetService(BaseService[Tweet, type(tweet_repo)]):
+class TweetService(BaseService[Tweet, type(LikeRepository)]):
     """
     Сервис для бизнес-логики, связанной с твитами.
 
@@ -77,7 +77,7 @@ class TweetService(BaseService[Tweet, type(tweet_repo)]):
         if tweet_data.tweet_media_ids:
             log.debug(f"Прикрепление медиа ID: {tweet_data.tweet_media_ids}")
             for media_id in tweet_data.tweet_media_ids:
-                media = await media_repo.get(db, obj_id=media_id)
+                media = await MediaRepository.get(db, obj_id=media_id)
                 if not media:
                     log.warning(f"Медиа с ID {media_id} не найдено при создании твита.")
                     raise NotFoundError(f"Медиафайл с ID {media_id} не найден.")
@@ -144,13 +144,13 @@ class TweetService(BaseService[Tweet, type(tweet_repo)]):
         await self._get_tweet_or_404(db, tweet_id)
 
         # Проверяем, не лайкнул ли уже
-        existing_like = await like_repo.get_like(db, user_id=current_user.id, tweet_id=tweet_id)
+        existing_like = await LikeRepository.get_like(db, user_id=current_user.id, tweet_id=tweet_id)
         if existing_like:
             log.warning(f"Пользователь ID {current_user.id} уже лайкнул твит ID {tweet_id}.")
             raise ConflictError("Вы уже лайкнули этот твит.")
 
         try:
-            await like_repo.add_like(db, user_id=current_user.id, tweet_id=tweet_id)
+            await LikeRepository.add_like(db, user_id=current_user.id, tweet_id=tweet_id)
             log.success(f"Лайк от пользователя ID {current_user.id} на твит ID {tweet_id} успешно поставлен.")
         except IntegrityError as exc:
             # На случай гонки запросов или если проверка выше не сработала
@@ -176,7 +176,7 @@ class TweetService(BaseService[Tweet, type(tweet_repo)]):
         """
         log.info(f"Пользователь ID {current_user.id} убирает лайк с твита ID {tweet_id}")
 
-        removed = await like_repo.remove_like(db, user_id=current_user.id, tweet_id=tweet_id)
+        removed = await LikeRepository.remove_like(db, user_id=current_user.id, tweet_id=tweet_id)
 
         if not removed:
             log.warning(f"Лайк от пользователя ID {current_user.id} на твит ID {tweet_id} не найден для удаления.")
@@ -199,7 +199,7 @@ class TweetService(BaseService[Tweet, type(tweet_repo)]):
             TweetFeedResult: Схема с лентой твитов.
         """
         log.info(f"Формирование ленты для пользователя ID {current_user.id}")
-        following_ids = await follow_repo.get_following_ids(db, follower_id=current_user.id)
+        following_ids = await FollowRepository.get_following_ids(db, follower_id=current_user.id)
 
         # Включаем ID самого пользователя в список авторов
         author_ids_to_fetch = list(set(following_ids + [current_user.id]))
@@ -236,4 +236,4 @@ class TweetService(BaseService[Tweet, type(tweet_repo)]):
 
 
 # Создаем экземпляр сервиса
-tweet_service = TweetService(tweet_repo)
+tweet_service = TweetService(TweetRepository)

@@ -7,7 +7,7 @@ from app.core.exceptions import (BadRequestError, ConflictError,
                                  PermissionDeniedError, NotFoundError)
 from app.core.logging import log
 from app.models import User
-from app.repositories import follow_repo, user_repo
+from app.repositories import FollowRepository, UserRepository
 
 
 class FollowService:
@@ -18,7 +18,7 @@ class FollowService:
     но основная логика связана с проверкой Users.
     """
 
-    def __init__(self, repo: type(follow_repo), user_repository: type(user_repo)):
+    def __init__(self, repo: FollowRepository, user_repository: UserRepository):
         self.repo = repo
         self.user_repo = user_repository
 
@@ -81,12 +81,15 @@ class FollowService:
 
         try:
             await self.repo.add_follow(db, follower_id=follower_id, following_id=user_to_follow_id)
+            await db.commit()
             log.success(f"Пользователь ID {follower_id} успешно подписался на пользователя ID {user_to_follow_id}")
         except IntegrityError as exc:
             # На случай гонки запросов или если проверка выше не сработала
+            await db.rollback()
             log.warning(f"Конфликт целостности при подписке ({follower_id} -> {user_to_follow_id}): {exc}")
             raise ConflictError("Не удалось подписаться (возможно, подписка уже существует).") from exc
         except Exception as exc:
+            await db.rollback()
             log.error(f"Ошибка при создании подписки ({follower_id} -> {user_to_follow_id}): {exc}", exc_info=True)
             raise BadRequestError("Не удалось подписаться на пользователя.") from exc
 
@@ -108,13 +111,12 @@ class FollowService:
         log.info(f"Пользователь ID {follower_id} пытается отписаться от пользователя ID {user_to_unfollow_id}")
         await self._validate_follow_action(db, follower_id, user_to_unfollow_id)
 
-        removed = await self.repo.remove_follow(db, follower_id=follower_id, following_id=user_to_unfollow_id)
+        try:
+            await self.repo.remove_follow(db, follower_id=follower_id, following_id=user_to_unfollow_id)
+            await db.commit()
+            log.success(f"Пользователь ID {follower_id} успешно отписался от пользователя ID {user_to_unfollow_id}")
 
-        if not removed:
-            log.warning(f"Подписка пользователя ID {follower_id} на пользователя ID {user_to_unfollow_id} не найдена для удаления.")
-            raise NotFoundError("Вы не подписаны на этого пользователя.")
-        log.success(f"Пользователь ID {follower_id} успешно отписался от пользователя ID {user_to_unfollow_id}")
-
-
-# Создаем экземпляр сервиса
-follow_service = FollowService(follow_repo, user_repo)  # Передаем оба репозитория
+        except Exception as exc:
+            await db.rollback()
+            log.error(f"Ошибка при удалении подписки ({follower_id} -> {user_to_unfollow_id}): {exc}", exc_info=True)
+            raise BadRequestError("Не удалось отписаться от пользователя.") from exc
