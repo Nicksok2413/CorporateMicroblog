@@ -1,22 +1,19 @@
 """API роуты для подписок пользователей."""
 
-from fastapi import APIRouter, Depends, Path as FastApiPath, status
+from fastapi import APIRouter, Path as FastApiPath, status
 
-# Импортируем зависимости, сервисы и схемы
 from app.api.v1.dependencies import CurrentUser, DBSession
 from app.core.logging import log
-from app.schemas import ResultTrue  # Общий успешный ответ
-from app.services import follow_service  # Сервис для подписок
+from app.schemas import ResultTrue
+from app.services import follow_service
 
-# Роутер для подписок
 router = APIRouter(tags=["Follows"])
 
 
 @router.post(
-    # Полный путь /api/v1/users/{user_id}/follow
     "/users/{user_id}/follow",
     response_model=ResultTrue,
-    status_code=status.HTTP_201_CREATED,  # Ресурс 'подписка' создается
+    status_code=status.HTTP_201_CREATED,
     summary="Подписаться на пользователя",
     responses={
         status.HTTP_404_NOT_FOUND: {"description": "Пользователь для подписки не найден"},
@@ -25,8 +22,8 @@ router = APIRouter(tags=["Follows"])
     }
 )
 async def follow_a_user(
-        current_user: CurrentUser = Depends(),
-        db: DBSession = Depends(),
+        current_user: CurrentUser,
+        db: DBSession,
         user_id: int = FastApiPath(..., description="ID пользователя, на которого нужно подписаться", gt=0),
 ):
     """
@@ -52,7 +49,6 @@ async def follow_a_user(
 
 
 @router.delete(
-    # Полный путь /api/v1/users/{user_id}/follow
     "/users/{user_id}/follow",
     response_model=ResultTrue,
     status_code=status.HTTP_200_OK,
@@ -63,8 +59,8 @@ async def follow_a_user(
     }
 )
 async def unfollow_a_user(
-        current_user: CurrentUser = Depends(),
-        db: DBSession = Depends(),
+        current_user: CurrentUser,
+        db: DBSession,
         user_id: int = FastApiPath(..., description="ID пользователя, от которого нужно отписаться", gt=0),
 ):
     """

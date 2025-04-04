@@ -2,15 +2,14 @@
 
 from app.models.media import Media
 from app.repositories.base import BaseRepository
-from app.schemas.media import MediaCreate  # Импортируем реальную схему
+from app.schemas.media import MediaCreate
 
 
-class MediaRepository(BaseRepository[Media, MediaCreate, None]):  # Указываем схему Create, Update = None
+class MediaRepository(BaseRepository[Media, MediaCreate, None]):
     """
     Репозиторий для выполнения CRUD операций с моделью Media.
     """
-    # В данном случае специфичных методов может и не быть,
-    # базовых CRUD достаточно.
+    # В данном случае базовых CRUD достаточно
     pass
 
 

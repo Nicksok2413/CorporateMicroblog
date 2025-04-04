@@ -23,6 +23,7 @@ class BaseUser(TunedModel):
 
 
 # --- Схемы для API ответов ---
+# noinspection PyDataclass
 class UserProfile(TunedModel):
     """
     Схема для профиля пользователя.
@@ -39,8 +40,6 @@ class UserProfile(TunedModel):
     name: str
     followers: List[BaseUser] = Field(default_factory=list)
     following: List[BaseUser] = Field(default_factory=list)
-    # followers: List[BaseUser] = Field(default_factory=Optional[list])
-    # following: List[BaseUser] = Field(default_factory=Optional[list])
 
 
 class UserProfileResult(ResultTrue):
@@ -52,13 +51,3 @@ class UserProfileResult(ResultTrue):
         user (UserProfile): Данные профиля пользователя
     """
     user: UserProfile
-
-# --- Схемы для создания/обновления (если понадобятся) ---
-# class UserCreate(BaseModel):
-#     """Схема для создания нового пользователя (например, для сидинга)."""
-#     name: str = Field(..., min_length=1, max_length=100)
-#     api_key: str = Field(..., min_length=10) # Пример
-
-# class UserUpdate(BaseModel):
-#     """Схема для обновления данных пользователя (не используется в ТЗ)."""
-#     name: Optional[str] = Field(None, min_length=1, max_length=100)

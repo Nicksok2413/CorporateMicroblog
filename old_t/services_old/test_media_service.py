@@ -1,24 +1,23 @@
 """Юнит-тесты для MediaService."""
 
 import io
-from pathlib import Path
 
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch, mock_open
+from unittest.mock import AsyncMock, patch
 
 from app.services.media_service import media_service
 from app.models import Media
 from app.schemas.media import MediaCreate
-from app.core.exceptions import MediaValidationError, BadRequestError
+from app.core.exceptions import MediaValidationError
 from app.core.config import settings  # Нужен для пути сохранения
 
 
 # Мокируем aiofiles.open, т.к. он используется для записи
-@patch("app.services.media_service.aiofiles.open", new_callable=AsyncMock)
+@patch("app.services_old.media_service.aiofiles.open", new_callable=AsyncMock)
 @pytest.mark.asyncio
 async def test_save_media_service_success(mock_aio_open, mocker):
     """Тест успешного сохранения медиа."""
-    mock_media_repo = mocker.patch("app.services.media_service.media_repo", autospec=True)
+    mock_media_repo = mocker.patch("app.services_old.media_service.media_repo", autospec=True)
 
     # Настройка мока репозитория
     created_media = Media(id=1, file_path="some-uuid.jpg")
@@ -32,7 +31,7 @@ async def test_save_media_service_success(mock_aio_open, mocker):
     content_type = "image/jpeg"
 
     # Мок для uuid.uuid4(), чтобы имя файла было предсказуемым
-    mocker.patch("app.services.media_service.uuid.uuid4", return_value="fixed-uuid")
+    mocker.patch("app.services_old.media_service.uuid.uuid4", return_value="fixed-uuid")
     expected_filename = "fixed-uuid.jpg"
     expected_save_path = settings.STORAGE_PATH_OBJ / expected_filename
 
@@ -63,7 +62,7 @@ async def test_save_media_service_success(mock_aio_open, mocker):
 @pytest.mark.asyncio
 async def test_save_media_service_invalid_type(mocker):
     """Тест сохранения файла недопустимого типа."""
-    mock_media_repo = mocker.patch("app.services.media_service.media_repo", autospec=True)
+    mock_media_repo = mocker.patch("app.services_old.media_service.media_repo", autospec=True)
     # Мок Path.unlink на случай, если он будет вызван
     mocker.patch("pathlib.Path.unlink", return_value=None)
 

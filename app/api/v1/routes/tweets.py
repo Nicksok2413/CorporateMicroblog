@@ -1,29 +1,27 @@
 """API роуты для работы с твитами (создание, удаление, лента)."""
 
-from fastapi import APIRouter, Depends, Path as FastApiPath, status
+from fastapi import APIRouter, Path as FastApiPath, status
 
-# Импортируем зависимости, сервисы и схемы
 from app.api.v1.dependencies import CurrentUser, DBSession
 from app.core.logging import log
-from app.services import tweet_service  # Импортируем сервис твитов
+from app.services import tweet_service
 from app.schemas import (TweetActionResult, TweetCreateRequest,
                          TweetCreateResult, TweetFeedResult)
 
-# Создаем роутер для твитов
 router = APIRouter(prefix="/tweets", tags=["Tweets"])
 
 
 @router.post(
-    "",  # POST /api/v1/tweets
+    "",
     response_model=TweetCreateResult,
     status_code=status.HTTP_201_CREATED,
     summary="Создание нового твита",
     description="Позволяет аутентифицированному пользователю опубликовать новый твит, опционально прикрепив медиа.",
 )
 async def create_new_tweet(
-        tweet_in: TweetCreateRequest,  # Данные из тела запроса (валидируются Pydantic)
-        current_user: CurrentUser,  # Аутентифицированный пользователь
-        db: DBSession,  # Сессия БД
+        tweet_in: TweetCreateRequest,
+        current_user: CurrentUser,
+        db: DBSession,
 ):
     """
     Создает новый твит для текущего пользователя.
@@ -42,20 +40,20 @@ async def create_new_tweet(
     """
     log.info(f"Запрос на создание твита от пользователя ID {current_user.id}")
     tweet = await tweet_service.create_tweet(
-        db=db, tweet_data=tweet_in, current_user=current_user
+        db=db, current_user=current_user, tweet_data=tweet_in
     )
     return TweetCreateResult(tweet_id=tweet.id)
 
 
 @router.get(
-    "",  # GET /api/v1/tweets
+    "",
     response_model=TweetFeedResult,
     status_code=status.HTTP_200_OK,
     summary="Получение ленты твитов",
     description="Возвращает ленту твитов от пользователей, на которых подписан текущий пользователь, и его собственные твиты, отсортированные по популярности.",
 )
 async def get_tweets_feed(
-        current_user: CurrentUser,  # Аутентификация обязательна
+        current_user: CurrentUser,
         db: DBSession,
         # Можно добавить параметры пагинации (limit, offset), если нужно
         # limit: int = Query(50, gt=0, le=100),
@@ -77,20 +75,20 @@ async def get_tweets_feed(
 
 
 @router.delete(
-    "/{tweet_id}",  # DELETE /api/v1/tweets/{tweet_id}
+    "/{tweet_id}",
     response_model=TweetActionResult,
-    status_code=status.HTTP_200_OK,  # Или 204 No Content, но тогда response_model не нужен
+    status_code=status.HTTP_200_OK,
     summary="Удаление твита",
     description="Позволяет автору твита удалить его.",
-    responses={  # Документируем возможные ошибки
+    responses={
         status.HTTP_404_NOT_FOUND: {"description": "Твит не найден"},
         status.HTTP_403_FORBIDDEN: {"description": "Недостаточно прав для удаления"},
     }
 )
 async def delete_existing_tweet(
-        current_user: CurrentUser = Depends(),  # Используем Depends() как альтернативу аннотации
-        db: DBSession = Depends(),  # Используем Depends() как альтернативу аннотации
-        tweet_id: int = FastApiPath(..., description="ID твита для удаления", gt=0),  # Валидация параметра пути
+        current_user: CurrentUser,
+        db: DBSession,
+        tweet_id: int = FastApiPath(..., description="ID твита для удаления", gt=0),
 ):
     """
     Удаляет твит по его ID.
@@ -111,6 +109,5 @@ async def delete_existing_tweet(
         BadRequestError: При ошибке удаления из БД.
     """
     log.info(f"Запрос на удаление твита ID {tweet_id} от пользователя ID {current_user.id}")
-    await tweet_service.delete_tweet(db=db, tweet_id=tweet_id, current_user=current_user)
-    # Если сервис не вызвал исключение, удаление прошло успешно
-    return TweetActionResult()  # result=True по умолчанию
+    await tweet_service.delete_tweet(db=db, current_user=current_user, tweet_id=tweet_id)
+    return TweetActionResult()

@@ -6,8 +6,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.exceptions import (BadRequestError, ConflictError,
                                  PermissionDeniedError, NotFoundError)
 from app.core.logging import log
-from app.models import User  # Импортируем модель User
-from app.repositories import follow_repo, user_repo  # Импортируем репозитории
+from app.models import User
+from app.repositories import follow_repo, user_repo
 
 
 class FollowService:
@@ -47,6 +47,7 @@ class FollowService:
 
         # Проверяем, существует ли пользователь, на которого подписываемся
         user_to_follow = await self.user_repo.get(db, obj_id=following_id)
+
         if not user_to_follow:
             log.warning(f"Пользователь ID {following_id} (на которого пытаются подписаться/отписаться) не найден.")
             raise NotFoundError(f"Пользователь с ID {following_id} не найден.")
@@ -73,21 +74,21 @@ class FollowService:
 
         # Проверяем, не подписан ли уже
         existing_follow = await self.repo.get_follow(db, follower_id=follower_id, following_id=user_to_follow_id)
+
         if existing_follow:
             log.warning(f"Пользователь ID {follower_id} уже подписан на пользователя ID {user_to_follow_id}.")
             raise ConflictError("Вы уже подписаны на этого пользователя.")
-            # return # Или просто выйти без ошибки
 
         try:
             await self.repo.create_follow(db, follower_id=follower_id, following_id=user_to_follow_id)
             log.success(f"Пользователь ID {follower_id} успешно подписался на пользователя ID {user_to_follow_id}")
-        except IntegrityError as e:
+        except IntegrityError as exc:
             # На случай гонки запросов или если проверка выше не сработала
-            log.warning(f"Конфликт целостности при подписке ({follower_id} -> {user_to_follow_id}): {e}")
-            raise ConflictError("Не удалось подписаться (возможно, подписка уже существует).") from e
-        except Exception as e:
-            log.error(f"Ошибка при создании подписки ({follower_id} -> {user_to_follow_id}): {e}", exc_info=True)
-            raise BadRequestError("Не удалось подписаться на пользователя.") from e
+            log.warning(f"Конфликт целостности при подписке ({follower_id} -> {user_to_follow_id}): {exc}")
+            raise ConflictError("Не удалось подписаться (возможно, подписка уже существует).") from exc
+        except Exception as exc:
+            log.error(f"Ошибка при создании подписки ({follower_id} -> {user_to_follow_id}): {exc}", exc_info=True)
+            raise BadRequestError("Не удалось подписаться на пользователя.") from exc
 
     async def unfollow_user(self, db: AsyncSession, *, current_user: User, user_to_unfollow_id: int):
         """
@@ -108,11 +109,9 @@ class FollowService:
         await self._validate_follow_action(db, follower_id, user_to_unfollow_id)
 
         removed = await self.repo.remove_follow(db, follower_id=follower_id, following_id=user_to_unfollow_id)
+
         if not removed:
-            log.warning(
-                f"Подписка пользователя ID {follower_id} на пользователя ID {user_to_unfollow_id} не найдена для удаления.")
-            # По ТЗ нужно вернуть success=true, даже если подписки не было? Или 404?
-            # Возвращаем ошибку.
+            log.warning(f"Подписка пользователя ID {follower_id} на пользователя ID {user_to_unfollow_id} не найдена для удаления.")
             raise NotFoundError("Вы не подписаны на этого пользователя.")
         log.success(f"Пользователь ID {follower_id} успешно отписался от пользователя ID {user_to_unfollow_id}")
 

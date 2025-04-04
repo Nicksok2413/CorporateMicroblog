@@ -6,8 +6,6 @@ from pathlib import Path
 
 from loguru import logger
 
-from app.core.config import settings
-
 
 def serialize(record):
     """
@@ -76,6 +74,8 @@ def configure_logging():
     - Опциональный вывод в файл с ротацией для production.
     - Специальная обработка логов SQLAlchemy в режиме DEBUG.
     """
+    from app.core.config import settings
+
     # Удаляем стандартный обработчик, чтобы избежать дублирования
     logger.remove()
 
@@ -99,7 +99,7 @@ def configure_logging():
     if not log_file_path and settings.PRODUCTION:
         # По умолчанию пишем в logs/app.log в production, если LOG_FILE не задан явно
         log_file_path = Path("logs") / "app.log"
-        # Создаем директорию, если нужно (на случай, если post_init в config не сработал)
+        # Создаем директорию, если нужно (на случай, если model_post_init в config не сработал)
         log_file_path.parent.mkdir(parents=True, exist_ok=True)
 
     if log_file_path:
@@ -109,7 +109,7 @@ def configure_logging():
             rotation="100 MB",  # Ротация при достижении 100 MB
             retention="30 days",  # Хранить логи за последние 30 дней
             compression="zip",  # Сжимать старые логи
-            level="INFO",  # Уровень для записи в файл (можно сделать строже, чем LOG_LEVEL)
+            level=settings.LOG_LEVEL,  # Уровень для записи в файл
             format=serialize,  # Всегда JSON в файле
             enqueue=True,  # Асинхронная запись для производительности
             # Не фильтруем uvicorn.access для файла, т.к. там он может быть полезен
@@ -120,14 +120,6 @@ def configure_logging():
     # Настройка логирования SQLAlchemy (только в DEBUG)
     if settings.DEBUG:
         logger.enable("sqlalchemy.engine")  # Включаем логгер SQLAlchemy
-        # Можно настроить отдельный обработчик для SQL, если нужно форматирование
-        # logger.add(
-        #     sys.stderr,
-        #     level="INFO", # Уровень INFO для SQL запросов
-        #     filter=lambda record: record["name"] == "sqlalchemy.engine.Engine",
-        #     format="<magenta>SQL:</magenta> {message}",
-        #     colorize=True
-        # )
     else:
         logger.disable("sqlalchemy.engine")  # Отключаем SQL логи в production
 
@@ -135,6 +127,9 @@ def configure_logging():
 
 
 # Инициализация логирования при импорте модуля
+# Комментируем строку при тестах, иначе будет ошибка:
+# ImportError: cannot import name 'settings' from partially initialized module 'app.core.config' (most likely due to a circular import)
+# TODO: Подумать как решить эту проблему
 configure_logging()
 
 # Экспортируем настроенный логгер для использования в других модулях

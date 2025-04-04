@@ -1,11 +1,11 @@
 """Юнит-тесты для UserService."""
 
 import pytest
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock
 
 from app.services.user_service import user_service
 from app.models import User, Follow
-from app.schemas.user import UserProfile, BaseUser
+from app.schemas.user import UserProfile
 from app.core.exceptions import NotFoundError
 
 
@@ -13,8 +13,8 @@ from app.core.exceptions import NotFoundError
 async def test_get_user_profile_service_success(mocker):
     """Тест успешного получения профиля пользователя."""
     # Моки репозиториев
-    mock_user_repo = mocker.patch("app.services.user_service.user_repo", autospec=True)
-    mock_follow_repo = mocker.patch("app.services.user_service.follow_repo", autospec=True)
+    mock_user_repo = mocker.patch("app.services_old.user_service.user_repo", autospec=True)
+    mock_follow_repo = mocker.patch("app.services_old.user_service.follow_repo", autospec=True)
 
     # Данные
     target_user_id = 1
@@ -62,8 +62,8 @@ async def test_get_user_profile_service_success(mocker):
 @pytest.mark.asyncio
 async def test_get_user_profile_service_not_found(mocker):
     """Тест получения профиля несуществующего пользователя."""
-    mock_user_repo = mocker.patch("app.services.user_service.user_repo", autospec=True)
-    mock_follow_repo = mocker.patch("app.services.user_service.follow_repo", autospec=True)
+    mock_user_repo = mocker.patch("app.services_old.user_service.user_repo", autospec=True)
+    mock_follow_repo = mocker.patch("app.services_old.user_service.follow_repo", autospec=True)
 
     mock_user_repo.get.return_value = None  # Пользователь не найден
 

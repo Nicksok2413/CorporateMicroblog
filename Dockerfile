@@ -8,8 +8,9 @@ ENV PYTHONUNBUFFERED=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=on \
     PIP_DEFAULT_TIMEOUT=100
 
-# Системные зависимости (если нужны, например, для psycopg2 или Pillow)
+# Системные зависимости (если нужны, например, для psycopg2 )
 # RUN apt-get update && apt-get install --no-install-recommends -y build-essential libpq-dev curl && rm -rf /var/lib/apt/lists/*
+# RUN apt-get update && apt-get install -y --no-install-recommends gcc libpq-dev && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -21,10 +22,11 @@ FROM python-base as builder
 
 # Копируем файлы зависимостей
 COPY requirements.txt .
-# Если есть requirements-dev.txt и он нужен для чего-то на этом этапе
+# Опционально: копируем dev-зависимости для билда, если нужны
 # COPY requirements-dev.txt .
 
 # Устанавливаем зависимости
+# --no-cache-dir уменьшает размер образа
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Этап 3: Финальный образ
@@ -40,7 +42,6 @@ COPY ./migrations /app/migrations
 COPY alembic.ini /app/alembic.ini
 
 # Создаем директорию для медиа (владелец будет root, но volume mount из docker-compose переопределит)
-# Права могут быть важны, если НЕ используется volume mount
 RUN mkdir -p /app/static/media
 
 # Указываем порт, который будет слушать приложение

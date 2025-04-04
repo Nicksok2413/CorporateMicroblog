@@ -6,8 +6,7 @@ import pytest
 from httpx import AsyncClient
 from fastapi import status
 
-from app.models import User, Media
-from app.schemas import MediaCreateResult
+from app.models import User
 
 
 @pytest.mark.asyncio
@@ -18,7 +17,7 @@ async def test_upload_media_success(async_client: AsyncClient, test_user_alice: 
     file_content = b"fake image data"
     files = {"file": ("test.jpg", io.BytesIO(file_content), "image/jpeg")}
 
-    response = await async_client.post("/api/v1/medias", files=files, headers=headers)
+    response = await async_client.post("/api_old/v1/medias", files=files, headers=headers)
 
     assert response.status_code == status.HTTP_201_CREATED
     json_response = response.json()
@@ -36,7 +35,7 @@ async def test_upload_media_invalid_type(async_client: AsyncClient, test_user_al
     file_content = b"this is plain text"
     files = {"file": ("test.txt", io.BytesIO(file_content), "text/plain")}
 
-    response = await async_client.post("/api/v1/medias", files=files, headers=headers)
+    response = await async_client.post("/api_old/v1/medias", files=files, headers=headers)
 
     # Ожидаем ошибку BadRequestError или MediaValidationError, которые дают 400
     assert response.status_code == status.HTTP_400_BAD_REQUEST
@@ -52,7 +51,7 @@ async def test_upload_media_unauthorized(async_client: AsyncClient):
     file_content = b"fake image data"
     files = {"file": ("test.jpg", io.BytesIO(file_content), "image/jpeg")}
 
-    response = await async_client.post("/api/v1/medias", files=files)
+    response = await async_client.post("/api_old/v1/medias", files=files)
 
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
 

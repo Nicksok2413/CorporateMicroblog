@@ -4,8 +4,7 @@ import pytest
 from httpx import AsyncClient
 from fastapi import status
 
-from app.models import Follow, Like, Tweet, User  # Добавили Like
-from app.schemas import TweetFeedResult, TweetCreateResult, TweetActionResult
+from app.models import Follow, Like, Tweet, User
 
 
 # --- Тесты для POST /tweets (без изменений) ---
@@ -18,7 +17,7 @@ async def test_get_feed_includes_own_tweets(async_client: AsyncClient, test_user
                                             test_tweet_by_alice: Tweet):
     """Тест: лента включает собственные твиты."""
     headers = {"api-key": test_user_alice.api_key}
-    response = await async_client.get("/api/v1/tweets", headers=headers)
+    response = await async_client.get("/api_old/v1/tweets", headers=headers)
     # ... (проверки как раньше) ...
     assert response.status_code == status.HTTP_200_OK
     json_response = response.json()
@@ -33,7 +32,7 @@ async def test_get_feed_includes_following_tweets(async_client: AsyncClient, tes
                                                   test_tweet_by_bob: Tweet, alice_follows_bob: Follow):
     """Тест: лента включает твиты отслеживаемых пользователей."""
     headers = {"api-key": test_user_alice.api_key}
-    response = await async_client.get("/api/v1/tweets", headers=headers)
+    response = await async_client.get("/api_old/v1/tweets", headers=headers)
 
     assert response.status_code == status.HTTP_200_OK
     json_response = response.json()
@@ -57,14 +56,14 @@ async def test_like_tweet_success(async_client: AsyncClient, test_user_alice: Us
     headers = {"api-key": test_user_alice.api_key}
     tweet_id = test_tweet_by_bob.id
 
-    response = await async_client.post(f"/api/v1/tweets/{tweet_id}/likes", headers=headers)
+    response = await async_client.post(f"/api_old/v1/tweets/{tweet_id}/likes", headers=headers)
 
     assert response.status_code == status.HTTP_201_CREATED
     json_response = response.json()
     assert json_response["result"] is True
 
     # Проверим, что лайк появился в ленте (или через профиль Боба)
-    response_feed = await async_client.get("/api/v1/tweets", headers=headers)  # Лента Алисы
+    response_feed = await async_client.get("/api_old/v1/tweets", headers=headers)  # Лента Алисы
     feed = response_feed.json()["tweets"]
     bob_tweet_in_feed = next((t for t in feed if t["id"] == tweet_id), None)
     assert bob_tweet_in_feed is not None
@@ -79,7 +78,7 @@ async def test_like_tweet_already_liked(async_client: AsyncClient, test_user_bob
     headers = {"api-key": test_user_bob.api_key}  # Боб уже лайкнул
     tweet_id = test_tweet_by_alice.id
 
-    response = await async_client.post(f"/api/v1/tweets/{tweet_id}/likes", headers=headers)
+    response = await async_client.post(f"/api_old/v1/tweets/{tweet_id}/likes", headers=headers)
 
     assert response.status_code == status.HTTP_409_CONFLICT
     json_response = response.json()
@@ -93,7 +92,7 @@ async def test_like_tweet_not_found(async_client: AsyncClient, test_user_alice: 
     headers = {"api-key": test_user_alice.api_key}
     non_existent_id = 99999
 
-    response = await async_client.post(f"/api/v1/tweets/{non_existent_id}/likes", headers=headers)
+    response = await async_client.post(f"/api_old/v1/tweets/{non_existent_id}/likes", headers=headers)
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
     json_response = response.json()
@@ -110,15 +109,11 @@ async def test_unlike_tweet_success(async_client: AsyncClient, test_user_bob: Us
     headers = {"api-key": test_user_bob.api_key}  # Боб лайкнул
     tweet_id = test_tweet_by_alice.id
 
-    response = await async_client.delete(f"/api/v1/tweets/{tweet_id}/likes", headers=headers)
+    response = await async_client.delete(f"/api_old/v1/tweets/{tweet_id}/likes", headers=headers)
 
     assert response.status_code == status.HTTP_200_OK
     json_response = response.json()
     assert json_response["result"] is True
-
-    # Проверим, что лайк исчез (через профиль Алисы или Боба)
-    response_profile = await async_client.get(f"/api/v1/users/{test_user_alice.id}")
-    # ... (нужно добавить тесты профиля)
 
 
 @pytest.mark.asyncio
@@ -127,7 +122,7 @@ async def test_unlike_tweet_not_liked(async_client: AsyncClient, test_user_alice
     headers = {"api-key": test_user_alice.api_key}
     tweet_id = test_tweet_by_bob.id  # Алиса не лайкала твит Боба
 
-    response = await async_client.delete(f"/api/v1/tweets/{tweet_id}/likes", headers=headers)
+    response = await async_client.delete(f"/api_old/v1/tweets/{tweet_id}/likes", headers=headers)
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
     json_response = response.json()
@@ -141,7 +136,7 @@ async def test_unlike_tweet_not_found(async_client: AsyncClient, test_user_alice
     headers = {"api-key": test_user_alice.api_key}
     non_existent_id = 99999
 
-    response = await async_client.delete(f"/api/v1/tweets/{non_existent_id}/likes", headers=headers)
+    response = await async_client.delete(f"/api_old/v1/tweets/{non_existent_id}/likes", headers=headers)
 
     # Ожидаем 404, так как remove_like не найдет лайк
     assert response.status_code == status.HTTP_404_NOT_FOUND

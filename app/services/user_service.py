@@ -6,9 +6,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import NotFoundError
 from app.core.logging import log
-from app.models import Follow, User  # Импортируем модели
-from app.repositories import follow_repo, user_repo  # Импортируем репозитории
-from app.schemas.user import BaseUser, UserProfile  # Импортируем схемы
+from app.models import Follow, User
+from app.repositories import follow_repo, user_repo
+from app.schemas.user import BaseUser, UserProfile
 from app.services.base_service import BaseService
 
 
@@ -60,9 +60,11 @@ class UserService(BaseService[User, type(user_repo)]):
             NotFoundError: Если пользователь не найден.
         """
         user = await self.get_user_by_id(db, user_id)
+
         if not user:
             log.warning(f"Пользователь с ID {user_id} не найден.")
             raise NotFoundError(f"Пользователь с ID {user_id} не найден.")
+
         return user
 
     async def get_user_profile(self, db: AsyncSession, user_id: int) -> UserProfile:

@@ -15,14 +15,10 @@ from .tweet import (
     TweetActionResult,
     TweetInFeed,
     TweetFeedResult,
-    TweetAuthor,  # Экспортируем, если используется где-то еще
-    LikeInfo,  # Экспортируем, если используется где-то еще
+    TweetAuthor,
+    LikeInfo,
 )
 from .user import BaseUser, UserProfile, UserProfileResult
-
-# Если создавали схемы для Like и Follow, их тоже нужно экспортировать
-# from .like import LikeCreate, LikeOut
-# from .follow import FollowCreate
 
 __all__ = [
     # Base
@@ -45,9 +41,4 @@ __all__ = [
     "BaseUser",
     "UserProfile",
     "UserProfileResult",
-    # Like (если есть)
-    # "LikeCreate",
-    # "LikeOut",
-    # Follow (если есть)
-    # "FollowCreate",
 ]

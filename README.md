@@ -52,13 +52,13 @@
 microblog/
     ├── .env.example                  # Шаблон конфигурации
     ├── .gitignore                    # Игнорируемые файлы
+    ├── alembic.ini                   # Настройки миграций
     ├── docker-compose.yml            # Композиция сервисов
     ├── Dockerfile                    # Образ приложения
-    ├── requirements.txt              # Зависимости (Production)
-    ├── requirements-dev.txt          # Зависимости (Development)
-    ├── alembic.ini                   # Настройки миграций
     ├── pytest.ini                    # Настройки тестирования
     ├── README.md                     # Документация
+    ├── requirements.txt              # Зависимости (Production)
+    ├── requirements-dev.txt          # Зависимости (Development)
     │
     ├── app/                          # Основное приложение
     │   ├── __init__.py
@@ -72,7 +72,7 @@ microblog/
     │   │       ├── dependencies.py   # Зависимости
     │   │       ├── router.py         # Агрегация роутеров для API версии v1
     │   │       └── routes/           # Маршруты
-    │   │         ├── init.py
+    │   │         ├── __init__.py
     │   │         ├── users.py        # /users/...
     │   │         ├── tweets.py       # /tweets/...
     │   │         ├── media.py        # /media
@@ -84,8 +84,7 @@ microblog/
     │   │   ├── config.py             # Настройки приложения
     │   │   ├── database.py           # Подключение к БД
     │   │   ├── exceptions.py         # Обработка исключений
-    │   │   ├── logging.py            # Настройка логгера
-    │   │   └── security.py           # Аутентификация
+    │   │   └── logging.py            # Настройка логгера
     │   │
     │   ├── models/                   # SQLAlchemy модели
     │   │   ├── __init__.py
@@ -134,7 +133,7 @@ microblog/
     │       └── js/
     │           └── ...
     │
-    ├── migrations/                   # Alembic миграции
+    ├── alembic/                   # Alembic миграции
     │   ├── versions/
     │   ├── env.py
     │   └── script.py.mako
@@ -143,22 +142,16 @@ microblog/
         ├── __init__.py
         ├── conftest.py               # Фикстуры pytest
         ├── integration/              # Интеграционные тесты
-        │   ├── api/
-        │   │   ├── test_users_api.py
-        │   │   └── ...
-        │   ├── database/
-        │   │   ├── test_connections.py
+        │   ├── .../
+        │   │   ├── ...
         │   │   └── ...
         │   └── .../
         │       ├── ...
         │       └── ...
         │
         └── unit/                     # Юнит-тесты
-            ├── repositories/
-            │   ├── test_user_repo.py
-            │   └── ...
-            ├── services/
-            │   ├── test_user_service.py
+            ├── .../
+            │   ├── ...
             │   └── ...
             └── .../
                 ├── ...

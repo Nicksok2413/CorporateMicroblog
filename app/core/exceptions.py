@@ -4,45 +4,15 @@
 и функции для их корректной обработки и преобразования в HTTP-ответы.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-# Импортируем логгер
 from app.core.logging import log
+from app.schemas.base import ResultFalseWithError
 
-# Импортируем базовую схему ошибки
-try:
-    # Предполагаем, что схема находится здесь
-    from app.schemas.base import ResultFalseWithError
-except ImportError:
-    log.warning("Не удалось импортировать ResultFalseWithError из app.schemas.base. Используется заглушка.")
-
-
-    # Заглушка, если схема еще не создана или находится в другом месте
-    class ResultFalseWithError:
-        def __init__(self, result: bool = False, error_type: str = "Error", error_message: Any = "Unknown error",
-                     **kwargs):
-            self.result = result
-            self.error_type = error_type
-            self.error_message = error_message
-            # Сохраняем доп. поля, если они переданы
-            self.extra_info = kwargs.get("extra_info")
-
-        def model_dump(self) -> Dict[str, Any]:
-            data = {
-                "result": self.result,
-                "error_type": self.error_type,
-                "error_message": self.error_message,
-            }
-            if self.extra_info:
-                data["extra_info"] = self.extra_info
-            return data
-
-
-# --- Ваши классы исключений (оставляем без изменений) ---
 
 class MicroblogHTTPException(HTTPException):
     """Базовое исключение для API микросервиса."""
@@ -58,8 +28,6 @@ class MicroblogHTTPException(HTTPException):
         super().__init__(status_code=status_code, detail=detail, headers=headers)
         self.error_type = error_type or "microblog_error"
         self.extra = extra or {}
-        # Сохраняем headers и здесь, если нужно к ним обращаться напрямую
-        # self.headers = headers
 
 
 class NotFoundError(MicroblogHTTPException):
@@ -141,7 +109,7 @@ async def microblog_exception_handler(request: Request, exc: MicroblogHTTPExcept
     content = ResultFalseWithError(
         error_type=exc.error_type,
         error_message=exc.detail,
-        extra_info=exc.extra  # Передаем extra в схему
+        extra_info=exc.extra
     ).model_dump()
 
     return JSONResponse(
@@ -171,14 +139,12 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         error_messages.append(f"Поле '{field}': {message}")
 
     error_detail = ". ".join(error_messages)
-    log.warning(f"Ошибка валидации запроса: {error_detail}")  # Логируем ошибку валидации
+    log.warning(f"Ошибка валидации запроса: {error_detail}")
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         content=ResultFalseWithError(
             error_type="Validation Error",
             error_message=error_detail,
-            # Можно передать exc.errors() в extra_info, если нужно на клиенте
-            # extra_info={"validation_errors": exc.errors()}
         ).model_dump(),
     )
 
@@ -219,9 +185,6 @@ def setup_exception_handlers(app: FastAPI):
     app.add_exception_handler(MicroblogHTTPException, microblog_exception_handler)
     # Обработчик для ошибок валидации Pydantic
     app.add_exception_handler(RequestValidationError, validation_exception_handler)
-    # Обработчик для стандартного HTTPException (если он где-то используется напрямую)
-    # Убедитесь, что он не конфликтует с MicroblogHTTPException, если тот наследуется от него
-    # app.add_exception_handler(HTTPException, http_exception_handler) # Возможно, не нужен, если все ошибки через MicroblogHTTPException
-    # Обработчик для всех остальных непредвиденных исключений (всегда последний)
+    # Обработчик для всех остальных непредвиденных исключений
     app.add_exception_handler(Exception, generic_exception_handler)
     log.info("Обработчики исключений настроены.")

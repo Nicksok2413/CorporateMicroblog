@@ -2,26 +2,23 @@
 
 from fastapi import APIRouter, File, UploadFile, status
 
-# Импортируем зависимости, сервисы и схемы
 from app.api.v1.dependencies import CurrentUser, DBSession
 from app.core.exceptions import BadRequestError
 from app.core.logging import log
 from app.services import media_service
-from app.schemas import MediaCreateResult  # Импортируем схему ответа
+from app.schemas import MediaCreateResult
 
-# Создаем роутер для медиа
-router = APIRouter(prefix="/media", tags=["Media"])  # Добавляем префикс /media
+router = APIRouter(prefix="/media", tags=["Media"])
 
 
 @router.post(
-    "",  # Путь относительно префикса /media, т.е. POST /api/v1/media
+    "",
     response_model=MediaCreateResult,
     status_code=status.HTTP_201_CREATED,
     summary="Загрузка медиафайла",
     description="Загружает медиафайл (изображение) и возвращает его ID для последующего прикрепления к твиту.",
 )
 async def upload_media_file(
-        # Зависимости: текущий пользователь (для авторизации) и сессия БД
         current_user: CurrentUser,
         db: DBSession,
         # Данные файла из формы (multipart/form-data)
@@ -49,8 +46,6 @@ async def upload_media_file(
     """
     log.info(f"Пользователь ID {current_user.id} загружает файл: '{file.filename}' ({file.content_type})")
 
-    # Используем try-except на случай непредвиденных ошибок при чтении файла,
-    # хотя основные ошибки (валидация, сохранение) обрабатываются в сервисе
     try:
         media = await media_service.save_media_file(
             db=db,
@@ -58,14 +53,13 @@ async def upload_media_file(
             filename=file.filename or "unknown",  # Используем имя файла или заглушку
             content_type=file.content_type or "application/octet-stream"
         )
-    except Exception as e:
+    except Exception as exc:
         # Логируем ошибку и позволяем обработчику исключений FastAPI разобраться
         log.exception(f"Непредвиденная ошибка при обработке загрузки файла от пользователя ID {current_user.id}")
         # Перевыбрасываем как BadRequestError или позволяем обработчику поймать оригинальное исключение
-        raise BadRequestError(f"Ошибка при обработке файла: {e}") from e
+        raise BadRequestError(f"Ошибка при обработке файла: {exc}") from exc
     finally:
-        # Важно закрыть файл после использования
         await file.close()
         log.debug(f"Файл '{file.filename}' закрыт после обработки.")
 
-    return MediaCreateResult(media_id=media.id)  # result=True добавится автоматически Pydantic
+    return MediaCreateResult(media_id=media.id)
