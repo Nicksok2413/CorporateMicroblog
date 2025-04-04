@@ -7,12 +7,11 @@ from app.core.logging import log
 from app.services import user_service
 from app.schemas import UserProfileResult
 
-# Создаем роутер для пользователей
 router = APIRouter(prefix="/users", tags=["Users"])
 
 
 @router.get(
-    "/me",  # GET /api_old/v1/users/me
+    "/me",
     response_model=UserProfileResult,
     status_code=status.HTTP_200_OK,
     summary="Получение профиля текущего пользователя",
@@ -41,18 +40,16 @@ async def get_my_profile(
 
 
 @router.get(
-    # Полный путь /api_old/v1/users/{user_id}
     "/{user_id}",
     response_model=UserProfileResult,
     status_code=status.HTTP_200_OK,
     summary="Получение профиля пользователя по ID",
     description="Возвращает информацию о профиле указанного пользователя, включая списки подписчиков и подписок.",
-    responses={  # Документируем возможные ошибки
+    responses={
         status.HTTP_404_NOT_FOUND: {"description": "Пользователь не найден"},
     }
 )
 async def get_user_profile_by_id(
-        # Аутентификация НЕ ТРЕБУЕТСЯ по ТЗ для этого эндпоинта
         db: DBSession,
         user_id: int = FastApiPath(..., description="ID пользователя для просмотра профиля", gt=0),
 ):

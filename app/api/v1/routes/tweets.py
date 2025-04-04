@@ -46,14 +46,14 @@ async def create_new_tweet(
 
 
 @router.get(
-    "",  # GET /api_old/v1/tweets
+    "",
     response_model=TweetFeedResult,
     status_code=status.HTTP_200_OK,
     summary="Получение ленты твитов",
     description="Возвращает ленту твитов от пользователей, на которых подписан текущий пользователь, и его собственные твиты, отсортированные по популярности.",
 )
 async def get_tweets_feed(
-        current_user: CurrentUser,  # Аутентификация обязательна
+        current_user: CurrentUser,
         db: DBSession,
         # Можно добавить параметры пагинации (limit, offset), если нужно
         # limit: int = Query(50, gt=0, le=100),
@@ -75,12 +75,12 @@ async def get_tweets_feed(
 
 
 @router.delete(
-    "/{tweet_id}",  # DELETE /api_old/v1/tweets/{tweet_id}
+    "/{tweet_id}",
     response_model=TweetActionResult,
-    status_code=status.HTTP_200_OK,  # Или 204 No Content, но тогда response_model не нужен
+    status_code=status.HTTP_200_OK,
     summary="Удаление твита",
     description="Позволяет автору твита удалить его.",
-    responses={  # Документируем возможные ошибки
+    responses={
         status.HTTP_404_NOT_FOUND: {"description": "Твит не найден"},
         status.HTTP_403_FORBIDDEN: {"description": "Недостаточно прав для удаления"},
     }
@@ -88,7 +88,7 @@ async def get_tweets_feed(
 async def delete_existing_tweet(
         current_user: CurrentUser,
         db: DBSession,
-        tweet_id: int = FastApiPath(..., description="ID твита для удаления", gt=0),  # Валидация параметра пути
+        tweet_id: int = FastApiPath(..., description="ID твита для удаления", gt=0),
 ):
     """
     Удаляет твит по его ID.
@@ -110,4 +110,4 @@ async def delete_existing_tweet(
     """
     log.info(f"Запрос на удаление твита ID {tweet_id} от пользователя ID {current_user.id}")
     await tweet_service.delete_tweet(db=db, current_user=current_user, tweet_id=tweet_id)
-    return TweetActionResult()  # result=True по умолчанию
+    return TweetActionResult()

@@ -1,194 +1,164 @@
-"""Конфигурация и фикстуры для Pytest."""
-
 import asyncio
-from typing import AsyncGenerator, Generator
+from typing import AsyncGenerator, Generator, List
 
 import pytest
 import pytest_asyncio
-from fastapi import FastAPI
-from httpx import ASGITransport, AsyncClient
-from sqlalchemy.ext.asyncio import (AsyncEngine, AsyncSession,
-                                    async_sessionmaker, create_async_engine)
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.pool import NullPool
 
 from app.core.config import settings
-from app.core.database import get_db_session
-from app.main import app as main_app
-from app.models import Base, Follow, Like, Media, Tweet, User
+from app.core.database import Base, get_db_session
+from app.main import app
+from app.models import User, Tweet, Media, Follow, Like
+
+# --- Базовые фикстуры ---
+test_engine = create_async_engine(settings.EFFECTIVE_DATABASE_URL, poolclass=NullPool)
+TestingSessionLocal = async_sessionmaker(autocommit=False, autoflush=False, bind=test_engine, class_=AsyncSession,
+                                         expire_on_commit=False)
 
 
-# --- Фикстуры для работы с БД ---
+@pytest_asyncio.fixture(scope="session", autouse=True)
+async def setup_database():
+    async with test_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+        await conn.run_sync(Base.metadata.create_all)
+    yield
+    # Можно раскомментировать для удаления после всех тестов
+    # async with test_engine.begin() as conn:
+    #     await conn.run_sync(Base.metadata.drop_all)
+
+
+@pytest_asyncio.fixture(scope="function")
+async def db_session() -> AsyncGenerator[AsyncSession, None]:
+    async with TestingSessionLocal() as session:
+        yield session
+        # Важно откатывать изменения после каждого теста для изоляции
+        await session.rollback()
+        await session.close()
+
 
 @pytest.fixture(scope="session")
-def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
-    """Создает event loop для сессии pytest."""
-    # Стандартная фикстура для pytest-asyncio
+def event_loop(request) -> Generator[asyncio.AbstractEventLoop, None, None]:
     loop = asyncio.get_event_loop_policy().new_event_loop()
     yield loop
     loop.close()
 
 
-@pytest_asyncio.fixture(scope="session")
-async def test_db_engine() -> AsyncGenerator[AsyncEngine, None]:
-    """Создает асинхронный движок для тестовой БД (SQLite)."""
-    # Убедимся, что мы в режиме тестирования
-    if not settings.TESTING:
-        pytest.fail("Тесты должны запускаться с TESTING=True в настройках.")
-    if not settings.EFFECTIVE_DATABASE_URL.startswith("sqlite"):
-        pytest.fail("Тесты ожидают SQLite в качестве тестовой БД (TEST_DB_URL).")
-
-    engine = create_async_engine(settings.EFFECTIVE_DATABASE_URL, echo=False)  # echo=False для тестов
-
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-        await conn.run_sync(Base.metadata.create_all)
-    print(f"\nТестовая БД инициализирована: {settings.EFFECTIVE_DATABASE_URL}")
-    yield engine
-    # Закрываем движок после завершения всех тестов сессии
-    await engine.dispose()
-    print(f"\nТестовая БД закрыта: {settings.EFFECTIVE_DATABASE_URL}")
-
-
-@pytest_asyncio.fixture(scope="function")  # Сессия на каждую функцию для изоляции
-async def db_session(test_db_engine: AsyncEngine) -> AsyncGenerator[AsyncSession, None]:
-    """Предоставляет асинхронную сессию для тестовой БД."""
-    session_factory = async_sessionmaker(
-        bind=test_db_engine, class_=AsyncSession, expire_on_commit=False
-    )
-    async with session_factory() as session:
-        # Начинаем транзакцию для теста
-        await session.begin()
+@pytest_asyncio.fixture(scope="function")
+async def client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
+    def override_get_db():
         try:
-            yield session
+            yield db_session
         finally:
-            # Откатываем транзакцию после каждого теста для изоляции
-            await session.rollback()
+            # Явное закрытие не нужно, т.к. db_session - контекстный менеджер
+            pass
+
+    app.dependency_overrides[get_db_session] = override_get_db
+    async with AsyncClient(app=app, base_url="http://testserver") as test_client:  # Убрал /api_old/v1 из base_url
+        yield test_client
+    app.dependency_overrides.clear()
 
 
-# --- Фикстуры для FastAPI приложения и HTTP клиента ---
-
-@pytest.fixture(scope="session")  # Достаточно одной сессии для приложения
-def test_app(db_session: AsyncSession) -> FastAPI:
-    """Создает экземпляр FastAPI приложения для тестов с переопределенной зависимостью БД."""
-
-    # Функция для переопределения зависимости get_db_session
-    async def override_get_db_session() -> AsyncGenerator[AsyncSession, None]:
-        # Эта функция будет использоваться вместо реальной get_db_session
-        # Мы не можем использовать db_session напрямую здесь, так как ее scope='function'
-        # Поэтому создаем новую сессию из того же движка для каждого запроса к API
-        engine = db_session.bind  # Получаем движок из сессии фикстуры
-        if not engine:
-            pytest.fail("Не удалось получить движок из тестовой сессии БД.")
-
-        session_factory_override = async_sessionmaker(
-            bind=engine, class_=AsyncSession, expire_on_commit=False
-        )
-        async with session_factory_override() as session:
-            # Не начинаем транзакцию здесь, пусть управляется внутри эндпоинта/репозитория
-            yield session
-
-    # Применяем переопределение зависимости
-    main_app.dependency_overrides[get_db_session] = override_get_db_session
-    print("\nЗависимость get_db_session переопределена для тестов.")
-    return main_app
-
-
-@pytest_asyncio.fixture(scope="function")  # Клиент на каждую функцию
-async def async_client(test_app: FastAPI) -> AsyncGenerator[AsyncClient, None]:
-    """Предоставляет асинхронный HTTP клиент для тестирования API."""
-    # Используем ASGITransport для прямого взаимодействия с ASGI приложением без сети
-    transport = ASGITransport(app=test_app)  # type: ignore
-    async with AsyncClient(transport=transport, base_url="http://testserver") as client:
-        print("\nAsyncClient создан.")
-        yield client
-    print("\nAsyncClient закрыт.")
-
-
-# --- Фикстуры с тестовыми данными ---
-
+# --- Фикстуры данных ---
 @pytest_asyncio.fixture(scope="function")
-async def test_user_alice(db_session: AsyncSession) -> User:
-    """Создает тестового пользователя Alice в БД."""
-    user = User(name="TestAlice", api_key="test_alice_key")
+async def test_user1(db_session: AsyncSession) -> User:
+    user = User(name="Test User 1", api_key="testkey1")
     db_session.add(user)
     await db_session.commit()
     await db_session.refresh(user)
-    print(f"\nСоздан тестовый пользователь: {user.name} (ID: {user.id}, Key: {user.api_key})")
     return user
 
 
 @pytest_asyncio.fixture(scope="function")
-async def test_user_bob(db_session: AsyncSession) -> User:
-    """Создает тестового пользователя Bob в БД."""
-    user = User(name="TestBob", api_key="test_bob_key")
+async def test_user2(db_session: AsyncSession) -> User:
+    user = User(name="Test User 2", api_key="testkey2")
     db_session.add(user)
     await db_session.commit()
     await db_session.refresh(user)
-    print(f"\nСоздан тестовый пользователь: {user.name} (ID: {user.id}, Key: {user.api_key})")
     return user
 
 
 @pytest_asyncio.fixture(scope="function")
-async def test_user_charlie(db_session: AsyncSession) -> User:
-    """Создает тестового пользователя Charlie в БД."""
-    user = User(name="TestCharlie", api_key="test_charlie_key")
+async def test_user3_no_tweets(db_session: AsyncSession) -> User:
+    user = User(name="Test User 3", api_key="testkey3")
     db_session.add(user)
     await db_session.commit()
     await db_session.refresh(user)
-    print(f"\nСоздан тестовый пользователь: {user.name} (ID: {user.id}, Key: {user.api_key})")
     return user
-
-
-@pytest_asyncio.fixture(scope="function")
-async def test_tweet_by_alice(db_session: AsyncSession, test_user_alice: User) -> Tweet:
-    """Создает тестовый твит от пользователя Alice."""
-    tweet = Tweet(content="Test tweet content by Alice", author_id=test_user_alice.id)
-    db_session.add(tweet)
-    await db_session.commit()
-    await db_session.refresh(tweet)
-    print(f"\nСоздан тестовый твит: ID {tweet.id} от {test_user_alice.name}")
-    return tweet
-
-
-@pytest_asyncio.fixture(scope="function")
-async def test_tweet_by_bob(db_session: AsyncSession, test_user_bob: User) -> Tweet:
-    """Создает тестовый твит от пользователя Bob."""
-    tweet = Tweet(content="Test tweet content by Bob", author_id=test_user_bob.id)
-    db_session.add(tweet)
-    await db_session.commit()
-    await db_session.refresh(tweet)
-    print(f"\nСоздан тестовый твит: ID {tweet.id} от {test_user_bob.name}")
-    return tweet
-
-
-# --- Новые фикстуры ---
-@pytest_asyncio.fixture(scope="function")
-async def alice_follows_bob(db_session: AsyncSession, test_user_alice: User, test_user_bob: User) -> Follow:
-    """Создает подписку Alice на Bob."""
-    follow = Follow(follower_id=test_user_alice.id, following_id=test_user_bob.id)
-    db_session.add(follow)
-    await db_session.commit()
-    # Refresh не нужен для Follow
-    print(f"\nСоздана подписка: {test_user_alice.name} -> {test_user_bob.name}")
-    return follow
-
-
-@pytest_asyncio.fixture(scope="function")
-async def bob_likes_alice_tweet(db_session: AsyncSession, test_user_bob: User, test_tweet_by_alice: Tweet) -> Like:
-    """Создает лайк от Bob на твит Alice."""
-    like = Like(user_id=test_user_bob.id, tweet_id=test_tweet_by_alice.id)
-    db_session.add(like)
-    await db_session.commit()
-    # Refresh не нужен для Like
-    print(f"\nСоздан лайк: {test_user_bob.name} -> Tweet ID {test_tweet_by_alice.id}")
-    return like
 
 
 @pytest_asyncio.fixture(scope="function")
 async def test_media(db_session: AsyncSession) -> Media:
-    """Создает тестовую запись медиа."""
     media = Media(file_path="test_image.jpg")
     db_session.add(media)
     await db_session.commit()
     await db_session.refresh(media)
-    print(f"\nСоздана тестовая запись медиа: ID {media.id}")
     return media
+
+
+@pytest_asyncio.fixture(scope="function")
+async def test_media_list(db_session: AsyncSession) -> List[Media]:
+    media1 = Media(file_path="image1.png")
+    media2 = Media(file_path="image2.gif")
+    db_session.add_all([media1, media2])
+    await db_session.commit()
+    await db_session.refresh(media1)
+    await db_session.refresh(media2)
+    return [media1, media2]
+
+
+@pytest_asyncio.fixture(scope="function")
+async def test_tweet_user1(db_session: AsyncSession, test_user1: User) -> Tweet:
+    tweet = Tweet(content="Tweet from User 1", author_id=test_user1.id)
+    db_session.add(tweet)
+    await db_session.commit()
+    await db_session.refresh(tweet)
+    return tweet
+
+
+@pytest_asyncio.fixture(scope="function")
+async def test_tweet_user2(db_session: AsyncSession, test_user2: User) -> Tweet:
+    tweet = Tweet(content="Tweet from User 2", author_id=test_user2.id)
+    db_session.add(tweet)
+    await db_session.commit()
+    await db_session.refresh(tweet)
+    return tweet
+
+
+@pytest_asyncio.fixture(scope="function")
+async def test_tweet_user1_with_media(db_session: AsyncSession, test_user1: User,
+                                      test_media_list: List[Media]) -> Tweet:
+    tweet = Tweet(content="Tweet from User 1 with media", author_id=test_user1.id)
+    tweet.attachments.extend(test_media_list)
+    db_session.add(tweet)
+    await db_session.commit()
+    await db_session.refresh(tweet, attribute_names=['attachments'])
+    return tweet
+
+
+@pytest_asyncio.fixture(scope="function")
+async def test_like_user2_on_tweet1(db_session: AsyncSession, test_user2: User, test_tweet_user1: Tweet) -> Like:
+    like = Like(user_id=test_user2.id, tweet_id=test_tweet_user1.id)
+    db_session.add(like)
+    await db_session.commit()
+    # refresh не нужен для Like, т.к. нет генерируемых полей
+    return like
+
+
+@pytest_asyncio.fixture(scope="function")
+async def test_follow_user1_on_user2(db_session: AsyncSession, test_user1: User, test_user2: User) -> Follow:
+    follow = Follow(follower_id=test_user1.id, following_id=test_user2.id)
+    db_session.add(follow)
+    await db_session.commit()
+    return follow
+
+
+@pytest_asyncio.fixture(scope="function")
+async def auth_headers_user1(test_user1: User) -> dict:
+    return {"api-key": test_user1.api_key}
+
+
+@pytest_asyncio.fixture(scope="function")
+async def auth_headers_user2(test_user2: User) -> dict:
+    return {"api-key": test_user2.api_key}
