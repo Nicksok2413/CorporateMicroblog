@@ -1,6 +1,6 @@
 """Зависимости FastAPI для API версии v1."""
 
-from typing import Annotated, AsyncGenerator
+from typing import Annotated
 
 from fastapi import Depends, Header
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db_session
 from app.core.exceptions import AuthenticationRequiredError, PermissionDeniedError
 from app.core.logging import log
-from app.models import Follow, Like, Media, Tweet, User
+from app.models import Media, Tweet, User
 from app.repositories import (
     FollowRepository, LikeRepository, MediaRepository, TweetRepository, UserRepository
 )
@@ -86,12 +86,11 @@ def get_tweet_service(
     )
 
 
-# UserService зависит только от UserRepo
+# UserService зависит от UserRepo и FollowRepo
 def get_user_service(
         repo: UserRepo,
-        follow_repo: FollowRepo  # Добавим зависимость для get_user_profile
+        follow_repo: FollowRepo
 ) -> UserService:
-    # Передаем нужные репозитории в конструктор
     return UserService(repo=repo, follow_repo=follow_repo)
 
 

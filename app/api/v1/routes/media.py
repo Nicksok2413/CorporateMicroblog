@@ -1,11 +1,11 @@
 """API роуты для работы с медиафайлами."""
 
-from fastapi import APIRouter, File, UploadFile, status
+from fastapi import APIRouter, Depends, File, UploadFile, status
 
-from app.api.v1.dependencies import CurrentUser, DBSession
+from app.api.v1.dependencies import CurrentUser, DBSession, MediaSvc, get_media_service
 from app.core.exceptions import BadRequestError
 from app.core.logging import log
-from app.services import media_service
+from app.services import MediaService
 from app.schemas import MediaCreateResult
 
 router = APIRouter(prefix="/media", tags=["Media"])
@@ -21,6 +21,7 @@ router = APIRouter(prefix="/media", tags=["Media"])
 async def upload_media_file(
         current_user: CurrentUser,
         db: DBSession,
+        media_service: MediaSvc,
         # Данные файла из формы (multipart/form-data)
         file: UploadFile = File(..., description="Медиафайл для загрузки (jpg, png, gif)")
 ):
