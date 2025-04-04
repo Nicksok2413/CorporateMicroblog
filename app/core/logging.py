@@ -127,7 +127,10 @@ def configure_logging():
 
 
 # Инициализация логирования при импорте модуля
-# configure_logging()
+# Комментируем строку при тестах, иначе будет ошибка:
+# ImportError: cannot import name 'settings' from partially initialized module 'app.core.config' (most likely due to a circular import)
+# TODO: Подумать как решить эту проблему
+configure_logging()
 
 # Экспортируем настроенный логгер для использования в других модулях
 log = logger

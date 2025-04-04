@@ -1,8 +1,4 @@
 """Основной файл приложения FastAPI для сервиса микроблогов."""
-
-# Сначала импортируем и настраиваем логирование
-from app.core.logging import log
-
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -12,10 +8,11 @@ from fastapi.staticfiles import StaticFiles
 from app.api.router import api_router
 from app.core.config import settings
 from app.core.database import db
+from app.core.logging import log
 from app.core.exceptions import setup_exception_handlers  # Наша функция настройки обработчиков
 
 
-# 3. Определяем lifespan для управления подключением к БД
+# Определяем lifespan для управления подключением к БД
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
@@ -48,7 +45,7 @@ async def lifespan(app: FastAPI):
         log.info("Приложение остановлено.")
 
 
-# 4. Создаем экземпляр FastAPI
+# Создаем экземпляр FastAPI
 log.info(f"Создание экземпляра FastAPI для '{settings.PROJECT_NAME} {settings.API_VERSION}'")
 log.info(f"Debug={settings.DEBUG}, Testing={settings.TESTING}, Production={settings.PRODUCTION}")
 app = FastAPI(
@@ -60,15 +57,15 @@ app = FastAPI(
     lifespan=lifespan,  # Подключаем управление жизненным циклом
 )
 
-# 5. Настраиваем CORS (Cross-Origin Resource Sharing)
+# Настраиваем CORS (Cross-Origin Resource Sharing)
 # Позволяет фронтенду с другого домена обращаться к API
 if settings.DEBUG or not settings.PRODUCTION:
-    allow_origins = ["*"] # Разрешаем все для разработки/тестирования
+    allow_origins = ["*"]  # Разрешаем все для разработки/тестирования
     log.warning("CORS настроен разрешать все источники (*). Не используйте в production!")
 else:
     # В production укажите конкретные разрешенные домены фронтенда
     # allow_origins = ["https://your-corporate-portal.com", "http://localhost:xxxx"] # Пример
-    allow_origins = [] # По умолчанию запретить все, если не задано
+    allow_origins = []  # По умолчанию запретить все, если не задано
     log.info(f"CORS настроен для production. Разрешенные источники: {allow_origins}")
 
 log.info("Настройка CORS...")
@@ -81,16 +78,15 @@ app.add_middleware(
 )
 log.info(f"CORS настроен. Разрешенный заголовок API ключа: '{settings.API_KEY_HEADER}'")
 
-# 6. Настраиваем обработчики исключений
+# Настраиваем обработчики исключений
 setup_exception_handlers(app)
 log.info("Обработчики исключений настроены.")
 
-# 7. Подключаем роутеры API
+# Подключаем роутеры API
 log.info(f"Подключение API роутера с префиксом '{settings.API_V1_STR}'...")
 app.include_router(api_router, prefix="/api")
 
-# 8. Монтируем статические файлы для медиа
-# URL будет /static/media/filename.jpg -> файл /app/static/media/filename.jpg
+# Монтируем статические файлы для медиа
 if settings.STORAGE_PATH_OBJ and settings.STORAGE_PATH_OBJ.is_dir():
     # Префикс URL, по которому будут доступны файлы (/static/media/filename.jpg)
     media_url_prefix = settings.MEDIA_URL_PREFIX
@@ -105,7 +101,8 @@ else:
     log.warning(f"Директория для медиафайлов '{settings.STORAGE_PATH}' не найдена или не настроена."
                 f" Раздача медиа будет недоступна.")
 
-# 9. Корневой эндпоинт для проверки
+
+# Корневой эндпоинт для проверки
 @app.get("/", tags=["Default"], summary="Проверка доступности сервиса")
 async def root():
     """
