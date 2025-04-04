@@ -2,15 +2,14 @@
 
 from fastapi import APIRouter, File, UploadFile, status
 
-# Импортируем зависимости, сервисы и схемы
 from app.api.v1.dependencies import CurrentUser, DBSession
 from app.core.exceptions import BadRequestError
 from app.core.logging import log
 from app.services import media_service
-from app.schemas import MediaCreateResult  # Импортируем схему ответа
+from app.schemas import MediaCreateResult
 
 # Создаем роутер для медиа
-router = APIRouter(prefix="/media", tags=["Media"])  # Добавляем префикс /media
+router = APIRouter(prefix="/media", tags=["Media"])
 
 
 @router.post(

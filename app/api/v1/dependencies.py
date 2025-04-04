@@ -20,9 +20,8 @@ DBSession = Annotated[AsyncSession, Depends(get_db_session)]
 # --- Зависимость для получения текущего пользователя ---
 
 async def get_current_user(
-        # Используем Annotated для Header и Depends
-        api_key: Annotated[str | None, Header(description="Ключ API для аутентификации пользователя.")] = None,
-        db: DBSession = Depends(get_db_session)  # Используем типизированную сессию
+        db: DBSession,
+        api_key: Annotated[str | None, Header(description="Ключ API для аутентификации пользователя.")] = None
 ) -> User:
     """
     Зависимость для получения текущего пользователя на основе API ключа.
@@ -30,8 +29,8 @@ async def get_current_user(
     Проверяет наличие заголовка `api-key` и ищет пользователя в базе данных.
 
     Args:
-        api_key (str | None): Значение заголовка `api-key` из запроса.
         db (AsyncSession): Сессия базы данных, предоставляемая зависимостью `get_db_session`.
+        api_key (str | None): Значение заголовка `api-key` из запроса.
 
     Returns:
         User: Объект аутентифицированного пользователя.

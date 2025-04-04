@@ -116,7 +116,7 @@ class Settings(BaseSettings):
         Args:
             __context: Контекст инициализации.
         """
-        effective_path_str = self.EFFECTIVE_STORAGE_PATH  # Используем вычисляемый путь
+        effective_path_str = self.EFFECTIVE_STORAGE_PATH
         self.STORAGE_PATH_OBJ = Path(effective_path_str)
 
         try:
