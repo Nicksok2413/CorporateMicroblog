@@ -1,13 +1,15 @@
 """API роуты для лайков твитов."""
 
-from fastapi import APIRouter, Depends, Path as FastApiPath, status
+from fastapi import APIRouter, Path as FastApiPath, status
 
-from app.api.v1.dependencies import CurrentUser, DBSession, TweetSvc, get_tweet_service
+from app.api.v1.dependencies import CurrentUser, DBSession, LikeSvc
 from app.core.logging import log
-from app.schemas import TweetActionResult  # Общий ответ для лайка/анлайка
-from app.services import TweetService  # Логика лайков находится в TweetService
+from app.schemas import TweetActionResult
 
 router = APIRouter(tags=["Likes"])
+
+
+# TODO: fix docstrings
 
 
 @router.post(
@@ -17,13 +19,13 @@ router = APIRouter(tags=["Likes"])
     summary="Поставить лайк твиту",
     responses={
         status.HTTP_404_NOT_FOUND: {"description": "Твит не найден"},
-        status.HTTP_409_CONFLICT: {"description": "Твит уже лайкнут этим пользователем"},
+        status.HTTP_409_CONFLICT: {"description": "Твит уже лайкнут"},
     }
 )
 async def like_a_tweet(
         current_user: CurrentUser,
         db: DBSession,
-        tweet_service: TweetSvc,
+        like_service: LikeSvc,
         tweet_id: int = FastApiPath(..., description="ID твита для лайка", gt=0),
 ):
     """
@@ -43,7 +45,7 @@ async def like_a_tweet(
         BadRequestError: При ошибке сохранения лайка.
     """
     log.info(f"Запрос на лайк твита ID {tweet_id} от пользователя ID {current_user.id}")
-    await tweet_service.like_tweet(db=db, current_user=current_user, tweet_id=tweet_id)
+    await like_service.like_tweet(db=db, current_user=current_user, tweet_id=tweet_id)
     return TweetActionResult()
 
 
@@ -53,13 +55,13 @@ async def like_a_tweet(
     status_code=status.HTTP_200_OK,
     summary="Убрать лайк с твита",
     responses={
-        status.HTTP_404_NOT_FOUND: {"description": "Твит не найден или лайк отсутствует"},
+        status.HTTP_404_NOT_FOUND: {"description": "Лайк не найден"},
     }
 )
 async def unlike_a_tweet(
         current_user: CurrentUser,
         db: DBSession,
-        tweet_service: TweetSvc,
+        like_service: LikeSvc,
         tweet_id: int = FastApiPath(..., gt=0, description="ID твита для снятия лайка"),
 ):
     """
@@ -78,5 +80,5 @@ async def unlike_a_tweet(
         BadRequestError: При ошибке удаления лайка.
     """
     log.info(f"Запрос на снятие лайка с твита ID {tweet_id} от пользователя ID {current_user.id}")
-    await tweet_service.unlike_tweet(db=db, current_user=current_user, tweet_id=tweet_id)
+    await like_service.unlike_tweet(db=db, current_user=current_user, tweet_id=tweet_id)
     return TweetActionResult()

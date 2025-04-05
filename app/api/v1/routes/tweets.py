@@ -1,14 +1,16 @@
 """API роуты для работы с твитами (создание, удаление, лента)."""
 
-from fastapi import APIRouter, Depends, Path as FastApiPath, status
+from fastapi import APIRouter, Path as FastApiPath, status
 
-from app.api.v1.dependencies import CurrentUser, DBSession, TweetSvc, get_tweet_service
+from app.api.v1.dependencies import CurrentUser, DBSession, TweetSvc
 from app.core.logging import log
-from app.services import TweetService
 from app.schemas import (TweetActionResult, TweetCreateRequest,
                          TweetCreateResult, TweetFeedResult)
 
 router = APIRouter(prefix="/tweets", tags=["Tweets"])
+
+
+# TODO: fix docstrings
 
 
 @router.post(

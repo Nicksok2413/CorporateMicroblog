@@ -1,14 +1,15 @@
 """API роуты для работы с медиафайлами."""
 
-from fastapi import APIRouter, Depends, File, UploadFile, status
+from fastapi import APIRouter, File, UploadFile, status
 
-from app.api.v1.dependencies import CurrentUser, DBSession, MediaSvc, get_media_service
-from app.core.exceptions import BadRequestError
+from app.api.v1.dependencies import CurrentUser, DBSession, MediaSvc
 from app.core.logging import log
-from app.services import MediaService
 from app.schemas import MediaCreateResult
 
 router = APIRouter(prefix="/media", tags=["Media"])
+
+
+# TODO: fix docstrings
 
 
 @router.post(
@@ -46,6 +47,7 @@ async def upload_media_file(
         BadRequestError: Если произошла ошибка сохранения файла или БД (перехватывается).
     """
     log.info(f"Пользователь ID {current_user.id} загружает файл: '{file.filename}' ({file.content_type})")
+    media = None
 
     try:
         media = await media_service.save_media_file(
@@ -54,11 +56,10 @@ async def upload_media_file(
             filename=file.filename or "unknown",  # Используем имя файла или заглушку
             content_type=file.content_type or "application/octet-stream"
         )
-    except Exception as exc:
-        # Логируем ошибку и позволяем обработчику исключений FastAPI разобраться
-        log.exception(f"Непредвиденная ошибка при обработке загрузки файла от пользователя ID {current_user.id}")
-        # Перевыбрасываем как BadRequestError или позволяем обработчику поймать оригинальное исключение
-        raise BadRequestError(f"Ошибка при обработке файла: {exc}") from exc
+    except Exception:
+        log.exception(f"Ошибка при обработке загрузки файла от пользователя ID {current_user.id}")
+        # Позволяем глобальному обработчику поймать ошибку (MediaValidationError, BadRequestError и т.д.)
+        raise
     finally:
         await file.close()
         log.debug(f"Файл '{file.filename}' закрыт после обработки.")

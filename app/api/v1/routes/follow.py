@@ -1,13 +1,15 @@
 """API роуты для подписок пользователей."""
 
-from fastapi import APIRouter, Depends, Path as FastApiPath, status
+from fastapi import APIRouter, Path as FastApiPath, status
 
-from app.api.v1.dependencies import CurrentUser, DBSession, FollowSvc, get_follow_service
+from app.api.v1.dependencies import CurrentUser, DBSession, FollowSvc
 from app.core.logging import log
 from app.schemas import ResultTrue
-from app.services import FollowService
 
 router = APIRouter(tags=["Follows"])
+
+
+# TODO: fix docstrings
 
 
 @router.post(
@@ -16,9 +18,9 @@ router = APIRouter(tags=["Follows"])
     status_code=status.HTTP_201_CREATED,
     summary="Подписаться на пользователя",
     responses={
-        status.HTTP_404_NOT_FOUND: {"description": "Пользователь для подписки не найден"},
+        status.HTTP_404_NOT_FOUND: {"description": "Пользователь не найден"},
         status.HTTP_403_FORBIDDEN: {"description": "Нельзя подписаться на себя"},
-        status.HTTP_409_CONFLICT: {"description": "Вы уже подписаны на этого пользователя"},
+        status.HTTP_409_CONFLICT: {"description": "Уже подписаны"},
     }
 )
 async def follow_a_user(
@@ -55,7 +57,7 @@ async def follow_a_user(
     status_code=status.HTTP_200_OK,
     summary="Отписаться от пользователя",
     responses={
-        status.HTTP_404_NOT_FOUND: {"description": "Пользователь не найден или вы не были на него подписаны"},
+        status.HTTP_404_NOT_FOUND: {"description": "Пользователь не найден или подписка отсутствует"},
         status.HTTP_403_FORBIDDEN: {"description": "Нельзя отписаться от себя"},
     }
 )

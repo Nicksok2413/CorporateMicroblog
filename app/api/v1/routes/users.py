@@ -1,16 +1,15 @@
 """API роуты для работы с пользователями и их профилями."""
 
-from typing import Annotated
+from fastapi import APIRouter, Path as FastApiPath, status
 
-from fastapi import APIRouter, Depends, Path as FastApiPath, status
-
-from app.api.v1.dependencies import CurrentUser, DBSession, UserSvc, get_user_service
+from app.api.v1.dependencies import CurrentUser, DBSession, UserSvc
 from app.core.logging import log
-from app.services import UserService
 from app.schemas import UserProfileResult
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
+
+# TODO: fix docstrings
 
 @router.get(
     "/me",
@@ -38,7 +37,6 @@ async def get_my_profile(
     """
     log.info(f"Запрос профиля для текущего пользователя ID {current_user.id}")
     profile = await user_service.get_user_profile(db=db, user_id=current_user.id)
-    # Возвращаем в формате { "result": true, "user": { ... } }
     return UserProfileResult(user=profile)
 
 
@@ -74,5 +72,4 @@ async def get_user_profile_by_id(
     """
     log.info(f"Запрос профиля для пользователя ID {user_id}")
     profile = await user_service.get_user_profile(db=db, user_id=user_id)
-    # Обработчик исключений поймает NotFoundError из сервиса
     return UserProfileResult(user=profile)
