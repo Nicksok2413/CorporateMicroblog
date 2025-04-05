@@ -34,7 +34,7 @@ services:
     volumes:
       # Монтируем код для live reload (удобно для разработки, можно убрать для чистого production)
       - ./app:/app/app
-      - ./migrations:/app/migrations
+      - ./alembic:/app/alembic
       - ./alembic.ini:/app/alembic.ini
       # Том для хранения загруженных медиафайлов
       - media_volume:/app/static/media
