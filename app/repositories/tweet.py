@@ -45,7 +45,7 @@ class TweetRepository(BaseRepository[Tweet, TweetCreateInternal]):
             # Присоединяем медиа к твиту (SQLAlchemy обработает M2M связь)
             db_obj.attachments.extend(media_items)
 
-        db.add(db_obj)
+        await self.add(db, db_obj=db_obj)
         return db_obj
 
     async def get_feed_for_user(
@@ -58,7 +58,7 @@ class TweetRepository(BaseRepository[Tweet, TweetCreateInternal]):
         Получает ленту твитов для пользователя от указанных авторов.
 
         Загружает связанные данные (автор, лайки + их пользователи, медиа)
-        и сортирует по популярности (количество лайков убыв.), затем по дате создания (убыв.).
+        и сортирует по популярности (количество лайков убыв.).
 
         Args:
             db: Асинхронная сессия SQLAlchemy.
@@ -91,14 +91,14 @@ class TweetRepository(BaseRepository[Tweet, TweetCreateInternal]):
                 selectinload(Tweet.likes).selectinload(Like.user),  # Загружаем лайки и пользователей
                 selectinload(Tweet.attachments)  # Загружаем медиа
             )
-            # Сортировка: сначала по количеству лайков (NULLS LAST), затем по дате создания
+            # Сортировка: сначала по количеству лайков (NULLS LAST)
             .order_by(
-                desc(func.coalesce(like_count_subquery.c.like_count, 0))  # Сортировка по лайкам, NULL -> 0
+                desc(func.coalesce(like_count_subquery.c.like_count, 0))  # Сортировка по лайкам, TODO: Упростить!
             )
         )
 
         result = await db.execute(statement)
-        # Используем unique() для корректной обработки LEFT JOIN при загрузке связей
+        # Используем unique() для корректной обработки JOIN при загрузке связей
         tweets = result.unique().scalars().all()
         log.debug(f"Найдено {len(tweets)} твитов для ленты.")
         return tweets
@@ -115,6 +115,7 @@ class TweetRepository(BaseRepository[Tweet, TweetCreateInternal]):
             Optional[Tweet]: Найденный твит с загруженными деталями или None.
         """
         log.debug(f"Получение твита с деталями по ID: {tweet_id}")
+
         statement = (
             select(self.model)
             .where(self.model.id == tweet_id)
@@ -124,8 +125,10 @@ class TweetRepository(BaseRepository[Tweet, TweetCreateInternal]):
                 selectinload(Tweet.attachments)
             )
         )
+
         result = await db.execute(statement)
         instance = result.unique().scalars().first()
+
         if instance:
             log.debug(f"Твит с деталями (ID {tweet_id}) найден.")
         else:

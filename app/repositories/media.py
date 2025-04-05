@@ -8,6 +8,6 @@ from app.schemas.media import MediaCreate
 class MediaRepository(BaseRepository[Media, MediaCreate]):
     """
     Репозиторий для выполнения CRUD операций с моделью Media.
+    В нашем случае базовых CRUD достаточно.
     """
-    # В данном случае базовых CRUD достаточно
     pass

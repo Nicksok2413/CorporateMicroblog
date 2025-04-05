@@ -13,6 +13,7 @@ from app.models.follow import Follow
 class FollowRepository:
     """
     Репозиторий для управления подписками пользователей.
+    Не наследуется от BaseRepository из-за специфики модели Follow.
     """
     model = Follow
 
@@ -29,10 +30,12 @@ class FollowRepository:
             Optional[Follow]: Объект Follow, если подписка существует, иначе None.
         """
         log.debug(f"Проверка подписки: follower_id={follower_id}, following_id={following_id}")
+
         statement = select(self.model).where(
             self.model.follower_id == follower_id,
             self.model.following_id == following_id
         )
+
         result = await db.execute(statement)
         return result.scalars().first()
 
@@ -53,7 +56,7 @@ class FollowRepository:
         db.add(db_obj)
         return db_obj
 
-    async def remove_follow(self, db: AsyncSession, *, follower_id: int, following_id: int) -> bool:
+    async def delete_follow(self, db: AsyncSession, *, follower_id: int, following_id: int) -> None:
         """
         Выполняет удаление записи о подписке напрямую в БД.
 
@@ -61,19 +64,16 @@ class FollowRepository:
             db: Асинхронная сессия SQLAlchemy.
             follower_id: ID пользователя-подписчика.
             following_id: ID пользователя, на которого подписаны.
-
-        Returns:
-             bool: True, если команда delete выполнена.
-                   Сервис должен проверить rowcount после коммита.
         """
         log.debug(f"Подготовка к удалению подписки: follower_id={follower_id}, following_id={following_id}")
+
         statement = delete(self.model).where(
             self.model.follower_id == follower_id,
             self.model.following_id == following_id
-        ).returning(self.model.follower_id) # Добавим returning, чтобы потом проверить rowcount
-        # TODO: rowcount в сервисе мы не проверяем
+        )
+
         await db.execute(statement)
-        return True
+        # Сервис должен проверить результат коммита или существование до удаления
 
     async def get_following_ids(self, db: AsyncSession, *, follower_id: int) -> List[int]:
         """
@@ -123,13 +123,15 @@ class FollowRepository:
             Sequence[Follow]: Последовательность объектов Follow с загруженным `followed_user`.
         """
         log.debug(f"Получение подписок с деталями пользователей для follower_id={follower_id}")
-        stmt = (
+
+        statement = (
             select(Follow)
             .where(Follow.follower_id == follower_id)
             .options(selectinload(Follow.followed_user))  # Загружаем профиль того, на кого подписан
         )
-        res = await db.execute(stmt)
-        return res.scalars().all()
+
+        result = await db.execute(statement)
+        return result.scalars().all()
 
     async def get_followers_with_users(self, db: AsyncSession, *, following_id: int) -> Sequence[Follow]:
         """
@@ -143,10 +145,12 @@ class FollowRepository:
             Sequence[Follow]: Последовательность объектов Follow с загруженным `follower`.
         """
         log.debug(f"Получение подписчиков с деталями пользователей для following_id={following_id}")
-        stmt = (
+
+        statement = (
             select(Follow)
             .where(Follow.following_id == following_id)
             .options(selectinload(Follow.follower))  # Загружаем профиль подписчика
         )
-        res = await db.execute(stmt)
-        return res.scalars().all()
+
+        result = await db.execute(statement)
+        return result.scalars().all()

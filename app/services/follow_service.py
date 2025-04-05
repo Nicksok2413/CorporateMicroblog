@@ -112,7 +112,7 @@ class FollowService:
         await self._validate_follow_action(db, follower_id, user_to_unfollow_id)
 
         try:
-            await self.repo.remove_follow(db, follower_id=follower_id, following_id=user_to_unfollow_id)
+            await self.repo.delete_follow(db, follower_id=follower_id, following_id=user_to_unfollow_id)
             await db.commit()
             log.success(f"Пользователь ID {follower_id} успешно отписался от пользователя ID {user_to_unfollow_id}")
 

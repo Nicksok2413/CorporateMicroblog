@@ -82,21 +82,21 @@ async def test_like_tweet_service_tweet_not_found(mocker):
 async def test_unlike_tweet_service_success(mocker):
     """Тест успешного снятия лайка."""
     mock_like_repo = mocker.patch("app.services_old.tweet_service.like_repo", autospec=True)
-    mock_like_repo.remove_like.return_value = True  # Лайк найден и удален
+    mock_like_repo.delete_like.return_value = True  # Лайк найден и удален
 
     db_session_mock = AsyncMock()
     current_user = User(id=1)
 
     await tweet_service.unlike_tweet(db=db_session_mock, current_user=current_user, tweet_id=1)
 
-    mock_like_repo.remove_like.assert_called_once_with(db=db_session_mock, user_id=1, tweet_id=1)
+    mock_like_repo.delete_like.assert_called_once_with(db=db_session_mock, user_id=1, tweet_id=1)
 
 
 @pytest.mark.asyncio
 async def test_unlike_tweet_service_not_liked(mocker):
     """Тест снятия лайка, которого не было."""
     mock_like_repo = mocker.patch("app.services_old.tweet_service.like_repo", autospec=True)
-    mock_like_repo.remove_like.return_value = False  # Лайк не найден
+    mock_like_repo.delete_like.return_value = False  # Лайк не найден
 
     db_session_mock = AsyncMock()
     current_user = User(id=1)
@@ -104,7 +104,7 @@ async def test_unlike_tweet_service_not_liked(mocker):
     with pytest.raises(NotFoundError):
         await tweet_service.unlike_tweet(db=db_session_mock, current_user=current_user, tweet_id=1)
 
-    mock_like_repo.remove_like.assert_called_once_with(db=db_session_mock, user_id=1, tweet_id=1)
+    mock_like_repo.delete_like.assert_called_once_with(db=db_session_mock, user_id=1, tweet_id=1)
 
 
 # --- Тесты для get_tweet_feed ---

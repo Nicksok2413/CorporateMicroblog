@@ -29,10 +29,12 @@ class LikeRepository:
             Optional[Like]: Объект Like, если лайк существует, иначе None.
         """
         log.debug(f"Проверка лайка: user_id={user_id}, tweet_id={tweet_id}")
+
         statement = select(self.model).where(
             self.model.user_id == user_id,
             self.model.tweet_id == tweet_id
         )
+
         result = await db.execute(statement)
         return result.scalars().first()
 
@@ -53,7 +55,7 @@ class LikeRepository:
         db.add(db_obj)
         return db_obj
 
-    async def remove_like(self, db: AsyncSession, *, user_id: int, tweet_id: int) -> bool:
+    async def delete_like(self, db: AsyncSession, *, user_id: int, tweet_id: int) -> None:
         """
         Выполняет удаление записи о лайке напрямую в БД (без загрузки объекта).
 
@@ -61,17 +63,13 @@ class LikeRepository:
             db: Асинхронная сессия SQLAlchemy.
             user_id: ID пользователя.
             tweet_id: ID твита.
-
-        Returns:
-            bool: True, если команда delete выполнена (не гарантирует, что строка была),
-                  False при ошибке (но ошибка должна перехватываться выше).
-                  Сервис должен проверить rowcount после коммита.
         """
         log.debug(f"Подготовка к удалению лайка: user_id={user_id}, tweet_id={tweet_id}")
+
         statement = delete(self.model).where(
             self.model.user_id == user_id,
             self.model.tweet_id == tweet_id
-        ).returning(self.model.user_id) # Добавим returning, чтобы потом проверить rowcount
+        )
 
         await db.execute(statement)
-        return True
+        # Сервис должен проверить результат коммита или существование до удаления

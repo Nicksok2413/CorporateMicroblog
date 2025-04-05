@@ -214,7 +214,7 @@ class TweetService(BaseService[Tweet, TweetRepository]):
             raise NotFoundError("Лайк не найден или уже удален.")
 
         try:
-            await self.like_repo.remove_like(db, user_id=current_user.id, tweet_id=tweet_id)
+            await self.like_repo.delete_like(db, user_id=current_user.id, tweet_id=tweet_id)
             await db.commit()
             log.success(f"Лайк от пользователя ID {current_user.id} на твит ID {tweet_id} успешно удален.")
         except Exception as exc:

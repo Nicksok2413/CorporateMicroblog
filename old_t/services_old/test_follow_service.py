@@ -107,7 +107,7 @@ async def test_unfollow_user_service_success(mocker):
     current_user = User(id=1)
     user_to_unfollow = User(id=2)
     mock_user_repo.get.return_value = user_to_unfollow
-    mock_follow_repo.remove_follow.return_value = True  # Подписка найдена и удалена
+    mock_follow_repo.delete_follow.return_value = True  # Подписка найдена и удалена
 
     db_session_mock = AsyncMock()
 
@@ -116,7 +116,7 @@ async def test_unfollow_user_service_success(mocker):
     )
 
     mock_user_repo.get.assert_called_once_with(db_session_mock, id=2)
-    mock_follow_repo.remove_follow.assert_called_once_with(db=db_session_mock, follower_id=1, following_id=2)
+    mock_follow_repo.delete_follow.assert_called_once_with(db=db_session_mock, follower_id=1, following_id=2)
 
 
 @pytest.mark.asyncio
@@ -128,7 +128,7 @@ async def test_unfollow_user_service_not_following(mocker):
     current_user = User(id=1)
     user_to_unfollow = User(id=2)
     mock_user_repo.get.return_value = user_to_unfollow
-    mock_follow_repo.remove_follow.return_value = False  # Подписка не найдена
+    mock_follow_repo.delete_follow.return_value = False  # Подписка не найдена
 
     db_session_mock = AsyncMock()
 
@@ -137,6 +137,6 @@ async def test_unfollow_user_service_not_following(mocker):
             db=db_session_mock, current_user=current_user, user_to_unfollow_id=2
         )
 
-    mock_follow_repo.remove_follow.assert_called_once_with(db=db_session_mock, follower_id=1, following_id=2)
+    mock_follow_repo.delete_follow.assert_called_once_with(db=db_session_mock, follower_id=1, following_id=2)
 
 # TODO: Добавить тесты для _validate_follow_action (хотя они косвенно покрываются другими тестами)
