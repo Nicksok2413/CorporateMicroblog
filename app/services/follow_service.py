@@ -1,6 +1,6 @@
 """Сервис для управления подписками."""
 
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import (BadRequestError, ConflictError,
@@ -53,7 +53,7 @@ class FollowService:
             raise NotFoundError(f"Пользователь с ID {following_id} не найден.")
         return user_to_follow
 
-    async def follow_user(self, db: AsyncSession, *, current_user: User, user_to_follow_id: int):
+    async def follow_user(self, db: AsyncSession, *, current_user: User, user_to_follow_id: int) -> None:
         """
         Осуществляет подписку одного пользователя на другого.
 
@@ -84,16 +84,15 @@ class FollowService:
             await db.commit()
             log.success(f"Пользователь ID {follower_id} успешно подписался на пользователя ID {user_to_follow_id}")
         except IntegrityError as exc:
-            # На случай гонки запросов или если проверка выше не сработала
             await db.rollback()
             log.warning(f"Конфликт целостности при подписке ({follower_id} -> {user_to_follow_id}): {exc}")
             raise ConflictError("Не удалось подписаться (возможно, подписка уже существует).") from exc
-        except Exception as exc:
+        except SQLAlchemyError as exc:
             await db.rollback()
             log.error(f"Ошибка при создании подписки ({follower_id} -> {user_to_follow_id}): {exc}", exc_info=True)
             raise BadRequestError("Не удалось подписаться на пользователя.") from exc
 
-    async def unfollow_user(self, db: AsyncSession, *, current_user: User, user_to_unfollow_id: int):
+    async def unfollow_user(self, db: AsyncSession, *, current_user: User, user_to_unfollow_id: int) -> None:
         """
         Осуществляет отписку одного пользователя от другого.
 
@@ -111,12 +110,18 @@ class FollowService:
         log.info(f"Пользователь ID {follower_id} пытается отписаться от пользователя ID {user_to_unfollow_id}")
         await self._validate_follow_action(db, follower_id, user_to_unfollow_id)
 
+        # Проверяем, существует ли подписка, чтобы вернуть 404, если нет
+        existing_follow = await self.repo.get_follow(db, follower_id=follower_id, following_id=user_to_unfollow_id)
+
+        if not existing_follow:
+            log.warning(f"Подписка пользователя ID {follower_id} на ID {user_to_unfollow_id} не найдена для удаления.")
+            raise NotFoundError("Вы не подписаны на этого пользователя.")
+
         try:
             await self.repo.delete_follow(db, follower_id=follower_id, following_id=user_to_unfollow_id)
             await db.commit()
             log.success(f"Пользователь ID {follower_id} успешно отписался от пользователя ID {user_to_unfollow_id}")
-
-        except Exception as exc:
+        except SQLAlchemyError as exc:
             await db.rollback()
             log.error(f"Ошибка при удалении подписки ({follower_id} -> {user_to_unfollow_id}): {exc}", exc_info=True)
             raise BadRequestError("Не удалось отписаться от пользователя.") from exc

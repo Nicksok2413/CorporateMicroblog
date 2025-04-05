@@ -23,7 +23,7 @@ class UserService(BaseService[User, UserRepository]):
         super().__init__(repo)
         self.follow_repo = follow_repo
 
-    async def get_user_by_id(self, db: AsyncSession, user_id: int) -> Optional[User]:
+    async def get_user_by_id(self, db: AsyncSession, *, user_id: int) -> Optional[User]:
         """
         Получает пользователя по ID.
 
@@ -34,9 +34,9 @@ class UserService(BaseService[User, UserRepository]):
         Returns:
             Найденный пользователь или None.
         """
-        return await self.repo.get(db, user_id)
+        return await self.repo.get(db, obj_id=user_id)
 
-    async def get_user_by_api_key(self, db: AsyncSession, api_key: str) -> Optional[User]:
+    async def get_user_by_api_key(self, db: AsyncSession, *, api_key: str) -> Optional[User]:
         """
         Получает пользователя по API ключу.
 
@@ -49,7 +49,7 @@ class UserService(BaseService[User, UserRepository]):
         """
         return await self.repo.get_by_api_key(db, api_key=api_key)
 
-    async def _get_user_or_404(self, db: AsyncSession, user_id: int) -> User:
+    async def _get_user_or_404(self, db: AsyncSession, *, user_id: int) -> User:
         """
         Вспомогательный метод для получения пользователя по ID или выброса NotFoundError.
 
@@ -63,7 +63,7 @@ class UserService(BaseService[User, UserRepository]):
         Raises:
             NotFoundError: Если пользователь не найден.
         """
-        user = await self.get_user_by_id(db, user_id)
+        user = await self.get_user_by_id(db, user_id=user_id)
 
         if not user:
             log.warning(f"Пользователь с ID {user_id} не найден.")
@@ -71,7 +71,7 @@ class UserService(BaseService[User, UserRepository]):
 
         return user
 
-    async def get_user_profile(self, db: AsyncSession, user_id: int) -> UserProfile:
+    async def get_user_profile(self, db: AsyncSession, *, user_id: int) -> UserProfile:
         """
         Получает и формирует профиль пользователя по ID.
 
@@ -88,7 +88,7 @@ class UserService(BaseService[User, UserRepository]):
             NotFoundError: Если пользователь не найден.
         """
         log.debug(f"Получение профиля для пользователя ID {user_id}")
-        user = await self._get_user_or_404(db, user_id)
+        user = await self._get_user_or_404(db, user_id=user_id)
 
         # Получаем подписки и подписчиков с загруженными данными пользователей
         following_relations: Sequence[Follow] = await self.follow_repo.get_following_with_users(db, follower_id=user_id)

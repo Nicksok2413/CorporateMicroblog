@@ -1,12 +1,10 @@
 """Модель SQLAlchemy для Media (Медиафайл)."""
 
-from pathlib import Path
 from typing import List, TYPE_CHECKING
 
 from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.core.config import settings
 from app.models.associations import tweet_media_association_table
 from app.models.base import Base
 
@@ -33,21 +31,3 @@ class Media(Base):
     tweets: Mapped[List["Tweet"]] = relationship(
         secondary=tweet_media_association_table, back_populates="attachments"
     )
-
-    @property
-    def url(self) -> str:
-        """Генерирует URL для доступа к файлу.
-
-        Returns:
-            str: Относительный URL вида /media/files/{filename}
-        """
-        return f"/media/files/{self.file_path}"
-
-    @property
-    def path(self) -> Path:
-        """Абсолютный путь к файлу в хранилище.
-
-        Returns:
-            Path: Полный путь к файлу
-        """
-        return Path(settings.STORAGE_PATH) / self.file_path

@@ -103,7 +103,7 @@ class TweetRepository(BaseRepository[Tweet, TweetCreateInternal]):
         log.debug(f"Найдено {len(tweets)} твитов для ленты.")
         return tweets
 
-    async def get_with_details(self, db: AsyncSession, tweet_id: int) -> Optional[Tweet]:
+    async def get_with_details(self, db: AsyncSession, *, tweet_id: int) -> Optional[Tweet]:
         """
         Получает твит по ID с загруженными связанными данными (автор, лайки, медиа).
 

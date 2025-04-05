@@ -110,7 +110,7 @@ async def test_save_media_file_success(db_session: AsyncSession):
         mock_create.assert_called_once()  # Check if repo create was called
         # Check the data passed to repo.create (relative path)
         create_call_args, _ = mock_create.call_args
-        created_obj_in = create_call_args.kwargs.get('obj_in')
+        created_obj_in = create_call_args.kwargs.get('obj_in', obj_id=)
         assert created_obj_in is not None
         assert created_obj_in.file_path == save_path.name  # Should be just the filename
 

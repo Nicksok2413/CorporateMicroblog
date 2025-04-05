@@ -25,7 +25,7 @@ class BaseRepository(Generic[ModelType, CreateSchemaType]):
     def __init__(self, model: Type[ModelType]):
         self.model = model
 
-    async def get(self, db: AsyncSession, obj_id: Any) -> Optional[ModelType]:
+    async def get(self, db: AsyncSession, *, obj_id: Any) -> Optional[ModelType]:
         """
         Получает запись по её ID.
 

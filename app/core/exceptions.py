@@ -134,8 +134,8 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     """
     error_messages = []
     for error in exc.errors():
-        field = " -> ".join(map(str, error.get("loc", ["unknown"])))
-        message = error.get("msg", "Unknown validation error")
+        field = " -> ".join(map(str, error.get("loc", obj_id=["unknown"])))
+        message = error.get("msg", obj_id="Unknown validation error")
         error_messages.append(f"Поле '{field}': {message}")
 
     error_detail = ". ".join(error_messages)
