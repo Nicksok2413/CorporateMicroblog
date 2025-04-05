@@ -18,9 +18,9 @@ class FollowService:
     но основная логика связана с проверкой Users.
     """
 
-    def __init__(self, repo: FollowRepository, user_repository: UserRepository):
+    def __init__(self, repo: FollowRepository, user_repo: UserRepository):
         self.repo = repo
-        self.user_repo = user_repository
+        self.user_repo = user_repo
 
     async def _validate_follow_action(self, db: AsyncSession, follower_id: int, following_id: int) -> User:
         """

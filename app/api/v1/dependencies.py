@@ -13,7 +13,7 @@ from app.repositories import (
     FollowRepository, LikeRepository, MediaRepository, TweetRepository, UserRepository
 )
 from app.services import (
-    FollowService, MediaService, TweetService, UserService
+    FollowService, LikeService, MediaService, TweetService, UserService
 )
 
 # --- Типизация для инъекции зависимостей ---
@@ -61,7 +61,15 @@ def get_follow_service(
         repo: FollowRepo,
         user_repo: UserRepo
 ) -> FollowService:
-    return FollowService(repo=repo, user_repository=user_repo)
+    return FollowService(repo=repo, user_repo=user_repo)
+
+
+# LikeService зависит от LikeRepo и TweetRepo
+def get_like_service(
+        repo: LikeRepo,
+        tweet_repo: TweetRepo  # Нужен для проверки существования твита
+) -> LikeService:
+    return LikeService(repo=repo, tweet_repo=tweet_repo)
 
 
 # MediaService зависит только от MediaRepo
@@ -72,16 +80,14 @@ def get_media_service(repo: MediaRepo) -> MediaService:
 # TweetService зависит от многих репозиториев и MediaService
 def get_tweet_service(
         repo: TweetRepo,
-        media_repo: MediaRepo,
-        like_repo: LikeRepo,
         follow_repo: FollowRepo,
+        media_repo: MediaRepo,
         media_svc: Annotated[MediaService, Depends(get_media_service)]  # Зависит от другого сервиса
 ) -> TweetService:
     return TweetService(
         repo=repo,
-        media_repo=media_repo,
-        like_repo=like_repo,
         follow_repo=follow_repo,
+        media_repo=media_repo,
         media_service=media_svc
     )
 
@@ -96,13 +102,14 @@ def get_user_service(
 
 # Типизация для сервисов
 FollowSvc = Annotated[FollowService, Depends(get_follow_service)]
+LikeSvc = Annotated[LikeService, Depends(get_like_service)]
 MediaSvc = Annotated[MediaService, Depends(get_media_service)]
 TweetSvc = Annotated[TweetService, Depends(get_tweet_service)]
 UserSvc = Annotated[UserService, Depends(get_user_service)]
 
 
 # --- Зависимость для получения текущего пользователя ---
-
+# TODO: Fix docstrings
 async def get_current_user(
         db: DBSession,
         user_repo: UserRepo,

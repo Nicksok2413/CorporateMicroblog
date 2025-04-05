@@ -9,7 +9,7 @@ from app.core.exceptions import (BadRequestError, ConflictError,
                                  PermissionDeniedError, NotFoundError)
 from app.core.logging import log
 from app.models import Media, Tweet, User
-from app.repositories import FollowRepository, LikeRepository, MediaRepository, TweetRepository
+from app.repositories import FollowRepository, MediaRepository, TweetRepository
 from app.schemas.tweet import LikeInfo, TweetAuthor, TweetCreateRequest, TweetFeedResult, TweetInFeed
 from app.services.base_service import BaseService
 from app.services.media_service import MediaService
@@ -25,15 +25,13 @@ class TweetService(BaseService[Tweet, TweetRepository]):
     def __init__(
             self,
             repo: TweetRepository,
-            media_repo: MediaRepository,
-            like_repo: LikeRepository,
             follow_repo: FollowRepository,
+            media_repo: MediaRepository,
             media_service: MediaService  # Зависимость от другого сервиса
     ):
         super().__init__(repo)
-        self.media_repo = media_repo
-        self.like_repo = like_repo
         self.follow_repo = follow_repo
+        self.media_repo = media_repo
         self.media_service = media_service  # Сохраняем медиа сервис
 
     async def _get_tweet_or_404(self, db: AsyncSession, tweet_id: int, load_details: bool = False) -> Tweet:
