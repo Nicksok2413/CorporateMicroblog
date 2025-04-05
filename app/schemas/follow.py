@@ -1,3 +1,5 @@
 # Отдельные схемы для Follow не требуются для API ответов.
-# Схема BaseUser используется для списков followers/following схемы UserProfile в app/schemas/user.py.
-# Схема для успешной подписки/отписки - ResultTrue в app/schemas/base.py.
+
+# Информация о подписчиках/подписках представлена схемой BaseUser, которая используется внутри схемы UserProfile (из app/schemas/user.py).
+
+# Ответы для эндпоинтов подписки/отписки (POST/DELETE /users/{id}/follow) используют общую схему ResultTrue (из app/schemas/base.py).

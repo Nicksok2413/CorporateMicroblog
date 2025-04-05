@@ -5,7 +5,7 @@ from typing import List, Optional, Sequence
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import BadRequestError, PermissionDeniedError, NotFoundError
+from app.core.exceptions import BadRequestError, NotFoundError, PermissionDeniedError
 from app.core.logging import log
 from app.models import Media, Tweet, User
 from app.repositories import FollowRepository, MediaRepository, TweetRepository
@@ -38,12 +38,12 @@ class TweetService(BaseService[Tweet, TweetRepository]):
         Вспомогательный метод для получения твита по ID или выброса NotFoundError.
 
         Args:
-            db: Сессия БД.
-            tweet_id: ID твита.
-            load_details: Загружать ли связанные данные (автор, лайки, медиа).
+            db (AsyncSession): Сессия БД.
+            tweet_id (int): ID твита.
+            load_details (bool): Загружать ли связанные данные (автор, лайки, медиа).
 
         Returns:
-            Найденный твит.
+            Tweet: Найденный твит.
 
         Raises:
             NotFoundError: Если твит не найден.
@@ -71,12 +71,12 @@ class TweetService(BaseService[Tweet, TweetRepository]):
         Создает новый твит для указанного пользователя.
 
         Args:
-            db: Сессия БД.
-            current_user: Пользователь, создающий твит.
-            tweet_data: Данные для создания твита из API запроса.
+            db (AsyncSession): Сессия БД.
+            current_user (User): Пользователь, создающий твит.
+            tweet_data (TweetCreateRequest): Данные для создания твита из API запроса.
 
         Returns:
-            Созданный объект твита.
+            Tweet: Созданный объект твита.
 
         Raises:
             NotFoundError: Если указанный media_id не найден.
@@ -118,9 +118,9 @@ class TweetService(BaseService[Tweet, TweetRepository]):
         Удаляет твит, если он принадлежит текущему пользователю.
 
         Args:
-            db: Сессия БД.
-            current_user: Пользователь, выполняющий действие.
-            tweet_id: ID твита для удаления.
+            db (AsyncSession): Сессия БД.
+            current_user (User): Пользователь, выполняющий действие.
+            tweet_id (id): ID твита для удаления.
 
         Raises:
             NotFoundError: Если твит не найден.
@@ -160,8 +160,8 @@ class TweetService(BaseService[Tweet, TweetRepository]):
         Сортирует по популярности (лайки) и дате.
 
         Args:
-            db: Сессия БД.
-            current_user: Пользователь, для которого формируется лента.
+            db (AsyncSession): Сессия БД.
+            current_user (User): Пользователь, для которого формируется лента.
 
         Returns:
             TweetFeedResult: Схема с лентой твитов.

@@ -4,9 +4,9 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import (BadRequestError, ConflictError,
-                                 PermissionDeniedError, NotFoundError)
+                                 NotFoundError, PermissionDeniedError)
 from app.core.logging import log
-from app.models import User
+from app.models.user import User
 from app.repositories import FollowRepository, UserRepository
 
 
@@ -15,7 +15,7 @@ class FollowService:
     Сервис для бизнес-логики, связанной с подписками.
 
     Не наследуется от BaseService, так как работает с репозиторием Follow,
-    но основная логика связана с проверкой Users.
+    но основная логика связана с проверкой User.
     """
 
     def __init__(self, repo: FollowRepository, user_repo: UserRepository):
@@ -30,9 +30,9 @@ class FollowService:
         - Целевой пользователь должен существовать.
 
         Args:
-            db: Сессия БД.
-            follower_id: ID пользователя, выполняющего действие.
-            following_id: ID целевого пользователя.
+            db (AsyncSession): Сессия БД.
+            follower_id (int): ID пользователя, выполняющего действие.
+            following_id (int): ID целевого пользователя.
 
         Returns:
             User: Объект целевого пользователя (на кого подписываются/отписываются).
@@ -58,9 +58,9 @@ class FollowService:
         Осуществляет подписку одного пользователя на другого.
 
         Args:
-            db: Сессия БД.
-            current_user: Пользователь, который подписывается.
-            user_to_follow_id: ID пользователя, на которого нужно подписаться.
+            db (AsyncSession): Сессия БД.
+            current_user(User): Пользователь, который подписывается.
+            user_to_follow_id (int): ID пользователя, на которого нужно подписаться.
 
         Raises:
             ForbiddenException: Если пользователь пытается подписаться на себя.
@@ -97,9 +97,9 @@ class FollowService:
         Осуществляет отписку одного пользователя от другого.
 
         Args:
-            db: Сессия БД.
-            current_user: Пользователь, который отписывается.
-            user_to_unfollow_id: ID пользователя, от которого нужно отписаться.
+            db (AsyncSession): Сессия БД.
+            current_user (User): Пользователь, который отписывается.
+            user_to_unfollow_id (int): ID пользователя, от которого нужно отписаться.
 
         Raises:
             ForbiddenException: Если пользователь пытается отписаться от себя.

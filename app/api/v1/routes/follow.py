@@ -9,9 +9,6 @@ from app.schemas import ResultTrue
 router = APIRouter(tags=["Follows"])
 
 
-# TODO: fix docstrings
-
-
 @router.post(
     "/users/{user_id}/follow",
     response_model=ResultTrue,
@@ -28,14 +25,15 @@ async def follow_a_user(
         db: DBSession,
         follow_service: FollowSvc,
         user_id: int = FastApiPath(..., description="ID пользователя, на которого нужно подписаться", gt=0),
-):
+) -> ResultTrue:
     """
     Создает подписку текущего пользователя на указанного пользователя.
 
     Args:
-        current_user: Пользователь, выполняющий подписку.
-        db: Сессия БД.
-        user_id: ID пользователя, на которого подписываются.
+        current_user (CurrentUser): Аутентифицированный пользователь.
+        db (AsyncSession): Сессия БД.
+        follow_service (FollowSvc): Экземпляр сервиса `FollowService`.
+        user_id (int): ID пользователя, на которого подписываются.
 
     Returns:
         ResultTrue: Стандартный успешный ответ.
@@ -66,14 +64,15 @@ async def unfollow_a_user(
         db: DBSession,
         follow_service: FollowSvc,
         user_id: int = FastApiPath(..., description="ID пользователя, от которого нужно отписаться", gt=0),
-):
+) -> ResultTrue:
     """
     Удаляет подписку текущего пользователя от указанного пользователя.
 
     Args:
-        current_user: Пользователь, выполняющий отписку.
-        db: Сессия БД.
-        user_id: ID пользователя, от которого отписываются.
+        current_user (CurrentUser): Аутентифицированный пользователь.
+        db (AsyncSession): Сессия БД.
+        follow_service (FollowSvc): Экземпляр сервиса `FollowService`.
+        user_id (int): ID пользователя, от которого отписываются.
 
     Returns:
         ResultTrue: Стандартный успешный ответ.

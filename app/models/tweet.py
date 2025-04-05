@@ -5,8 +5,7 @@ from typing import List, TYPE_CHECKING
 from sqlalchemy import ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from .associations import tweet_media_association_table
-from .base import Base
+from app.models import Base, tweet_media_association_table
 
 if TYPE_CHECKING:
     from .like import Like

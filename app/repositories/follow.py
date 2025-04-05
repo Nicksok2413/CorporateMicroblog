@@ -22,9 +22,9 @@ class FollowRepository:
         Проверяет наличие подписки одного пользователя на другого.
 
         Args:
-            db: Асинхронная сессия SQLAlchemy.
-            follower_id: ID пользователя, который подписывается.
-            following_id: ID пользователя, на которого подписываются.
+            db (AsyncSession): Сессия БД.
+            follower_id (int): ID пользователя, который подписывается.
+            following_id (int): ID пользователя, на которого подписываются.
 
         Returns:
             Optional[Follow]: Объект Follow, если подписка существует, иначе None.
@@ -44,9 +44,9 @@ class FollowRepository:
         Создает и добавляет объект Follow в сессию.
 
         Args:
-            db: Асинхронная сессия SQLAlchemy.
-            follower_id: ID пользователя-подписчика.
-            following_id: ID пользователя, на которого подписываются.
+            db (AsyncSession): Сессия БД.
+            follower_id (int): ID пользователя-подписчика.
+            following_id (int): ID пользователя, на которого подписываются.
 
         Returns:
             Follow: Созданный объект Follow.
@@ -61,9 +61,9 @@ class FollowRepository:
         Выполняет удаление записи о подписке напрямую в БД.
 
         Args:
-            db: Асинхронная сессия SQLAlchemy.
-            follower_id: ID пользователя-подписчика.
-            following_id: ID пользователя, на которого подписаны.
+            db (AsyncSession): Сессия БД.
+            follower_id (int): ID пользователя-подписчика.
+            following_id (int): ID пользователя, на которого подписаны.
         """
         log.debug(f"Подготовка к удалению подписки: follower_id={follower_id}, following_id={following_id}")
 
@@ -80,8 +80,8 @@ class FollowRepository:
         Получает список ID пользователей, на которых подписан данный пользователь.
 
         Args:
-            db: Асинхронная сессия SQLAlchemy.
-            follower_id: ID пользователя-подписчика.
+            db (AsyncSession): Сессия БД.
+            follower_id (int): ID пользователя-подписчика.
 
         Returns:
             List[int]: Список ID пользователей, на которых он подписан.
@@ -98,8 +98,8 @@ class FollowRepository:
         Получает список ID пользователей, которые подписаны на данного пользователя.
 
         Args:
-            db: Асинхронная сессия SQLAlchemy.
-            following_id: ID пользователя, чьих подписчиков ищем.
+            db (AsyncSession): Сессия БД.
+            following_id (int): ID пользователя, чьих подписчиков ищем.
 
         Returns:
             List[int]: Список ID подписчиков.
@@ -116,8 +116,8 @@ class FollowRepository:
         Получает список подписок пользователя с загрузкой информации о пользователях, на которых он подписан.
 
         Args:
-            db: Асинхронная сессия SQLAlchemy.
-            follower_id: ID пользователя-подписчика.
+            db (AsyncSession): Сессия БД.
+            follower_id (int): ID пользователя-подписчика.
 
         Returns:
             Sequence[Follow]: Последовательность объектов Follow с загруженным `followed_user`.
@@ -138,8 +138,8 @@ class FollowRepository:
         Получает список подписчиков пользователя с загрузкой информации об этих подписчиках.
 
         Args:
-            db: Асинхронная сессия SQLAlchemy.
-            following_id: ID пользователя, чьих подписчиков ищем.
+            db (AsyncSession): Сессия БД.
+            following_id (int): ID пользователя, чьих подписчиков ищем.
 
         Returns:
             Sequence[Follow]: Последовательность объектов Follow с загруженным `follower`.

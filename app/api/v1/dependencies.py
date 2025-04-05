@@ -109,7 +109,7 @@ UserSvc = Annotated[UserService, Depends(get_user_service)]
 
 
 # --- Зависимость для получения текущего пользователя ---
-# TODO: Fix docstrings
+
 async def get_current_user(
         db: DBSession,
         user_repo: UserRepo,
@@ -121,7 +121,8 @@ async def get_current_user(
     Проверяет наличие заголовка `api-key` и ищет пользователя в базе данных.
 
     Args:
-        db (AsyncSession): Сессия базы данных, предоставляемая зависимостью `get_db_session`.
+        db (AsyncSession): Сессия БД.
+        user_repo (UserRepo): Экземпляр репозитория пользователей.
         api_key (str | None): Значение заголовка `api-key` из запроса.
 
     Returns:

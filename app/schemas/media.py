@@ -2,7 +2,7 @@
 
 from pydantic import Field
 
-from app.schemas.base import ResultTrue, TunedModel, BaseModel
+from app.schemas.base import BaseModel, ResultTrue
 
 
 # --- Схема для создания (используется внутри приложения) ---
@@ -26,16 +26,3 @@ class MediaCreateResult(ResultTrue):
         media_id (int): ID загруженного и сохраненного медиафайла
     """
     media_id: int
-
-
-# --- Схема для представления Media (если понадобится в других ответах) ---
-class MediaOut(TunedModel):
-    """
-    Схема для представления информации о медиафайле.
-
-    Fields:
-        id (int): ID медиафайла
-        url (str): Ссылка на медиафайл
-    """
-    id: int
-    url: str

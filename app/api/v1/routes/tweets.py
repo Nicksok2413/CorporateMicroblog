@@ -10,9 +10,6 @@ from app.schemas import (TweetActionResult, TweetCreateRequest,
 router = APIRouter(prefix="/tweets", tags=["Tweets"])
 
 
-# TODO: fix docstrings
-
-
 @router.post(
     "",
     response_model=TweetCreateResult,
@@ -25,14 +22,15 @@ async def create_new_tweet(
         current_user: CurrentUser,
         db: DBSession,
         tweet_service: TweetSvc,
-):
+) -> TweetCreateResult:
     """
     Создает новый твит для текущего пользователя.
 
     Args:
-        tweet_in: Данные для создания твита.
-        current_user: Аутентифицированный пользователь.
-        db: Сессия БД.
+        tweet_in (TweetCreateRequest): Данные для создания твита.
+        current_user (CurrentUser): Аутентифицированный пользователь.
+        db (AsyncSession): Сессия БД.
+        tweet_service (TweetSvc): Экземпляр сервиса `TweetService`.
 
     Returns:
         TweetCreateResult: Результат с ID созданного твита.
@@ -59,13 +57,14 @@ async def get_tweets_feed(
         current_user: CurrentUser,
         db: DBSession,
         tweet_service: TweetSvc,
-):
+) -> TweetFeedResult:
     """
     Возвращает ленту твитов для текущего пользователя.
 
     Args:
-        current_user: Аутентифицированный пользователь.
-        db: Сессия БД.
+        current_user (CurrentUser): Аутентифицированный пользователь.
+        db (AsyncSession): Сессия БД.
+        tweet_service (TweetSvc): Экземпляр сервиса `TweetService`.
 
     Returns:
         TweetFeedResult: Лента твитов.
@@ -91,16 +90,17 @@ async def delete_existing_tweet(
         db: DBSession,
         tweet_service: TweetSvc,
         tweet_id: int = FastApiPath(..., description="ID твита для удаления", gt=0),
-):
+) -> TweetActionResult:
     """
     Удаляет твит по его ID.
 
     Доступно только автору твита.
 
     Args:
-        current_user: Пользователь, выполняющий удаление.
-        db: Сессия БД.
-        tweet_id: ID твита для удаления.
+        current_user (CurrentUser): Аутентифицированный пользователь.
+        db (AsyncSession): Сессия БД.
+        tweet_service (TweetSvc): Экземпляр сервиса `TweetService`.
+        tweet_id (int): ID твита для удаления.
 
     Returns:
         TweetActionResult: Стандартный успешный ответ.

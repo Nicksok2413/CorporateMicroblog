@@ -9,8 +9,6 @@ from app.schemas import UserProfileResult
 router = APIRouter(prefix="/users", tags=["Users"])
 
 
-# TODO: fix docstrings
-
 @router.get(
     "/me",
     response_model=UserProfileResult,
@@ -22,15 +20,16 @@ async def get_my_profile(
         current_user: CurrentUser,
         db: DBSession,
         user_service: UserSvc,
-):
+) -> UserProfileResult:
     """
     Возвращает профиль текущего пользователя.
 
     Включает списки подписчиков и подписок.
 
     Args:
-        current_user: Аутентифицированный пользователь.
-        db: Сессия БД.
+        current_user (CurrentUser): Аутентифицированный пользователь.
+        db (DBSession): Сессия БД.
+        user_service (UserSvc): Экземпляр сервиса `UserService`.
 
     Returns:
         UserProfileResult: Профиль пользователя.
@@ -54,15 +53,16 @@ async def get_user_profile_by_id(
         db: DBSession,
         user_service: UserSvc,
         user_id: int = FastApiPath(..., description="ID пользователя для просмотра профиля", gt=0),
-):
+) -> UserProfileResult:
     """
     Возвращает профиль пользователя по указанному ID.
 
     Включает списки подписчиков и подписок. Доступен без аутентификации.
 
     Args:
-        db: Сессия БД.
-        user_id: ID пользователя.
+        db (DBSession): Сессия БД.
+        user_service (UserSvc): Экземпляр сервиса `UserService`.
+        user_id (int): ID пользователя.
 
     Returns:
         UserProfileResult: Профиль пользователя.

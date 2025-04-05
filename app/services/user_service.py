@@ -28,11 +28,11 @@ class UserService(BaseService[User, UserRepository]):
         Получает пользователя по ID.
 
         Args:
-            db: Сессия БД.
-            user_id: ID пользователя.
+            db (AsyncSession): Сессия БД.
+            user_id (int): ID пользователя.
 
         Returns:
-            Найденный пользователь или None.
+            Optional[User]: Найденный пользователь или None.
         """
         return await self.repo.get(db, obj_id=user_id)
 
@@ -41,11 +41,11 @@ class UserService(BaseService[User, UserRepository]):
         Получает пользователя по API ключу.
 
         Args:
-            db: Сессия БД.
-            api_key: API ключ.
+            db (AsyncSession): Сессия БД.
+            api_key (str): API ключ.
 
         Returns:
-            Найденный пользователь или None.
+            Optional[User]: Найденный пользователь или None.
         """
         return await self.repo.get_by_api_key(db, api_key=api_key)
 
@@ -54,11 +54,11 @@ class UserService(BaseService[User, UserRepository]):
         Вспомогательный метод для получения пользователя по ID или выброса NotFoundError.
 
         Args:
-            db: Сессия БД.
-            user_id: ID пользователя.
+            db (AsyncSession): Сессия БД.
+            user_id (int): ID пользователя.
 
         Returns:
-            Найденный пользователь.
+            User: Найденный пользователь.
 
         Raises:
             NotFoundError: Если пользователь не найден.
@@ -78,8 +78,8 @@ class UserService(BaseService[User, UserRepository]):
         Включает загрузку и форматирование списков подписчиков и подписок.
 
         Args:
-            db: Сессия БД.
-            user_id: ID пользователя.
+            db (AsyncSession): Сессия БД.
+            user_id (int): ID пользователя.
 
         Returns:
             UserProfile: Схема профиля пользователя.

@@ -4,7 +4,7 @@ from typing import List, Optional
 
 from pydantic import Field
 
-from app.schemas.base import ResultTrue, TunedModel, BaseModel
+from app.schemas.base import BaseModel, ResultTrue, TunedModel
 from app.schemas.user import BaseUser
 
 

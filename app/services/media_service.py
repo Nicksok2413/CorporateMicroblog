@@ -14,7 +14,7 @@ from app.core.config import settings
 from app.core.exceptions import BadRequestError, MediaValidationError
 from app.core.logging import log
 from app.models.media import Media
-from app.repositories import MediaRepository
+from app.repositories.media import MediaRepository
 from app.schemas.media import MediaCreate
 from app.services.base_service import BaseService
 
@@ -34,8 +34,8 @@ class MediaService(BaseService[Media, MediaRepository]):
         Валидирует загружаемый файл по типу.
 
         Args:
-            filename: Имя файла.
-            content_type: MIME-тип файла (опционально).
+            filename (str): Имя файла.
+            content_type (Optional[str]): MIME-тип файла (опционально).
 
         Raises:
             MediaValidationError: Если тип файла не разрешен.
@@ -53,7 +53,15 @@ class MediaService(BaseService[Media, MediaRepository]):
         log.debug(f"Файл '{file_name_log}' прошел валидацию.")
 
     def _generate_short_random_string(self, length: int = RANDOM_PART_LENGTH) -> str:
-        """Генерирует короткую случайную строку из букв и цифр."""
+        """
+        Генерирует короткую случайную строку из букв и цифр.
+
+        Args:
+            length (int): Желаемая длина генерируемой строки. По умолчанию используется значение `RANDOM_PART_LENGTH`.
+
+        Returns:
+            str: Случайная строка из строчных букв ASCII и цифр указанной длины.
+        """
         return ''.join(choice(ascii_lowercase + digits) for _ in range(length))
 
     def _generate_unique_filename(self, original_filename: str) -> str:
@@ -61,7 +69,7 @@ class MediaService(BaseService[Media, MediaRepository]):
         Генерирует уникальное имя файла на основе timestamp и случайной строки.
 
         Args:
-            original_filename: Исходное имя файла.
+            original_filename (str): Исходное имя файла.
 
         Returns:
             str: Уникальное имя файла формата <timestamp_us>_<random_chars>.<ext>.
@@ -87,10 +95,10 @@ class MediaService(BaseService[Media, MediaRepository]):
         Сохраняет медиафайл и создает соответствующую запись в БД.
 
         Args:
-            db: Сессия БД.
-            file: Файловый объект (из UploadFile.file).
-            filename: Оригинальное имя файла.
-            content_type: MIME-тип файла.
+            db (AsyncSession): Сессия БД.
+            file (IO[bytes]): Файловый объект (из UploadFile.file).
+            filename (str): Оригинальное имя файла.
+            content_type (str): MIME-тип файла.
 
         Returns:
             Media: Созданный объект Media.
@@ -186,7 +194,7 @@ class MediaService(BaseService[Media, MediaRepository]):
         Генерирует URL для доступа к медиафайлу.
 
         Args:
-            media: Объект Media.
+            media (Media): Объект Media.
 
         Returns:
             str: Полный URL медиафайла.

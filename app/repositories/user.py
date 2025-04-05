@@ -21,8 +21,8 @@ class UserRepository(BaseRepository[User, None]):
         Получает пользователя по его API ключу.
 
         Args:
-            db: Асинхронная сессия SQLAlchemy.
-            api_key: API ключ пользователя.
+            db (AsyncSession): Сессия БД.
+            api_key (str): API ключ пользователя.
 
         Returns:
             Optional[User]: Найденный пользователь или None.

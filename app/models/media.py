@@ -5,8 +5,7 @@ from typing import List, TYPE_CHECKING
 from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.models.associations import tweet_media_association_table
-from app.models.base import Base
+from app.models import Base, tweet_media_association_table
 
 if TYPE_CHECKING:
     from .tweet import Tweet

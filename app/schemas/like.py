@@ -1,3 +1,6 @@
 # Отдельные схемы для Like не требуются для API ответов.
-# Схема LikeInfo определена в app/schemas/tweet.py.
-# Схема для успешного лайка/анлайка - TweetActionResult в app/schemas/tweet.py.
+
+# Схема LikeInfo (Информация о пользователе, поставившем лайк) определена в app/schemas/tweet.py.
+# Это по сути псевдоним для BaseUser, используемый для ясности в контексте TweetInFeed (Схема представления одного твита в ленте.)
+
+# Ответы для эндпоинтов лайка/анлайка (POST/DELETE /tweets/{id}/likes) используют общую схему TweetActionResult (из app/schemas/tweet.py.)

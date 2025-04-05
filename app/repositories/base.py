@@ -30,8 +30,8 @@ class BaseRepository(Generic[ModelType, CreateSchemaType]):
         Получает запись по её ID.
 
         Args:
-            db: Асинхронная сессия SQLAlchemy.
-            obj_id: Идентификатор записи.
+            db (AsyncSession): Асинхронная сессия SQLAlchemy.
+            obj_id (Any): Идентификатор записи.
 
         Returns:
             Optional[ModelType]: Найденный объект модели или None.
@@ -52,7 +52,7 @@ class BaseRepository(Generic[ModelType, CreateSchemaType]):
         Получает список записей.
 
         Args:
-            db: Асинхронная сессия SQLAlchemy.
+            db (AsyncSession): Асинхронная сессия SQLAlchemy.
 
         Returns:
             List[ModelType]: Список объектов модели.
@@ -68,8 +68,8 @@ class BaseRepository(Generic[ModelType, CreateSchemaType]):
         Добавляет объект модели в сессию.
 
         Args:
-            db: Асинхронная сессия SQLAlchemy.
-            db_obj: Экземпляр модели для добавления.
+            db (AsyncSession): Асинхронная сессия SQLAlchemy.
+            db_obj (ModelType): Экземпляр модели для добавления.
 
         Returns:
             ModelType: Добавленный объект модели.
@@ -83,8 +83,8 @@ class BaseRepository(Generic[ModelType, CreateSchemaType]):
         Создает и добавляет новый объект в сессию на основе Pydantic схемы.
 
         Args:
-            db: Асинхронная сессия SQLAlchemy.
-            obj_in: Pydantic схема с данными для создания.
+            db (AsyncSession): Асинхронная сессия SQLAlchemy.
+            obj_in (CreateSchemaType): Pydantic схема с данными для создания.
 
         Returns:
             ModelType: Созданный объект модели.
@@ -100,8 +100,8 @@ class BaseRepository(Generic[ModelType, CreateSchemaType]):
         Помечает объект для удаления в сессии.
 
         Args:
-            db: Асинхронная сессия SQLAlchemy.
-            db_obj: Экземпляр модели для удаления.
+            db (AsyncSession): Асинхронная сессия SQLAlchemy.
+            db_obj (ModelType): Экземпляр модели для удаления.
         """
         log.debug(f"Пометка на удаление {self.model.__name__} (ID: {getattr(db_obj, 'id', 'N/A')})")
         await db.delete(db_obj)
@@ -111,8 +111,8 @@ class BaseRepository(Generic[ModelType, CreateSchemaType]):
         Находит объект по ID и помечает объект для удаления в сессии.
 
         Args:
-            db: Асинхронная сессия SQLAlchemy.
-            obj_id: Идентификатор записи для удаления.
+            db (AsyncSession): Асинхронная сессия SQLAlchemy.
+            obj_id (Any): Идентификатор записи для удаления.
 
         Returns:
             Optional[ModelType]: Объект, помеченный для удаления, или None, если не найден.

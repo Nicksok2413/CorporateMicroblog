@@ -9,9 +9,6 @@ from app.schemas import TweetActionResult
 router = APIRouter(tags=["Likes"])
 
 
-# TODO: fix docstrings
-
-
 @router.post(
     "/tweets/{tweet_id}/likes",
     response_model=TweetActionResult,
@@ -27,14 +24,15 @@ async def like_a_tweet(
         db: DBSession,
         like_service: LikeSvc,
         tweet_id: int = FastApiPath(..., description="ID твита для лайка", gt=0),
-):
+) -> TweetActionResult:
     """
     Ставит лайк на указанный твит от имени текущего пользователя.
 
     Args:
-        current_user: Пользователь, ставящий лайк.
-        db: Сессия БД.
-        tweet_id: ID твита для лайка.
+        current_user (CurrentUser): Аутентифицированный пользователь.
+        db (AsyncSession): Сессия БД.
+        like_service (LikeSvc): Экземпляр сервиса `LikeService`.
+        tweet_id (int): ID твита для лайка.
 
     Returns:
         TweetActionResult: Стандартный успешный ответ.
@@ -63,14 +61,15 @@ async def unlike_a_tweet(
         db: DBSession,
         like_service: LikeSvc,
         tweet_id: int = FastApiPath(..., gt=0, description="ID твита для снятия лайка"),
-):
+) -> TweetActionResult:
     """
     Убирает лайк с указанного твита от имени текущего пользователя.
 
     Args:
-        current_user: Пользователь, убирающий лайк.
-        db: Сессия БД.
-        tweet_id: ID твита для снятия лайка.
+        current_user (CurrentUser): Аутентифицированный пользователь.
+        db (AsyncSession): Сессия БД.
+        like_service (LikeSvc): Экземпляр сервиса `LikeService`.
+        tweet_id (int): ID твита для снятия лайка.
 
     Returns:
         TweetActionResult: Стандартный успешный ответ.

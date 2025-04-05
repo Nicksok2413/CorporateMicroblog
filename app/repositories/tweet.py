@@ -30,10 +30,10 @@ class TweetRepository(BaseRepository[Tweet, TweetCreateInternal]):
         когда нужно сразу прикрепить медиа.
 
         Args:
-            db: Асинхронная сессия SQLAlchemy.
-            content: Содержимое твита.
-            author_id: ID автора твита.
-            media_items: Список объектов Media для прикрепления (опционально).
+            db (AsyncSession): Сессия БД.
+            content (str): Содержимое твита.
+            author_id (int): ID автора твита.
+            media_items (Optional[List[Media]]): Список объектов Media для прикрепления (опционально).
 
         Returns:
             Tweet: Созданный объект твита.
@@ -61,8 +61,8 @@ class TweetRepository(BaseRepository[Tweet, TweetCreateInternal]):
         и сортирует по популярности (количество лайков убыв.).
 
         Args:
-            db: Асинхронная сессия SQLAlchemy.
-            author_ids: Список ID авторов, чьи твиты нужно включить.
+            db (AsyncSession): Сессия БД.
+            author_ids (List[int]): Список ID авторов, чьи твиты нужно включить.
 
         Returns:
             Sequence[Tweet]: Последовательность объектов Tweet с загруженными связями.
@@ -91,9 +91,9 @@ class TweetRepository(BaseRepository[Tweet, TweetCreateInternal]):
                 selectinload(Tweet.likes).selectinload(Like.user),  # Загружаем лайки и пользователей
                 selectinload(Tweet.attachments)  # Загружаем медиа
             )
-            # Сортировка: сначала по количеству лайков (NULLS LAST)
+            # Сортировка: по убыванию лайков, NULL значения (0 лайков) в конце
             .order_by(
-                desc(func.coalesce(like_count_subquery.c.like_count, 0))  # Сортировка по лайкам, TODO: Упростить!
+                desc(like_count_subquery.c.like_count).nulls_last()
             )
         )
 
@@ -108,8 +108,8 @@ class TweetRepository(BaseRepository[Tweet, TweetCreateInternal]):
         Получает твит по ID с загруженными связанными данными (автор, лайки, медиа).
 
         Args:
-            db: Асинхронная сессия SQLAlchemy.
-            tweet_id: ID твита.
+            db (AsyncSession): Сессия БД.
+            tweet_id (int): ID твита.
 
         Returns:
             Optional[Tweet]: Найденный твит с загруженными деталями или None.

@@ -1,5 +1,7 @@
 """API роуты для работы с медиафайлами."""
 
+from typing import Optional
+
 from fastapi import APIRouter, File, UploadFile, status
 
 from app.api.v1.dependencies import CurrentUser, DBSession, MediaSvc
@@ -7,9 +9,6 @@ from app.core.logging import log
 from app.schemas import MediaCreateResult
 
 router = APIRouter(prefix="/media", tags=["Media"])
-
-
-# TODO: fix docstrings
 
 
 @router.post(
@@ -25,7 +24,7 @@ async def upload_media_file(
         media_service: MediaSvc,
         # Данные файла из формы (multipart/form-data)
         file: UploadFile = File(..., description="Медиафайл для загрузки (jpg, png, gif)")
-):
+) -> Optional[MediaCreateResult]:
     """
     Обрабатывает загрузку медиафайла.
 
@@ -35,12 +34,13 @@ async def upload_media_file(
     - Возвращает ID созданного медиафайла.
 
     Args:
-        current_user: Аутентифицированный пользователь (инъекция).
-        db: Сессия БД (инъекция).
-        file: Загружаемый файл (инъекция).
+        current_user (CurrentUser): Аутентифицированный пользователь.
+        db (AsyncSession): Сессия БД.
+        media_service (MediaSvc): Экземпляр сервиса `MediaService`.
+        file (UploadFile): Загружаемый файл.
 
     Returns:
-        MediaCreateResult: Результат с ID созданного медиа.
+        Optional[MediaCreateResult]: Результат с ID созданного медиа или None.
 
     Raises:
         MediaValidationError: Если файл не прошел валидацию (перехватывается обработчиком).

@@ -21,9 +21,9 @@ class LikeRepository:
         Проверяет наличие лайка от пользователя на конкретный твит.
 
         Args:
-            db: Асинхронная сессия SQLAlchemy.
-            user_id: ID пользователя.
-            tweet_id: ID твита.
+            db (AsyncSession): Сессия БД.
+            user_id (int): ID пользователя.
+            tweet_id (int): ID твита.
 
         Returns:
             Optional[Like]: Объект Like, если лайк существует, иначе None.
@@ -43,9 +43,9 @@ class LikeRepository:
         Создает и добавляет объект Like в сессию.
 
         Args:
-            db: Асинхронная сессия SQLAlchemy.
-            user_id: ID пользователя.
-            tweet_id: ID твита.
+            db (AsyncSession): Сессия БД.
+            user_id (int): ID пользователя.
+            tweet_id (int): ID твита.
 
         Returns:
             Like: Созданный объект Like.
@@ -60,9 +60,9 @@ class LikeRepository:
         Выполняет удаление записи о лайке напрямую в БД (без загрузки объекта).
 
         Args:
-            db: Асинхронная сессия SQLAlchemy.
-            user_id: ID пользователя.
-            tweet_id: ID твита.
+            db (AsyncSession): Сессия БД.
+            user_id (int): ID пользователя.
+            tweet_id (int): ID твита.
         """
         log.debug(f"Подготовка к удалению лайка: user_id={user_id}, tweet_id={tweet_id}")
 

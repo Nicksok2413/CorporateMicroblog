@@ -5,20 +5,36 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import BadRequestError, ConflictError, NotFoundError
 from app.core.logging import log
-from app.models import User
+from app.models import Tweet, User
 from app.repositories import LikeRepository, TweetRepository
 
 
-# TODO: Add full docstrings
 class LikeService:
-    """Сервис для бизнес-логики, связанной с лайками."""
+    """
+    Сервис для бизнес-логики, связанной с лайками.
+
+    Не наследуется от BaseService, так как работает с репозиторием Like,
+    но основная логика связана с проверкой Tweet.
+    """
 
     def __init__(self, repo: LikeRepository, tweet_repo: TweetRepository):
         self.repo = repo
         self.tweet_repo = tweet_repo
 
-    async def _get_tweet_or_404(self, db: AsyncSession, tweet_id: int):
-        """Проверяет существование твита."""
+    async def _get_tweet_or_404(self, db: AsyncSession, tweet_id: int) -> Tweet:
+        """
+        Вспомогательный метод для получения твита по ID или выброса NotFoundError.
+
+        Args:
+            db (AsyncSession): Сессия БД.
+            tweet_id (int): ID твита.
+
+        Returns:
+            Tweet: Найденный твит.
+
+        Raises:
+            NotFoundError: Если твит не найден.
+        """
         tweet = await self.tweet_repo.get(db, obj_id=tweet_id)
 
         if not tweet:
@@ -27,14 +43,14 @@ class LikeService:
 
         return tweet
 
-    async def like_tweet(self, db: AsyncSession, current_user: User, *, tweet_id: int):
+    async def like_tweet(self, db: AsyncSession, current_user: User, *, tweet_id: int) -> None:
         """
         Ставит лайк на твит от имени текущего пользователя.
 
         Args:
-            db: Сессия БД.
-            current_user: Пользователь, ставящий лайк.
-            tweet_id: ID твита.
+            db (AsyncSession): Сессия БД.
+            current_user (User): Пользователь, ставящий лайк.
+            tweet_id (int): ID твита.
 
         Raises:
             NotFoundError: Если твит не найден.
@@ -42,7 +58,7 @@ class LikeService:
             BadRequestError: При ошибке сохранения лайка.
         """
         log.info(f"Пользователь ID {current_user.id} лайкает твит ID {tweet_id}")
-        await self._get_tweet_or_404(db, tweet_id) # Проверяем, существует ли твит
+        await self._get_tweet_or_404(db, tweet_id)  # Проверяем, существует ли твит
 
         # Проверяем, не лайкнул ли уже
         existing_like = await self.repo.get_like(db, user_id=current_user.id, tweet_id=tweet_id)
@@ -63,14 +79,14 @@ class LikeService:
             log.error(f"Ошибка БД при создании лайка ({current_user.id} -> {tweet_id}): {exc}", exc_info=True)
             raise BadRequestError("Не удалось поставить лайк.") from exc
 
-    async def unlike_tweet(self, db: AsyncSession, current_user: User, *, tweet_id: int):
+    async def unlike_tweet(self, db: AsyncSession, current_user: User, *, tweet_id: int) -> None:
         """
         Убирает лайк с твита от имени текущего пользователя.
 
         Args:
-            db: Сессия БД.
-            current_user: Пользователь, убирающий лайк.
-            tweet_id: ID твита.
+            db (AsyncSession): Сессия БД.
+            current_user (User): Пользователь, убирающий лайк.
+            tweet_id (int): ID твита.
 
         Raises:
             NotFoundError: Если лайк для удаления не найден (твит не лайкнут этим пользователем).
