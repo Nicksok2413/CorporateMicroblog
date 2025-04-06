@@ -4,7 +4,6 @@ from typing import Optional, Sequence
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import NotFoundError
 from app.core.logging import log
 from app.models import Follow, User
 from app.repositories import FollowRepository, UserRepository
@@ -23,19 +22,6 @@ class UserService(BaseService[User, UserRepository]):
         super().__init__(repo)
         self.follow_repo = follow_repo
 
-    async def get_user_by_id(self, db: AsyncSession, *, user_id: int) -> Optional[User]:
-        """
-        Получает пользователя по ID.
-
-        Args:
-            db (AsyncSession): Сессия БД.
-            user_id (int): ID пользователя.
-
-        Returns:
-            Optional[User]: Найденный пользователь или None.
-        """
-        return await self.repo.get(db, obj_id=user_id)
-
     async def get_user_by_api_key(self, db: AsyncSession, *, api_key: str) -> Optional[User]:
         """
         Получает пользователя по API ключу.
@@ -48,28 +34,6 @@ class UserService(BaseService[User, UserRepository]):
             Optional[User]: Найденный пользователь или None.
         """
         return await self.repo.get_by_api_key(db, api_key=api_key)
-
-    async def _get_user_or_404(self, db: AsyncSession, *, user_id: int) -> User:
-        """
-        Вспомогательный метод для получения пользователя по ID или выброса NotFoundError.
-
-        Args:
-            db (AsyncSession): Сессия БД.
-            user_id (int): ID пользователя.
-
-        Returns:
-            User: Найденный пользователь.
-
-        Raises:
-            NotFoundError: Если пользователь не найден.
-        """
-        user = await self.get_user_by_id(db, user_id=user_id)
-
-        if not user:
-            log.warning(f"Пользователь с ID {user_id} не найден.")
-            raise NotFoundError(f"Пользователь с ID {user_id} не найден.")
-
-        return user
 
     async def get_user_profile(self, db: AsyncSession, *, user_id: int) -> UserProfile:
         """
@@ -88,7 +52,7 @@ class UserService(BaseService[User, UserRepository]):
             NotFoundError: Если пользователь не найден.
         """
         log.debug(f"Получение профиля для пользователя ID {user_id}")
-        user = await self._get_user_or_404(db, user_id=user_id)
+        user = await self._get_obj_or_404(db, obj_id=user_id)
 
         # Получаем подписки и подписчиков с загруженными данными пользователей
         following_relations: Sequence[Follow] = await self.follow_repo.get_following_with_users(db, follower_id=user_id)

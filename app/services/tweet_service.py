@@ -33,29 +33,6 @@ class TweetService(BaseService[Tweet, TweetRepository]):
         self.media_repo = media_repo
         self.media_service = media_service
 
-    async def _get_tweet_or_404(self, db: AsyncSession, tweet_id: int) -> Tweet:
-        """
-        Вспомогательный метод для получения твита по ID или выброса NotFoundError.
-
-        Args:
-            db (AsyncSession): Сессия БД.
-            tweet_id (int): ID твита.
-
-        Returns:
-            Tweet: Найденный твит.
-
-        Raises:
-            NotFoundError: Если твит не найден.
-        """
-        log.debug(f"Поиск твита ID {tweet_id}")
-
-        tweet = await self.repo.get(db, obj_id=tweet_id)
-
-        if not tweet:
-            log.warning(f"Твит с ID {tweet_id} не найден.")
-            raise NotFoundError(f"Твит с ID {tweet_id} не найден.")
-        return tweet
-
     async def create_tweet(
             self,
             db: AsyncSession,
@@ -124,7 +101,7 @@ class TweetService(BaseService[Tweet, TweetRepository]):
             BadRequestError: При ошибке удаления из БД.
         """
         log.info(f"Пользователь ID {current_user.id} пытается удалить твит ID {tweet_id}")
-        tweet = await self._get_tweet_or_404(db, tweet_id)
+        tweet = await self._get_obj_or_404(db, obj_id=tweet_id)
 
         if tweet.author_id != current_user.id:
             log.warning(
