@@ -73,7 +73,6 @@ class FollowRepository:
         )
 
         await db.execute(statement)
-        # Сервис должен проверить результат коммита или существование до удаления
 
     async def get_following_ids(self, db: AsyncSession, *, follower_id: int) -> List[int]:
         """
@@ -91,24 +90,6 @@ class FollowRepository:
         result = await db.execute(statement)
         ids = result.scalars().all()
         log.debug(f"Пользователь {follower_id} подписан на {len(ids)} пользователей.")
-        return list(ids)
-
-    async def get_follower_ids(self, db: AsyncSession, *, following_id: int) -> List[int]:
-        """
-        Получает список ID пользователей, которые подписаны на данного пользователя.
-
-        Args:
-            db (AsyncSession): Сессия БД.
-            following_id (int): ID пользователя, чьих подписчиков ищем.
-
-        Returns:
-            List[int]: Список ID подписчиков.
-        """
-        log.debug(f"Получение ID подписчиков для пользователя {following_id}")
-        statement = select(self.model.follower_id).where(self.model.following_id == following_id)
-        result = await db.execute(statement)
-        ids = result.scalars().all()
-        log.debug(f"На пользователя {following_id} подписано {len(ids)} пользователей.")
         return list(ids)
 
     async def get_following_with_users(self, db: AsyncSession, *, follower_id: int) -> Sequence[Follow]:
