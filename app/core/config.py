@@ -51,7 +51,7 @@ class Settings(BaseSettings):
     # Настройки режимов приложения
     DEBUG: bool = Field(default=False, description="Режим отладки")
     TESTING: bool = Field(default=False, description="Режим тестирования")
-    PRODUCTION: bool = Field(default=True, description="Продакшен режим")  # По умолчанию продакшен
+    PRODUCTION: bool = Field(default=True, description="Продакшен режим")
 
     # Настройки хранения файлов
     STORAGE_PATH: str = Field(
@@ -80,7 +80,7 @@ class Settings(BaseSettings):
         extra="ignore",  # Игнорировать лишние переменные окружения
     )
 
-    @computed_field(repr=False)  # Скрываем из стандартного вывода repr, так как содержит пароль
+    @computed_field(repr=False)
     @cached_property
     def DATABASE_URL(self) -> str:
         """

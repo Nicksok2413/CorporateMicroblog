@@ -1,10 +1,4 @@
-"""Настройка подключения к базе данных с использованием SQLAlchemy.
-
-Содержит:
-- Настройку асинхронного движка БД
-- Фабрику сессий
-- Утилиты для управления подключением
-"""
+"""Настройка подключения к базе данных с использованием SQLAlchemy."""
 
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator, Optional
@@ -111,14 +105,13 @@ class Database:
         session: AsyncSession = self.session_factory()
         try:
             yield session
-            # Коммит не делаем здесь, должен управляться в репозитории/сервисе
         except Exception as exc:
             log.error(f"Ошибка во время сессии БД, выполняется откат: {exc}",
                       exc_info=settings.DEBUG)  # Трейсбек только в DEBUG
             await session.rollback()
-            raise  # Перевыбрасываем исключение для обработки выше
+            raise
         finally:
-            await session.close()  # Закрываем сессию
+            await session.close()
 
 
 # Глобальный экземпляр менеджера БД

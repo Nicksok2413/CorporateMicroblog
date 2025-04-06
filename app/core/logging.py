@@ -18,10 +18,10 @@ def serialize(record):
         str: Сериализованная в JSON строка лога.
     """
     subset = {
-        "timestamp": record["time"].isoformat(),  # Используем ISO формат для единообразия
+        "timestamp": record["time"].isoformat(),
         "message": record["message"],
         "level": record["level"].name,
-        "name": record["name"],  # Добавим имя логгера
+        "name": record["name"],
         "module": record["module"],
         "function": record["function"],
         "line": record["line"],
@@ -37,7 +37,7 @@ def serialize(record):
             "value": str(exception_value),
             # Трейсбек не добавляем в JSON по умолчанию, т.к. может быть большим
         }
-    return json.dumps(subset, ensure_ascii=False)  # ensure_ascii=False для кириллицы
+    return json.dumps(subset, ensure_ascii=False)
 
 
 def development_formatter(record):

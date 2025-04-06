@@ -1,8 +1,4 @@
-"""Модуль кастомных исключений и их обработчиков для FastAPI.
-
-Содержит специализированные исключения для разных сценариев
-и функции для их корректной обработки и преобразования в HTTP-ответы.
-"""
+"""Модуль кастомных исключений и их обработчиков для FastAPI."""
 
 from typing import Any, Optional
 
@@ -58,34 +54,18 @@ class BadRequestError(MicroblogHTTPException):
         super().__init__(status.HTTP_400_BAD_REQUEST, detail, "bad_request", **kwargs)
 
 
+class MediaValidationError(MicroblogHTTPException):
+    """Ошибка валидации медиафайла."""
+
+    def __init__(self, detail: str = "Ошибка валидации медиа", **kwargs):
+        super().__init__(status.HTTP_400_BAD_REQUEST, detail, "media_validation_error", **kwargs)
+
+
 class ConflictError(MicroblogHTTPException):
     """Ошибка при конфликте данных (например, дубликат)."""
 
     def __init__(self, detail: str = "Конфликт данных", **kwargs):
         super().__init__(status.HTTP_409_CONFLICT, detail, "conflict_error", **kwargs)
-
-
-class TweetValidationError(BadRequestError):
-    """Ошибка валидации твита."""
-
-    def __init__(self, detail: str = "Ошибка валидации твита", **kwargs):
-        super().__init__(detail, "tweet_validation_error", **kwargs)
-
-
-class MediaValidationError(BadRequestError):
-    """Ошибка валидации медиафайла."""
-
-    def __init__(self, detail: str = "Ошибка валидации медиа", **kwargs):
-        super().__init__(detail, "media_validation_error", **kwargs)
-
-
-class UserNotFoundError(NotFoundError):
-    """Ошибка при отсутствии пользователя."""
-
-    def __init__(self, api_key: Optional[str] = None):
-        detail = "Пользователь не найден"
-        extra = {"api_key": api_key} if api_key else {}
-        super().__init__(detail=detail, extra=extra)
 
 
 # --- Обработчики исключений FastAPI ---

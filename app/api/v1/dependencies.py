@@ -57,18 +57,12 @@ UserRepo = Annotated[UserRepository, Depends(get_user_repository)]
 # --- Фабрики Сервисов ---
 
 # FollowService зависит от FollowRepo и UserRepo
-def get_follow_service(
-        repo: FollowRepo,
-        user_repo: UserRepo
-) -> FollowService:
+def get_follow_service(repo: FollowRepo, user_repo: UserRepo) -> FollowService:
     return FollowService(repo=repo, user_repo=user_repo)
 
 
 # LikeService зависит от LikeRepo и TweetRepo
-def get_like_service(
-        repo: LikeRepo,
-        tweet_repo: TweetRepo  # Нужен для проверки существования твита
-) -> LikeService:
+def get_like_service(repo: LikeRepo, tweet_repo: TweetRepo) -> LikeService:
     return LikeService(repo=repo, tweet_repo=tweet_repo)
 
 
@@ -93,10 +87,7 @@ def get_tweet_service(
 
 
 # UserService зависит от UserRepo и FollowRepo
-def get_user_service(
-        repo: UserRepo,
-        follow_repo: FollowRepo
-) -> UserService:
+def get_user_service(repo: UserRepo, follow_repo: FollowRepo) -> UserService:
     return UserService(repo=repo, follow_repo=follow_repo)
 
 

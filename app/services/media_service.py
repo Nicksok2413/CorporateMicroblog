@@ -126,13 +126,11 @@ class MediaService(BaseService[Media, MediaRepository]):
         relative_path = unique_filename
 
         log.info(f"Сохранение медиафайла '{filename}' как '{unique_filename}' в '{save_path}'")
-
         media: Optional[Media] = None
 
         try:
             # Этап 1: Сохранение файла
             try:
-                # Асинхронная запись файла
                 async with await aiofiles.open(save_path, 'wb') as out_file:
                     while content := file.read(1024 * 1024):  # Читаем по 1MB
                         if isinstance(content, bytes):
@@ -154,7 +152,7 @@ class MediaService(BaseService[Media, MediaRepository]):
 
                 raise BadRequestError("Ошибка при сохранении файла.") from io_exc
 
-            # Этап 2: Создание записи в БД (в транзакции)
+            # Этап 2: Создание записи в БД
             try:
                 media_in = MediaCreate(file_path=relative_path)  # Сохраняем относительный путь
                 media = await self.repo.create(db=db, obj_in=media_in)
@@ -164,7 +162,7 @@ class MediaService(BaseService[Media, MediaRepository]):
                 return media
 
             except SQLAlchemyError as db_exc:
-                await db.rollback()  # Откат при ошибке БД
+                await db.rollback()
                 log.error(f"Ошибка БД при создании записи Media для '{unique_filename}': {db_exc}", exc_info=True)
 
                 # Если запись в БД не удалась, удаляем сохраненный файл

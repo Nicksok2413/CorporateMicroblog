@@ -11,11 +11,3 @@ from .like import LikeRepository
 from .media import MediaRepository
 from .tweet import TweetRepository
 from .user import UserRepository
-
-# __all__ = [
-#     "user_repo",
-#     "tweet_repo",
-#     "media_repo",
-#     "like_repo",
-#     "follow_repo",
-# ]

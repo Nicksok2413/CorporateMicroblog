@@ -11,10 +11,3 @@ from .like_service import LikeService
 from .media_service import MediaService
 from .tweet_service import TweetService
 from .user_service import UserService
-
-# __all__ = [
-#     "user_service",
-#     "media_service",
-#     "tweet_service",
-#     "follow_service",
-# ]
