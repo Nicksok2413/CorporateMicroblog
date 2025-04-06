@@ -33,14 +33,13 @@ class TweetService(BaseService[Tweet, TweetRepository]):
         self.media_repo = media_repo
         self.media_service = media_service
 
-    async def _get_tweet_or_404(self, db: AsyncSession, tweet_id: int, load_details: bool = False) -> Tweet:
+    async def _get_tweet_or_404(self, db: AsyncSession, tweet_id: int) -> Tweet:
         """
         Вспомогательный метод для получения твита по ID или выброса NotFoundError.
 
         Args:
             db (AsyncSession): Сессия БД.
             tweet_id (int): ID твита.
-            load_details (bool): Загружать ли связанные данные (автор, лайки, медиа).
 
         Returns:
             Tweet: Найденный твит.
@@ -48,12 +47,9 @@ class TweetService(BaseService[Tweet, TweetRepository]):
         Raises:
             NotFoundError: Если твит не найден.
         """
-        log.debug(f"Поиск твита ID {tweet_id}{' с деталями' if load_details else ''}")
+        log.debug(f"Поиск твита ID {tweet_id}")
 
-        if load_details:
-            tweet = await self.repo.get_with_details(db, tweet_id=tweet_id)
-        else:
-            tweet = await self.repo.get(db, obj_id=tweet_id)
+        tweet = await self.repo.get(db, obj_id=tweet_id)
 
         if not tweet:
             log.warning(f"Твит с ID {tweet_id} не найден.")
