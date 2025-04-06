@@ -27,12 +27,7 @@ class BaseService(Generic[ModelType, RepoType]):
     def __init__(self, repo: RepoType):
         self.repo = repo
 
-    async def _get_obj_or_404(
-            self,
-            db: AsyncSession,
-            *,
-            obj_id: int,
-    ) -> ModelType:
+    async def _get_obj_or_404(self, db: AsyncSession, *, obj_id: int) -> ModelType:
         """
         Вспомогательный метод для получения объекта по ID или выброса NotFoundError.
 
