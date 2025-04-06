@@ -152,7 +152,7 @@ class TweetService(BaseService[Tweet, TweetRepository]):
             log.error(f"Ошибка при удалении твита ID {tweet_id} пользователем {current_user.id}: {exc}", exc_info=True)
             raise BadRequestError("Не удалось удалить твит.") from exc
 
-    async def get_tweet_feed(self, db: AsyncSession, *, current_user: User) -> TweetFeedResult:
+    async def get_tweet_feed(self, db: AsyncSession, current_user: User) -> TweetFeedResult:
         """
         Формирует ленту твитов для текущего пользователя.
 

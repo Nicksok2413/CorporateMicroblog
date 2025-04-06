@@ -96,7 +96,7 @@ class MediaService(BaseService[Media, MediaRepository]):
 
         Args:
             db (AsyncSession): Сессия БД.
-            file (IO[bytes]): Файловый объект (из UploadFile.file).
+            file (IO[bytes]): Файловый объект.
             filename (str): Оригинальное имя файла.
             content_type (str): MIME-тип файла.
 

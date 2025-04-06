@@ -1,10 +1,10 @@
 """API роуты для подписок пользователей."""
 
-from fastapi import APIRouter, Path as FastApiPath, status
+from fastapi import APIRouter, Path, status
 
 from app.api.v1.dependencies import CurrentUser, DBSession, FollowSvc
 from app.core.logging import log
-from app.schemas import ResultTrue
+from app.schemas.base import ResultTrue
 
 router = APIRouter(tags=["Follows"])
 
@@ -21,17 +21,17 @@ router = APIRouter(tags=["Follows"])
     }
 )
 async def follow_a_user(
-        current_user: CurrentUser,
         db: DBSession,
+        current_user: CurrentUser,
         follow_service: FollowSvc,
-        user_id: int = FastApiPath(..., description="ID пользователя, на которого нужно подписаться", gt=0),
+        user_id: int = Path(..., description="ID пользователя, на которого нужно подписаться", gt=0),
 ) -> ResultTrue:
     """
     Создает подписку текущего пользователя на указанного пользователя.
 
     Args:
-        current_user (CurrentUser): Аутентифицированный пользователь.
         db (AsyncSession): Сессия БД.
+        current_user (CurrentUser): Аутентифицированный пользователь.
         follow_service (FollowSvc): Экземпляр сервиса `FollowService`.
         user_id (int): ID пользователя, на которого подписываются.
 
@@ -60,17 +60,17 @@ async def follow_a_user(
     }
 )
 async def unfollow_a_user(
-        current_user: CurrentUser,
         db: DBSession,
+        current_user: CurrentUser,
         follow_service: FollowSvc,
-        user_id: int = FastApiPath(..., description="ID пользователя, от которого нужно отписаться", gt=0),
+        user_id: int = Path(..., description="ID пользователя, от которого нужно отписаться", gt=0),
 ) -> ResultTrue:
     """
     Удаляет подписку текущего пользователя от указанного пользователя.
 
     Args:
-        current_user (CurrentUser): Аутентифицированный пользователь.
         db (AsyncSession): Сессия БД.
+        current_user (CurrentUser): Аутентифицированный пользователь.
         follow_service (FollowSvc): Экземпляр сервиса `FollowService`.
         user_id (int): ID пользователя, от которого отписываются.
 

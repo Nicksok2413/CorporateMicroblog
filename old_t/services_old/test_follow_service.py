@@ -26,9 +26,7 @@ async def test_follow_user_service_success(mocker):
     db_session_mock = AsyncMock()
 
     # Вызов - не должно быть исключений
-    await follow_service.follow_user(
-        db=db_session_mock, current_user=current_user, user_to_follow_id=2
-    )
+    await follow_service.follow_user(db=db_session_mock, current_user=current_user, user_to_follow_id=2)
 
     # Проверки
     mock_user_repo.get.assert_called_once_with(db_session_mock, id=2)
@@ -46,9 +44,7 @@ async def test_follow_user_service_self(mocker):
     db_session_mock = AsyncMock()
 
     with pytest.raises(PermissionDeniedError):
-        await follow_service.follow_user(
-            db=db_session_mock, current_user=current_user, user_to_follow_id=1
-        )
+        await follow_service.follow_user(db=db_session_mock, current_user=current_user, user_to_follow_id=1)
 
     mock_user_repo.get.assert_not_called()
     mock_follow_repo.get_follow.assert_not_called()
@@ -67,9 +63,7 @@ async def test_follow_user_service_target_not_found(mocker):
     db_session_mock = AsyncMock()
 
     with pytest.raises(NotFoundError):
-        await follow_service.follow_user(
-            db=db_session_mock, current_user=current_user, user_to_follow_id=99
-        )
+        await follow_service.follow_user(db=db_session_mock, current_user=current_user, user_to_follow_id=99)
 
     mock_follow_repo.get_follow.assert_not_called()
     mock_follow_repo.add_follow.assert_not_called()
@@ -89,9 +83,7 @@ async def test_follow_user_service_already_following(mocker):
     db_session_mock = AsyncMock()
 
     with pytest.raises(ConflictError):
-        await follow_service.follow_user(
-            db=db_session_mock, current_user=current_user, user_to_follow_id=2
-        )
+        await follow_service.follow_user(db=db_session_mock, current_user=current_user, user_to_follow_id=2)
 
     mock_follow_repo.add_follow.assert_not_called()
 
@@ -111,9 +103,7 @@ async def test_unfollow_user_service_success(mocker):
 
     db_session_mock = AsyncMock()
 
-    await follow_service.unfollow_user(
-        db=db_session_mock, current_user=current_user, user_to_unfollow_id=2
-    )
+    await follow_service.unfollow_user(db=db_session_mock, current_user=current_user, user_to_unfollow_id=2)
 
     mock_user_repo.get.assert_called_once_with(db_session_mock, id=2)
     mock_follow_repo.delete_follow.assert_called_once_with(db=db_session_mock, follower_id=1, following_id=2)
@@ -133,9 +123,7 @@ async def test_unfollow_user_service_not_following(mocker):
     db_session_mock = AsyncMock()
 
     with pytest.raises(NotFoundError):
-        await follow_service.unfollow_user(
-            db=db_session_mock, current_user=current_user, user_to_unfollow_id=2
-        )
+        await follow_service.unfollow_user(db=db_session_mock, current_user=current_user, user_to_unfollow_id=2)
 
     mock_follow_repo.delete_follow.assert_called_once_with(db=db_session_mock, follower_id=1, following_id=2)
 

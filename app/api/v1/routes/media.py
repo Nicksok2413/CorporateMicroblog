@@ -6,7 +6,7 @@ from fastapi import APIRouter, File, UploadFile, status
 
 from app.api.v1.dependencies import CurrentUser, DBSession, MediaSvc
 from app.core.logging import log
-from app.schemas import MediaCreateResult
+from app.schemas.media import MediaCreateResult
 
 router = APIRouter(prefix="/media", tags=["Media"])
 
@@ -19,8 +19,8 @@ router = APIRouter(prefix="/media", tags=["Media"])
     description="Загружает медиафайл (изображение) и возвращает его ID для последующего прикрепления к твиту.",
 )
 async def upload_media_file(
-        current_user: CurrentUser,
         db: DBSession,
+        current_user: CurrentUser,
         media_service: MediaSvc,
         # Данные файла из формы (multipart/form-data)
         file: UploadFile = File(..., description="Медиафайл для загрузки (jpg, png, gif)")
@@ -34,8 +34,8 @@ async def upload_media_file(
     - Возвращает ID созданного медиафайла.
 
     Args:
-        current_user (CurrentUser): Аутентифицированный пользователь.
         db (AsyncSession): Сессия БД.
+        current_user (CurrentUser): Аутентифицированный пользователь.
         media_service (MediaSvc): Экземпляр сервиса `MediaService`.
         file (UploadFile): Загружаемый файл.
 
@@ -58,7 +58,6 @@ async def upload_media_file(
         )
     except Exception:
         log.exception(f"Ошибка при обработке загрузки файла от пользователя ID {current_user.id}")
-        # Позволяем глобальному обработчику поймать ошибку (MediaValidationError, BadRequestError и т.д.)
         raise
     finally:
         await file.close()

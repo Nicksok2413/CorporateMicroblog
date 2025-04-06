@@ -1,10 +1,10 @@
 """API роуты для лайков твитов."""
 
-from fastapi import APIRouter, Path as FastApiPath, status
+from fastapi import APIRouter, Path, status
 
 from app.api.v1.dependencies import CurrentUser, DBSession, LikeSvc
 from app.core.logging import log
-from app.schemas import TweetActionResult
+from app.schemas.tweet import TweetActionResult
 
 router = APIRouter(tags=["Likes"])
 
@@ -20,17 +20,17 @@ router = APIRouter(tags=["Likes"])
     }
 )
 async def like_a_tweet(
-        current_user: CurrentUser,
         db: DBSession,
+        current_user: CurrentUser,
         like_service: LikeSvc,
-        tweet_id: int = FastApiPath(..., description="ID твита для лайка", gt=0),
+        tweet_id: int = Path(..., description="ID твита для лайка", gt=0),
 ) -> TweetActionResult:
     """
     Ставит лайк на указанный твит от имени текущего пользователя.
 
     Args:
-        current_user (CurrentUser): Аутентифицированный пользователь.
         db (AsyncSession): Сессия БД.
+        current_user (CurrentUser): Аутентифицированный пользователь.
         like_service (LikeSvc): Экземпляр сервиса `LikeService`.
         tweet_id (int): ID твита для лайка.
 
@@ -57,17 +57,17 @@ async def like_a_tweet(
     }
 )
 async def unlike_a_tweet(
-        current_user: CurrentUser,
         db: DBSession,
+        current_user: CurrentUser,
         like_service: LikeSvc,
-        tweet_id: int = FastApiPath(..., gt=0, description="ID твита для снятия лайка"),
+        tweet_id: int = Path(..., gt=0, description="ID твита для снятия лайка"),
 ) -> TweetActionResult:
     """
     Убирает лайк с указанного твита от имени текущего пользователя.
 
     Args:
-        current_user (CurrentUser): Аутентифицированный пользователь.
         db (AsyncSession): Сессия БД.
+        current_user (CurrentUser): Аутентифицированный пользователь.
         like_service (LikeSvc): Экземпляр сервиса `LikeService`.
         tweet_id (int): ID твита для снятия лайка.
 

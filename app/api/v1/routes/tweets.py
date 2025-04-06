@@ -1,11 +1,11 @@
 """API роуты для работы с твитами (создание, удаление, лента)."""
 
-from fastapi import APIRouter, Path as FastApiPath, status
+from fastapi import APIRouter, Path, status
 
 from app.api.v1.dependencies import CurrentUser, DBSession, TweetSvc
 from app.core.logging import log
-from app.schemas import (TweetActionResult, TweetCreateRequest,
-                         TweetCreateResult, TweetFeedResult)
+from app.schemas.tweet import (TweetActionResult, TweetCreateRequest,
+                               TweetCreateResult, TweetFeedResult)
 
 router = APIRouter(prefix="/tweets", tags=["Tweets"])
 
@@ -18,19 +18,19 @@ router = APIRouter(prefix="/tweets", tags=["Tweets"])
     description="Позволяет аутентифицированному пользователю опубликовать новый твит, опционально прикрепив медиа.",
 )
 async def create_new_tweet(
-        tweet_in: TweetCreateRequest,
-        current_user: CurrentUser,
         db: DBSession,
+        current_user: CurrentUser,
         tweet_service: TweetSvc,
+        tweet_in: TweetCreateRequest,
 ) -> TweetCreateResult:
     """
     Создает новый твит для текущего пользователя.
 
     Args:
-        tweet_in (TweetCreateRequest): Данные для создания твита.
-        current_user (CurrentUser): Аутентифицированный пользователь.
         db (AsyncSession): Сессия БД.
+        current_user (CurrentUser): Аутентифицированный пользователь.
         tweet_service (TweetSvc): Экземпляр сервиса `TweetService`.
+        tweet_in (TweetCreateRequest): Данные для создания твита.
 
     Returns:
         TweetCreateResult: Результат с ID созданного твита.
@@ -54,16 +54,16 @@ async def create_new_tweet(
     description="Возвращает ленту твитов от пользователей, на которых подписан текущий пользователь, и его собственные твиты, отсортированные по популярности.",
 )
 async def get_tweets_feed(
-        current_user: CurrentUser,
         db: DBSession,
+        current_user: CurrentUser,
         tweet_service: TweetSvc,
 ) -> TweetFeedResult:
     """
     Возвращает ленту твитов для текущего пользователя.
 
     Args:
-        current_user (CurrentUser): Аутентифицированный пользователь.
         db (AsyncSession): Сессия БД.
+        current_user (CurrentUser): Аутентифицированный пользователь.
         tweet_service (TweetSvc): Экземпляр сервиса `TweetService`.
 
     Returns:
@@ -86,10 +86,10 @@ async def get_tweets_feed(
     }
 )
 async def delete_existing_tweet(
-        current_user: CurrentUser,
         db: DBSession,
+        current_user: CurrentUser,
         tweet_service: TweetSvc,
-        tweet_id: int = FastApiPath(..., description="ID твита для удаления", gt=0),
+        tweet_id: int = Path(..., description="ID твита для удаления", gt=0),
 ) -> TweetActionResult:
     """
     Удаляет твит по его ID.
@@ -97,8 +97,8 @@ async def delete_existing_tweet(
     Доступно только автору твита.
 
     Args:
-        current_user (CurrentUser): Аутентифицированный пользователь.
         db (AsyncSession): Сессия БД.
+        current_user (CurrentUser): Аутентифицированный пользователь.
         tweet_service (TweetSvc): Экземпляр сервиса `TweetService`.
         tweet_id (int): ID твита для удаления.
 

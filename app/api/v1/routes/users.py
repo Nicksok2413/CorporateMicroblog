@@ -1,10 +1,10 @@
 """API роуты для работы с пользователями и их профилями."""
 
-from fastapi import APIRouter, Path as FastApiPath, status
+from fastapi import APIRouter, Path, status
 
 from app.api.v1.dependencies import CurrentUser, DBSession, UserSvc
 from app.core.logging import log
-from app.schemas import UserProfileResult
+from app.schemas.user import UserProfileResult
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
@@ -17,8 +17,8 @@ router = APIRouter(prefix="/users", tags=["Users"])
     description="Возвращает информацию о профиле аутентифицированного пользователя, включая списки подписчиков и подписок.",
 )
 async def get_my_profile(
-        current_user: CurrentUser,
         db: DBSession,
+        current_user: CurrentUser,
         user_service: UserSvc,
 ) -> UserProfileResult:
     """
@@ -27,8 +27,8 @@ async def get_my_profile(
     Включает списки подписчиков и подписок.
 
     Args:
-        current_user (CurrentUser): Аутентифицированный пользователь.
         db (DBSession): Сессия БД.
+        current_user (CurrentUser): Аутентифицированный пользователь.
         user_service (UserSvc): Экземпляр сервиса `UserService`.
 
     Returns:
@@ -52,7 +52,7 @@ async def get_my_profile(
 async def get_user_profile_by_id(
         db: DBSession,
         user_service: UserSvc,
-        user_id: int = FastApiPath(..., description="ID пользователя для просмотра профиля", gt=0),
+        user_id: int = Path(..., description="ID пользователя для просмотра профиля", gt=0),
 ) -> UserProfileResult:
     """
     Возвращает профиль пользователя по указанному ID.

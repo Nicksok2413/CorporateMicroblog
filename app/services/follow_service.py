@@ -53,7 +53,7 @@ class FollowService:
             raise NotFoundError(f"Пользователь с ID {following_id} не найден.")
         return user_to_follow
 
-    async def follow_user(self, db: AsyncSession, *, current_user: User, user_to_follow_id: int) -> None:
+    async def follow_user(self, db: AsyncSession, current_user: User, *, user_to_follow_id: int) -> None:
         """
         Осуществляет подписку одного пользователя на другого.
 
@@ -92,7 +92,7 @@ class FollowService:
             log.error(f"Ошибка при создании подписки ({follower_id} -> {user_to_follow_id}): {exc}", exc_info=True)
             raise BadRequestError("Не удалось подписаться на пользователя.") from exc
 
-    async def unfollow_user(self, db: AsyncSession, *, current_user: User, user_to_unfollow_id: int) -> None:
+    async def unfollow_user(self, db: AsyncSession, current_user: User, *, user_to_unfollow_id: int) -> None:
         """
         Осуществляет отписку одного пользователя от другого.
 

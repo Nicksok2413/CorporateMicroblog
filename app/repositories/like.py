@@ -72,4 +72,3 @@ class LikeRepository:
         )
 
         await db.execute(statement)
-        # Сервис должен проверить результат коммита или существование до удаления
