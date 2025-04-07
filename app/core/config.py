@@ -45,7 +45,7 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: str = Field(..., description="Пароль PostgreSQL")
     POSTGRES_DB: str = Field(..., description="Имя базы данных")
     POSTGRES_HOST: str = Field("db", description="Хост PostgreSQL (имя сервиса в Docker)")
-    POSTGRES_PORT: str = Field("5432", description="Порт PostgreSQL")
+    POSTGRES_PORT: int = Field(5432, description="Порт PostgreSQL")
     TEST_DB_URL: str = Field("sqlite+aiosqlite:///./test.db", description="URL тестовой БД (Async SQLite)")
 
     # Настройки режимов приложения
