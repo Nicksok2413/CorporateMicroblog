@@ -2,9 +2,10 @@
 
 import json
 import sys
-from pathlib import Path
 
 from loguru import logger
+
+from src.core.config import settings
 
 
 def serialize(record):
@@ -74,8 +75,6 @@ def configure_logging():
     - Опциональный вывод в файл с ротацией для production.
     - Специальная обработка логов SQLAlchemy в режиме DEBUG.
     """
-    from src.core.config import settings
-
     # Удаляем стандартный обработчик, чтобы избежать дублирования
     logger.remove()
 
@@ -94,13 +93,8 @@ def configure_logging():
         diagnose=settings.DEBUG  # Диагностика переменных только в DEBUG
     )
 
-    # Файловый вывод (если указан LOG_FILE или включен PRODUCTION)
+    # Файловый вывод (если включен PRODUCTION)
     log_file_path = settings.LOG_FILE
-    if not log_file_path and settings.PRODUCTION:
-        # По умолчанию пишем в logs/src.log в production, если LOG_FILE не задан явно
-        log_file_path = Path("logs") / "src.log"
-        # Создаем директорию, если нужно (на случай, если model_post_init в config не сработал)
-        log_file_path.parent.mkdir(parents=True, exist_ok=True)
 
     if log_file_path:
         logger.info(f"Логирование в файл включено: {log_file_path}")
@@ -116,6 +110,8 @@ def configure_logging():
             backtrace=True,  # Пишем трейсбеки в файл всегда
             diagnose=False  # Диагностику в файл не пишем
         )
+    else:
+        logger.info("Логирование в файл отключено.")
 
     # Настройка логирования SQLAlchemy (только в DEBUG)
     if settings.DEBUG:
@@ -127,9 +123,6 @@ def configure_logging():
 
 
 # Инициализация логирования при импорте модуля
-# Комментируем строку при тестах, иначе будет ошибка:
-# ImportError: cannot import name 'settings' from partially initialized module 'src.core.config' (most likely due to a circular import)
-# TODO: Подумать как решить эту проблему
 configure_logging()
 
 # Экспортируем настроенный логгер для использования в других модулях

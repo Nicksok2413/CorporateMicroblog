@@ -15,14 +15,12 @@ class Settings(BaseSettings):
     API_VERSION: str = "1.0.0"
     # Префикс v1 роутера
     API_V1_STR: str = "/api/v1"
-    # Уровень логирования
-    LOG_LEVEL: str = "INFO"
-    # Путь внутри контейнера к папке с логами (создается в Dockerfile)
-    LOG_FILE_PATH: str = "/app/src/logs/app.log"
     # Путь внутри контейнера к медиа-папке (создается в Dockerfile)
     STORAGE_PATH: str = "/app/src/static/media"
     # URL-префикс для доступа к медиа через FastAPI/Nginx
     MEDIA_URL_PREFIX: str = "/static/media"
+    # Уровень логирования
+    LOG_LEVEL: str = "INFO"
 
     # --- Настройки, читаемые из .env ---
     # Настройки базы данных
@@ -48,19 +46,22 @@ class Settings(BaseSettings):
         # Считаем продакшеном, если не DEBUG и не TESTING
         return not self.DEBUG and not self.TESTING
 
-    #
+    # Путь внутри контейнера к папке с логами
+    @computed_field
+    @cached_property
+    def LOG_FILE(self):
+        # Если включен PRODUCTION, то логгируем в файл
+        return "/app/src/logs/app.log" if self.PRODUCTION else None
+
+    # Формируем URL БД
     @computed_field(repr=False)
     @cached_property
     def DATABASE_URL(self) -> str:
-        """URL для основной PostgreSQL БД."""
-        return (f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@"
-                f"{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}")
-
-    @computed_field
-    @cached_property
-    def EFFECTIVE_DATABASE_URL(self) -> str:
-        """Актуальный URL базы данных (тестовой или основной)."""
-        return "sqlite+aiosqlite:///./test.db" if self.TESTING else self.DATABASE_URL
+        """URL для БД основной или тестовой."""
+        return "sqlite+aiosqlite:///./test.db" if self.TESTING else (
+            f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
+            f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+        )
 
     model_config = SettingsConfigDict(
         env_file=".env",
