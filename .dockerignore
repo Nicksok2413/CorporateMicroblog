@@ -1,0 +1,52 @@
+# .dockerignore
+
+# Git
+.git
+.gitignore
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environment
+.venv
+venv/
+env/
+.env
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.idea/
+.vscode/
+
+# Test files and cache
+.pytest_cache/
+pytest.ini
+htmlcov/
+.coverage
+# Если вы храните тестовую БД локально
+test.db
+test_media/ # Директория для тестовых медиа, если она вне /app
+
+# Логи (если они не должны попадать в образ)
+logs/
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Прочее
+*.log
+*.pot
+*.py[cod]
+
+# Если статика фронтенда не нужна в бэкенд-образе
+# (зависит от вашей структуры)
+# frontend/
+# node_modules/

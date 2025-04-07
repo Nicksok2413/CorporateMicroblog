@@ -26,23 +26,30 @@ services:
       - microblog_network
 
   # Сервис приложения FastAPI
-  web:
-    build: . # Собираем образ из Dockerfile в текущей директории
-    container_name: microblog_web
+  app:
+    build:
+      context: . # Собираем из Dockerfile в текущей директории
+      dockerfile: Dockerfile
+    container_name: microblog_app
     volumes:
       # Монтируем код для live reload (удобно для разработки, можно убрать для чистого production)
-#      - ./src:/app/src
-#      - ./alembic:/app/alembic
-#      - ./alembic.ini:/app/alembic.ini
-      # Volume для сохранения загруженных медиафайлов
-      - media_volume:/app/src/static/media
+      - ./src:/src/src
+      - ./alembic:/src/alembic
+      - ./alembic.ini:/src/alembic.ini
+      # Том для хранения загруженных медиафайлов
+      - media_volume:/src/static/media
     ports:
       - "8000:8000" # Маппим порт 8000 хоста на 8000 контейнера
     env_file:
       - .env # Передаем все переменные окружения из .env в приложение
     depends_on:
       db:
-        condition: service_healthy # Запускаем web только после того, как db станет 'healthy'
+        condition: service_healthy # Запускаем приложение только после того, как БД будет готова
+    # Команда для запуска: сначала миграции, потом Uvicorn
+    # Убираем --reload для production
+    command: /bin/sh -c "echo 'Ожидание запуска БД...' && sleep 5 && echo 'Запуск миграций Alembic...' && alembic upgrade head && echo 'Запуск Uvicorn...' && uvicorn src.main:src --host 0.0.0.0 --port 8000"
+    # Для разработки с перезагрузкой:
+    # command: /bin/sh -c "alembic upgrade head && uvicorn src.main:src --host 0.0.0.0 --port 8000 --reload"
     restart: unless-stopped
     networks:
       - microblog_network

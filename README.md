@@ -208,7 +208,7 @@ microblog/
     ```
 8.  **Запустите приложение FastAPI:**
     ```bash
-    uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+    uvicorn src.main:src --reload --host 0.0.0.0 --port 8000
     ```
 
 ## Миграции Базы Данных (Alembic)
@@ -216,7 +216,7 @@ microblog/
 *   **Создание новой миграции (после изменений в моделях):**
     ```bash
     # Запуск внутри контейнера (рекомендуется)
-    docker-compose exec app alembic revision --autogenerate -m "Краткое описание изменений"
+    docker-compose exec src alembic revision --autogenerate -m "Краткое описание изменений"
     # Или локально (если настроено окружение)
     # alembic revision --autogenerate -m "Краткое описание изменений"
     ```
@@ -226,7 +226,7 @@ microblog/
 *   **Применение миграций:**
     ```bash
     # Запуск внутри контейнера
-    docker-compose exec app alembic upgrade head
+    docker-compose exec src alembic upgrade head
     # Или локально
     # alembic upgrade head
     ```
@@ -236,7 +236,7 @@ microblog/
 *   **Откат миграции:**
     ```bash
     # Откат на одну версию назад
-    docker-compose exec app alembic downgrade -1
+    docker-compose exec src alembic downgrade -1
     # Или локально
     # alembic downgrade -1
     ```
@@ -263,7 +263,7 @@ microblog/
 2.  **Запустите тесты:**
     ```bash
     # Запуск внутри контейнера (если зависимости для тестов установлены в образе)
-    # docker-compose exec app pytest tests/
+    # docker-compose exec src pytest tests/
     # Или локально (предпочтительно)
     pytest
     ```
