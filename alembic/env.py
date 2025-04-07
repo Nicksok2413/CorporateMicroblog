@@ -6,6 +6,16 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import pool, create_engine
 
+# --- Загрузка .env ---
+from dotenv import load_dotenv
+# Ищем .env на один уровень выше папки alembic (в корне проекта)
+dotenv_path = os.path.join(os.path.dirname(__file__), '..', '.env')
+if os.path.exists(dotenv_path):
+    print(f"Loading environment variables from: {dotenv_path}")
+    load_dotenv(dotenv_path=dotenv_path)
+else:
+    print(f".env file not found at: {dotenv_path}. Relying on existing environment variables.")
+
 # Добавляем корень проекта в sys.path, чтобы найти app.*
 sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__), "..")))
 
