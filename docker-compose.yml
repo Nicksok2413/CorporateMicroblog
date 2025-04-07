@@ -4,62 +4,41 @@ services:
     image: postgres:17-alpine # Используем легковесный образ
     container_name: microblog_db
     volumes:
-      - postgres_data:/var/lib/postgresql/data/ # Том для персистентности данных
+      - postgres_data:/var/lib/postgresql/data/ # Volume для сохранения данных БД
     env_file:
       - .env # Загружаем переменные из .env (POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB)
-    ports:
-      # Маппим порт 5433 хоста на 5432 контейнера, чтобы не конфликтовать с локальным Postgres
+    expose:
+      - "5432" # Открываем порт только внутри сети Docker
+    ports: # Если нужен доступ к БД с хост-машины
       - "5433:5432"
-    environment:
-      # Эти переменные используются Postgres для инициализации БД при первом запуске
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"] # Экранируем $ для shell
-      interval: 10s
+      interval: 5s
       timeout: 5s
       retries: 5
-      start_period: 10s # Даем время на запуск Postgres перед первой проверкой
     restart: unless-stopped
-    networks:
-      - microblog_network
 
   # Сервис приложения FastAPI
-  app:
-    build:
-      context: . # Собираем из Dockerfile в текущей директории
-      dockerfile: Dockerfile
-    container_name: microblog_app
+  web:
+    build: . # Собираем образ из Dockerfile в текущей директории
+    container_name: microblog_web
     volumes:
       # Монтируем код для live reload (удобно для разработки, можно убрать для чистого production)
       - ./app:/app/app
       - ./alembic:/app/alembic
       - ./alembic.ini:/app/alembic.ini
-      # Том для хранения загруженных медиафайлов
-      - media_volume:/app/static/media
+      # Volume для сохранения загруженных медиафайлов
+      - media_data:/app/static/media
     ports:
-      - "8000:8000" # Маппим порт 8000 хоста на 8000 контейнера
+      - "8000:8000" # Пробрасываем порт 8000 контейнера на порт 8000 хоста
     env_file:
       - .env # Передаем все переменные окружения из .env в приложение
     depends_on:
       db:
-        condition: service_healthy # Запускаем приложение только после того, как БД будет готова
-    # Команда для запуска: сначала миграции, потом Uvicorn
-    # Убираем --reload для production
-    command: /bin/sh -c "echo 'Ожидание запуска БД...' && sleep 5 && echo 'Запуск миграций Alembic...' && alembic upgrade head && echo 'Запуск Uvicorn...' && uvicorn app.main:app --host 0.0.0.0 --port 8000"
-    # Для разработки с перезагрузкой:
-    # command: /bin/sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+        condition: service_healthy # Запускаем web только после того, как db станет 'healthy'
     restart: unless-stopped
-    networks:
-      - microblog_network
 
-networks:
-  microblog_network:
-    driver: bridge
-
+# Определяем именованные volumes
 volumes:
-  postgres_data: # Том для данных PostgreSQL
-    driver: local
-  media_volume: # Том для медиафайлов
-    driver: local
+  postgres_data: # Данные PostgreSQL
+  media_data:    # Медиафайлы приложения
