@@ -1,34 +1,13 @@
 """Конфигурация приложения."""
 
 from functools import cached_property
-from pathlib import Path
-from typing import Optional
 
 from pydantic import Field, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    """
-    Основные настройки приложения.
-
-    Attributes:
-        DEBUG: Режим отладки
-        TESTING: Режим тестирования
-        PRODUCTION: Продакшен режим
-        POSTGRES_USER: Имя пользователя PostgreSQL
-        POSTGRES_PASSWORD: Пароль PostgreSQL
-        POSTGRES_DB: Имя базы данных
-        POSTGRES_HOST: Хост PostgreSQL
-        POSTGRES_PORT: Порт PostgreSQL
-        STORAGE_PATH: Директория для хранения медиафайлов (строка)
-
-        STORAGE_PATH_OBJ: Директория для хранения медиафайлов (Path объект)
-        API_KEY_HEADER: HTTP-заголовок с API-ключом
-        SECRET_KEY: Секретный ключ (минимум 32 символа)
-        LOG_LEVEL: Уровень логирования
-        LOG_FILE: Файл для записи логов (Path объект)
-    """
+    """Основные настройки приложения."""
     # --- Статические настройки ---
     # Название приложения
     PROJECT_NAME: str = "Microblog Service"
@@ -36,6 +15,12 @@ class Settings(BaseSettings):
     API_VERSION: str = "1.0.0"
     # Префикс v1 роутера
     API_V1_STR: str = "/api/v1"
+    # Уровень логирования
+    LOG_LEVEL: str = "INFO"
+    # Путь внутри контейнера к папке с логами (создается в Dockerfile)
+    LOG_FILE_PATH: str = "/app/src/logs/app.log"
+    # Путь внутри контейнера к медиа-папке (создается в Dockerfile)
+    STORAGE_PATH: str = "/app/src/static/media"
     # URL-префикс для доступа к медиа через FastAPI/Nginx
     MEDIA_URL_PREFIX: str = "/static/media"
 
@@ -54,12 +39,6 @@ class Settings(BaseSettings):
     # Настройки безопасности
     API_KEY_HEADER: str = Field("api-key", description="HTTP-заголовок с API-ключом")
     SECRET_KEY: str = Field(..., description="Секретный API-ключ")
-
-    # Логирование
-    LOG_LEVEL: str = Field("INFO", description="Уровень логирования")
-    # LOG_FILE можно оставить в .env, если путь должен быть настраиваемым
-    # Если путь всегда /src/src/logs/src.log, можно задать его здесь
-    LOG_FILE_PATH_INSIDE_CONTAINER: Optional[str] = "/src/src/logs/src.log" # Пример статического пути
 
     # --- Вычисляемые поля ---
     # Продакшен режим
@@ -83,39 +62,12 @@ class Settings(BaseSettings):
         """Актуальный URL базы данных (тестовой или основной)."""
         return "sqlite+aiosqlite:///./test.db" if self.TESTING else self.DATABASE_URL
 
-    @computed_field
-    @cached_property
-    def STORAGE_PATH(self) -> str:
-         """Возвращает актуальный путь к хранилищу медиа."""
-         # В режиме тестирования используем временную папку (лучше управлять через фикстуры)
-         # В обычном режиме - путь внутри контейнера
-         return "./test_media" if self.TESTING else STORAGE_PATH_INSIDE_CONTAINER
-
-    # Настройки хранения файлов
-    STORAGE_PATH: str = Field(
-        "/src/static/media",  # Путь внутри контейнера
-        description="Директория для хранения медиафайлов (строковое представление)"
-    )
-
-    # Это поле будет вычислено в model_post_init
-    STORAGE_PATH_OBJ: Optional[Path] = Field(None, description="Объект Path для хранения медиафайлов", exclude=True)
-
-    # Настройки логирования
-    LOG_LEVEL: str = Field("INFO", description="Уровень логирования")
-    LOG_FILE: Optional[Path] = Field("logs/src.log", description="Файл для записи логов")  # LOG_FILE теперь Path
-
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=True,  # Имена переменных окружения чувствительны к регистру
         extra="ignore",  # Игнорировать лишние переменные окружения
     )
-
-
-    @computed_field
-    @cached_property
-    def EFFECTIVE_STORAGE_PATH(self) -> str:
-        return "./test_media" if self.TESTING else self.STORAGE_PATH
 
 
 # Кэшированный экземпляр настроек

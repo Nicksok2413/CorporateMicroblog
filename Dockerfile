@@ -25,7 +25,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Копируем код приложения и Alembic
 COPY ./alembic.ini /app/alembic.ini
 COPY ./alembic /app/alembic
-COPY ./app /app/app
+COPY ./src /app/src
 
 # Указываем порт, который будет слушать приложение
 EXPOSE 8000
@@ -36,4 +36,4 @@ RUN chmod +x /app/entrypoint.sh
 ENTRYPOINT ["/app/entrypoint.sh"]
 
 # CMD по умолчанию (если entrypoint не задан или для передачи аргументов)
-# CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]

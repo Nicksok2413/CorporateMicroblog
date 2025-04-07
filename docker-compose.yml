@@ -31,9 +31,9 @@ services:
     container_name: microblog_web
     volumes:
       # Монтируем код для live reload (удобно для разработки, можно убрать для чистого production)
-#      - ./src:/src/src
-#      - ./alembic:/src/alembic
-#      - ./alembic.ini:/src/alembic.ini
+#      - ./src:/app/src
+#      - ./alembic:/app/alembic
+#      - ./alembic.ini:/app/alembic.ini
       # Volume для сохранения загруженных медиафайлов
       - media_volume:/src/static/media
     ports:
