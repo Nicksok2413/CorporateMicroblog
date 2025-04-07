@@ -49,11 +49,11 @@ desktop.ini
 *.log
 logs/
 
-## === Alembic alembic (исключаем всё, кроме самих миграций) ===
-#alembic/
-#!alembic/versions/
-#!alembic/env.py
-#!alembic/script.py.mako
+# === Alembic alembic (исключаем всё, кроме самих миграций) ===
+alembic/
+!alembic/versions/.gitkeep
+!alembic/env.py
+!alembic/script.py.mako
 
 # === Static files ===
 app/static/media/*  # Исключаем загруженные файлы (храним только в production)
