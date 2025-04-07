@@ -30,7 +30,7 @@ class Database:
         """
         Устанавливает подключение к базе данных.
 
-        Использует `EFFECTIVE_DATABASE_URL` из настроек.
+        Использует `DATABASE_URL` из настроек.
 
         Args:
             **kwargs: Дополнительные параметры для create_async_engine.
@@ -38,7 +38,7 @@ class Database:
         Raises:
             RuntimeError: При неудачной проверке подключения.
         """
-        db_url = settings.EFFECTIVE_DATABASE_URL
+        db_url = settings.DATABASE_URL
         log.info(f"Подключение к базе данных: {'*' * 5}{db_url[-20:]}")  # Логируем URL (частично скрытый)
 
         self.engine = create_async_engine(
@@ -144,7 +144,7 @@ async def init_db():
         await db.connect()
         log.warning("Вызван init_db() без активного движка, выполнено подключение.")
 
-    if settings.TESTING and settings.EFFECTIVE_DATABASE_URL.startswith("sqlite"):
+    if settings.TESTING and settings.DATABASE_URL.startswith("sqlite"):
         log.info("Используется SQLite, создание таблиц...")
         async with db.engine.begin() as conn:
             await conn.run_sync(Base.metadata.drop_all)
