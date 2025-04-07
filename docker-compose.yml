@@ -35,7 +35,7 @@ services:
 #      - ./alembic:/app/alembic
 #      - ./alembic.ini:/app/alembic.ini
       # Volume для сохранения загруженных медиафайлов
-      - media_volume:/src/static/media
+      - media_volume:/app/src/static/media
     ports:
       - "8000:8000" # Маппим порт 8000 хоста на 8000 контейнера
     env_file:
