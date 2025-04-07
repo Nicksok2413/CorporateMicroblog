@@ -31,6 +31,8 @@ COPY ./app /app/app
 EXPOSE 8000
 
 # Определяем точку входа
+COPY ./entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
 ENTRYPOINT ["/app/entrypoint.sh"]
 
 # CMD по умолчанию (если entrypoint не задан или для передачи аргументов)
