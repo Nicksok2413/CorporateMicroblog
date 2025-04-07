@@ -11,8 +11,8 @@ from app.core.exceptions import PermissionDeniedError, NotFoundError, ConflictEr
 @pytest.mark.asyncio
 async def test_follow_user_service_success(mocker):
     """Тест успешной подписки."""
-    mock_user_repo = mocker.patch("app.services_old.follow_service.user_repo", autospec=True)
-    mock_follow_repo = mocker.patch("app.services_old.follow_service.follow_repo", autospec=True)
+    mock_user_repo = mocker.patch("src.services_old.follow_service.user_repo", autospec=True)
+    mock_follow_repo = mocker.patch("src.services_old.follow_service.follow_repo", autospec=True)
 
     # Данные
     current_user = User(id=1)
@@ -37,8 +37,8 @@ async def test_follow_user_service_success(mocker):
 @pytest.mark.asyncio
 async def test_follow_user_service_self(mocker):
     """Тест подписки на себя."""
-    mock_user_repo = mocker.patch("app.services_old.follow_service.user_repo", autospec=True)
-    mock_follow_repo = mocker.patch("app.services_old.follow_service.follow_repo", autospec=True)
+    mock_user_repo = mocker.patch("src.services_old.follow_service.user_repo", autospec=True)
+    mock_follow_repo = mocker.patch("src.services_old.follow_service.follow_repo", autospec=True)
 
     current_user = User(id=1)
     db_session_mock = AsyncMock()
@@ -54,8 +54,8 @@ async def test_follow_user_service_self(mocker):
 @pytest.mark.asyncio
 async def test_follow_user_service_target_not_found(mocker):
     """Тест подписки на несуществующего пользователя."""
-    mock_user_repo = mocker.patch("app.services_old.follow_service.user_repo", autospec=True)
-    mock_follow_repo = mocker.patch("app.services_old.follow_service.follow_repo", autospec=True)
+    mock_user_repo = mocker.patch("src.services_old.follow_service.user_repo", autospec=True)
+    mock_follow_repo = mocker.patch("src.services_old.follow_service.follow_repo", autospec=True)
 
     current_user = User(id=1)
     mock_user_repo.get.return_value = None  # Целевой пользователь не найден
@@ -72,8 +72,8 @@ async def test_follow_user_service_target_not_found(mocker):
 @pytest.mark.asyncio
 async def test_follow_user_service_already_following(mocker):
     """Тест повторной подписки."""
-    mock_user_repo = mocker.patch("app.services_old.follow_service.user_repo", autospec=True)
-    mock_follow_repo = mocker.patch("app.services_old.follow_service.follow_repo", autospec=True)
+    mock_user_repo = mocker.patch("src.services_old.follow_service.user_repo", autospec=True)
+    mock_follow_repo = mocker.patch("src.services_old.follow_service.follow_repo", autospec=True)
 
     current_user = User(id=1)
     user_to_follow = User(id=2)
@@ -93,8 +93,8 @@ async def test_follow_user_service_already_following(mocker):
 @pytest.mark.asyncio
 async def test_unfollow_user_service_success(mocker):
     """Тест успешной отписки."""
-    mock_user_repo = mocker.patch("app.services_old.follow_service.user_repo", autospec=True)
-    mock_follow_repo = mocker.patch("app.services_old.follow_service.follow_repo", autospec=True)
+    mock_user_repo = mocker.patch("src.services_old.follow_service.user_repo", autospec=True)
+    mock_follow_repo = mocker.patch("src.services_old.follow_service.follow_repo", autospec=True)
 
     current_user = User(id=1)
     user_to_unfollow = User(id=2)
@@ -112,8 +112,8 @@ async def test_unfollow_user_service_success(mocker):
 @pytest.mark.asyncio
 async def test_unfollow_user_service_not_following(mocker):
     """Тест отписки, если не был подписан."""
-    mock_user_repo = mocker.patch("app.services_old.follow_service.user_repo", autospec=True)
-    mock_follow_repo = mocker.patch("app.services_old.follow_service.follow_repo", autospec=True)
+    mock_user_repo = mocker.patch("src.services_old.follow_service.user_repo", autospec=True)
+    mock_follow_repo = mocker.patch("src.services_old.follow_service.follow_repo", autospec=True)
 
     current_user = User(id=1)
     user_to_unfollow = User(id=2)

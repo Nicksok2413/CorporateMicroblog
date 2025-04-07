@@ -55,5 +55,5 @@ alembic upgrade head
 
 # Запускаем основное приложение (Uvicorn)
 echo "Запуск основного приложения Uvicorn..."
-# exec su-exec appuser uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload # Для разработки
-exec uvicorn app.main:app --host 0.0.0.0 --port 8000
+# exec su-exec appuser uvicorn src.main:src --host 0.0.0.0 --port 8000 --reload # Для разработки
+exec uvicorn src.main:app --host 0.0.0.0 --port 8000

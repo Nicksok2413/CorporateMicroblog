@@ -20,8 +20,8 @@ from app.core.exceptions import NotFoundError, ConflictError
 @pytest.mark.asyncio
 async def test_like_tweet_service_success(mocker):
     """Тест успешного лайка."""
-    mock_tweet_repo = mocker.patch("app.services_old.tweet_service.tweet_repo", autospec=True)
-    mock_like_repo = mocker.patch("app.services_old.tweet_service.like_repo", autospec=True)
+    mock_tweet_repo = mocker.patch("src.services_old.tweet_service.tweet_repo", autospec=True)
+    mock_like_repo = mocker.patch("src.services_old.tweet_service.like_repo", autospec=True)
 
     # Настраиваем моки
     mock_tweet_repo.get.return_value = Tweet(id=1, author_id=2)  # Твит существует
@@ -43,8 +43,8 @@ async def test_like_tweet_service_success(mocker):
 @pytest.mark.asyncio
 async def test_like_tweet_service_already_liked(mocker):
     """Тест лайка уже лайкнутого твита."""
-    mock_tweet_repo = mocker.patch("app.services_old.tweet_service.tweet_repo", autospec=True)
-    mock_like_repo = mocker.patch("app.services_old.tweet_service.like_repo", autospec=True)
+    mock_tweet_repo = mocker.patch("src.services_old.tweet_service.tweet_repo", autospec=True)
+    mock_like_repo = mocker.patch("src.services_old.tweet_service.like_repo", autospec=True)
 
     mock_tweet_repo.get.return_value = Tweet(id=1, author_id=2)
     mock_like_repo.get_like.return_value = Like(user_id=1, tweet_id=1)  # Лайк уже есть
@@ -61,8 +61,8 @@ async def test_like_tweet_service_already_liked(mocker):
 @pytest.mark.asyncio
 async def test_like_tweet_service_tweet_not_found(mocker):
     """Тест лайка несуществующего твита."""
-    mock_tweet_repo = mocker.patch("app.services_old.tweet_service.tweet_repo", autospec=True)
-    mock_like_repo = mocker.patch("app.services_old.tweet_service.like_repo", autospec=True)
+    mock_tweet_repo = mocker.patch("src.services_old.tweet_service.tweet_repo", autospec=True)
+    mock_like_repo = mocker.patch("src.services_old.tweet_service.like_repo", autospec=True)
 
     mock_tweet_repo.get.return_value = None  # Твит не найден
 
@@ -81,7 +81,7 @@ async def test_like_tweet_service_tweet_not_found(mocker):
 @pytest.mark.asyncio
 async def test_unlike_tweet_service_success(mocker):
     """Тест успешного снятия лайка."""
-    mock_like_repo = mocker.patch("app.services_old.tweet_service.like_repo", autospec=True)
+    mock_like_repo = mocker.patch("src.services_old.tweet_service.like_repo", autospec=True)
     mock_like_repo.delete_like.return_value = True  # Лайк найден и удален
 
     db_session_mock = AsyncMock()
@@ -95,7 +95,7 @@ async def test_unlike_tweet_service_success(mocker):
 @pytest.mark.asyncio
 async def test_unlike_tweet_service_not_liked(mocker):
     """Тест снятия лайка, которого не было."""
-    mock_like_repo = mocker.patch("app.services_old.tweet_service.like_repo", autospec=True)
+    mock_like_repo = mocker.patch("src.services_old.tweet_service.like_repo", autospec=True)
     mock_like_repo.delete_like.return_value = False  # Лайк не найден
 
     db_session_mock = AsyncMock()
@@ -113,10 +113,10 @@ async def test_unlike_tweet_service_not_liked(mocker):
 async def test_get_tweet_feed_service_success(mocker):
     """Тест успешного получения ленты."""
     # Мокируем все используемые репозитории и сервисы
-    mock_follow_repo = mocker.patch("app.services_old.tweet_service.follow_repo", autospec=True)
-    mock_tweet_repo = mocker.patch("app.services_old.tweet_service.tweet_repo", autospec=True)
+    mock_follow_repo = mocker.patch("src.services_old.tweet_service.follow_repo", autospec=True)
+    mock_tweet_repo = mocker.patch("src.services_old.tweet_service.tweet_repo", autospec=True)
     # Мокируем media_service.get_media_url, т.к. он используется для форматирования
-    mock_media_service = mocker.patch("app.services_old.tweet_service.media_service", autospec=True)
+    mock_media_service = mocker.patch("src.services_old.tweet_service.media_service", autospec=True)
 
     # Подготовка данных
     current_user = User(id=1, name="Alice")

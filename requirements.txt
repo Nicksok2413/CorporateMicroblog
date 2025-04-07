@@ -1,21 +1,11 @@
 aiofiles==24.1.0
-sqlalchemy==2.0.39
+alembic==1.15.1
+fastapi==0.115.12
+loguru==0.7.3
 psycopg2-binary==2.9.10
 pydantic==2.10.6
 pydantic_settings==2.8.1
 python-dotenv==1.1.0
 python-multipart==0.0.20
-fastapi==0.115.12
+sqlalchemy==2.0.39
 uvicorn==0.34.0
-alembic==1.15.1
-loguru==0.7.3
-
-#for dev
-aiosqlite==0.21.0
-pytest==8.3.5
-pytest-asyncio==0.26.0
-pytest-cov==6.1.0
-pytest-dotenv==0.5.2
-httpx==0.28.1
-ruff==0.11.2
-mypy==1.15.0

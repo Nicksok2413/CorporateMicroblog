@@ -16,7 +16,7 @@ if os.path.exists(dotenv_path):
 else:
     print(f".env file not found at: {dotenv_path}. Relying on existing environment variables.")
 
-# Добавляем корень проекта в sys.path, чтобы найти app.*
+# Добавляем корень проекта в sys.path, чтобы найти src.*
 sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__), "..")))
 
 # --- Импорт моделей ---

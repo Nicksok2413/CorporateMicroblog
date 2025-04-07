@@ -33,11 +33,11 @@ services:
     container_name: microblog_app
     volumes:
       # Монтируем код для live reload (удобно для разработки, можно убрать для чистого production)
-      - ./app:/app/app
-      - ./alembic:/app/alembic
-      - ./alembic.ini:/app/alembic.ini
+      - ./src:/src/src
+      - ./alembic:/src/alembic
+      - ./alembic.ini:/src/alembic.ini
       # Том для хранения загруженных медиафайлов
-      - media_volume:/app/static/media
+      - media_volume:/src/static/media
     ports:
       - "8000:8000" # Маппим порт 8000 хоста на 8000 контейнера
     env_file:
@@ -47,9 +47,9 @@ services:
         condition: service_healthy # Запускаем приложение только после того, как БД будет готова
     # Команда для запуска: сначала миграции, потом Uvicorn
     # Убираем --reload для production
-    command: /bin/sh -c "echo 'Ожидание запуска БД...' && sleep 5 && echo 'Запуск миграций Alembic...' && alembic upgrade head && echo 'Запуск Uvicorn...' && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    command: /bin/sh -c "echo 'Ожидание запуска БД...' && sleep 5 && echo 'Запуск миграций Alembic...' && alembic upgrade head && echo 'Запуск Uvicorn...' && uvicorn src.main:src --host 0.0.0.0 --port 8000"
     # Для разработки с перезагрузкой:
-    # command: /bin/sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    # command: /bin/sh -c "alembic upgrade head && uvicorn src.main:src --host 0.0.0.0 --port 8000 --reload"
     restart: unless-stopped
     networks:
       - microblog_network
