@@ -31,7 +31,9 @@ ENV/
 
 # === Docker ===
 docker-compose.override.yml
-data/  # Для volume PostgreSQL (если используется локально)
+/postgres_data/
+/media/
+/logs/
 
 # === IDE ===
 # PyCharm

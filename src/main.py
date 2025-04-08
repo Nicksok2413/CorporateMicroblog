@@ -91,28 +91,27 @@ def create_app() -> FastAPI:
     # Можно добавить монтирование для "общей" статики фронтенда, если нужно
     # app.mount("/static", StaticFiles(directory="src/static"), name="static")
 
+    # Корневой эндпоинт для проверки
+    @app.get("/", tags=["Default"], summary="Проверка доступности сервиса")
+    async def root():
+        """
+        Корневой эндпоинт.
+
+        Возвращает приветственное сообщение и информацию о доступности документации.
+        """
+        log.debug("Запрос к корневому эндпоинту '/'")
+        return {
+            "message": f"Добро пожаловать в {settings.PROJECT_NAME}!",
+            "api_version": f"{settings.API_VERSION}",
+            "documentation_swagger": "/docs",
+            "documentation_redoc": "/redoc",
+            "status": "operational",
+            "debug_mode": settings.DEBUG,
+        }
+
     log.info(f"Приложение '{settings.PROJECT_NAME}' сконфигурировано и готово к запуску.")
     return app
 
 
 # Создаем приложение
 app = create_app()
-
-
-# Корневой эндпоинт для проверки
-@app.get("/", tags=["Default"], summary="Проверка доступности сервиса")
-async def root():
-    """
-    Корневой эндпоинт.
-
-    Возвращает приветственное сообщение и информацию о доступности документации.
-    """
-    log.debug("Запрос к корневому эндпоинту '/'")
-    return {
-        "message": f"Добро пожаловать в {settings.PROJECT_NAME}!",
-        "api_version": f"{settings.API_VERSION}",
-        "documentation_swagger": "/docs",
-        "documentation_redoc": "/redoc",
-        "status": "operational",
-        "debug_mode": settings.DEBUG,
-    }
