@@ -45,11 +45,9 @@ class User(Base):
     following: Mapped[List["Follow"]] = relationship(
         foreign_keys="Follow.follower_id",
         back_populates="follower",
-        cascade="all, delete-orphan",
     )
     # Пользователи, подписанные на данного пользователя
     followers: Mapped[List["Follow"]] = relationship(
         foreign_keys="Follow.following_id",
         back_populates="followed_user",
-        cascade="all, delete-orphan",
     )
