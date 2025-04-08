@@ -14,28 +14,29 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Microblog Service"
     # Версия API
     API_VERSION: str = "1.0.0"
-    # Путь внутри контейнера к медиа-папке
-    STORAGE_PATH: Path = Path("src/static/media")
-    # URL-префикс для доступа к медиа через FastAPI/Nginx
-    MEDIA_URL_PREFIX: str = "/static/media"
     # Уровень логирования
     LOG_LEVEL: str = "INFO"
+    # URL-префикс для доступа к медиа через FastAPI/Nginx
+    MEDIA_URL_PREFIX: str = "/media"
+
+    # --- Пути внутри контейнера (для монтирования Volumes) ---
+    # Путь к папке для хранения загруженных медиафайлов
+    MEDIA_ROOT_PATH: Path = Path("/media")
+    # Путь к папке для хранения лог-файлов
+    LOG_ROOT_PATH: Path = Path("/logs")
 
     # --- Настройки, читаемые из .env ---
-    # Настройки базы данных
+    # Настройки БД
     POSTGRES_USER: str = Field(..., description="Имя пользователя PostgreSQL")
     POSTGRES_PASSWORD: str = Field(..., description="Пароль PostgreSQL")
     POSTGRES_DB: str = Field(..., description="Имя базы данных")
     POSTGRES_HOST: str = Field("db", description="Хост PostgreSQL (имя сервиса в Docker)")
     POSTGRES_PORT: int = Field(5432, description="Порт PostgreSQL")
-
     # Настройки режимов приложения
     DEBUG: bool = Field(default=False, description="Режим отладки")
     TESTING: bool = Field(default=False, description="Режим тестирования")
-
     # Настройки безопасности
     API_KEY_HEADER: str = Field("api-key", description="HTTP-заголовок с API-ключом")
-    # SECRET_KEY: str = Field(..., description="Секретный API-ключ")
 
     # --- Вычисляемые поля ---
     # Продакшен режим
@@ -45,12 +46,13 @@ class Settings(BaseSettings):
         # Считаем продакшеном, если не DEBUG и не TESTING
         return not self.DEBUG and not self.TESTING
 
-    # Путь внутри контейнера к папке с файлом лога
+    # Путь внутри контейнера к файлу лога
     @computed_field
     @cached_property
     def LOG_FILE_PATH(self) -> Path | None:
-        # Если включен PRODUCTION, то логгируем в файл
-        return Path("src/logs/app.log") if self.PRODUCTION else None
+        # Пишем в файл только в production режиме
+        # Файл будет находиться в volume, смонтированном в LOG_ROOT_PATH
+        return self.LOG_ROOT_PATH / "app.log" if self.PRODUCTION else None
 
     # Формируем URL БД
     @computed_field(repr=False)
@@ -72,3 +74,11 @@ class Settings(BaseSettings):
 
 # Кэшированный экземпляр настроек
 settings = Settings()
+
+# --- Создание директорий при необходимости ---
+# Эти строки выполнятся при импорте settings.
+# Они нужны, чтобы FastAPI/Loguru не падали, если директории еще не созданы
+# Docker Volume создаст их при первом запуске, но это полезно для локальной разработки/тестов вне Docker
+settings.MEDIA_ROOT_PATH.mkdir(parents=True, exist_ok=True)
+if settings.LOG_FILE_PATH:
+    settings.LOG_ROOT_PATH.mkdir(parents=True, exist_ok=True)

@@ -1,20 +1,20 @@
 services:
   # Сервис базы данных PostgreSQL
   db:
-    image: postgres:17-alpine # Используем легковесный образ
+    image: postgres:17-alpine
     container_name: microblog_db
-    volumes:
-      - postgres_data:/var/lib/postgresql/data/ # Volume для сохранения данных БД
     env_file:
       - .env # Загружаем переменные из .env (POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB)
-    ports:
-      # Маппим порт 5433 хоста на 5432 контейнера, чтобы не конфликтовать с локальным Postgres
-      - "5433:5432"
     environment:
       # Эти переменные используются Postgres для инициализации БД при первом запуске
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/ # Volume для данных PostgreSQL
+    ports:
+      # Пробрасываем порт 5433 хоста на 5432 контейнера, чтобы не конфликтовать с локальным Postgres
+      - "5433:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"] # Экранируем $ для shell
       interval: 5s
@@ -29,17 +29,17 @@ services:
   web:
     build: . # Собираем образ из Dockerfile в текущей директории
     container_name: microblog_web
+    env_file:
+      - .env # Передаем все переменные окружения из .env в приложение
     volumes:
       # Монтируем код для live reload (удобно для разработки, можно убрать для чистого production)
 #      - ./src:/app/src
 #      - ./alembic:/app/alembic
 #      - ./alembic.ini:/app/alembic.ini
-      # Volume для сохранения загруженных медиафайлов
-      - media_volume:/app/src/static/media
+      - media_data:/media # Монтируем volume для медиафайлов в /media
+      - log_data:/logs # Монтируем volume для логов в /logs
     ports:
-      - "8000:8000" # Маппим порт 8000 хоста на 8000 контейнера
-    env_file:
-      - .env # Передаем все переменные окружения из .env в приложение
+      - "8000:8000" # Пробрасываем порт 8000 хоста на 8000 контейнера
     depends_on:
       db:
         condition: service_healthy # Запускаем web только после того, как db станет 'healthy'
@@ -47,12 +47,16 @@ services:
     networks:
       - microblog_network
 
-networks:
-  microblog_network:
-    driver: bridge
-
+# Определяем именованные volumes
 volumes:
   postgres_data: # Том для данных PostgreSQL
+    driver: local # Используем стандартный драйвер Docker
+  media_data: # Том для медиафайлов
     driver: local
-  media_volume: # Том для медиафайлов
+  log_data: # Том для логов
     driver: local
+
+# Определяем сеть
+networks:
+  microblog_network:
+    driver: bridge # Стандартная сеть типа bridge
