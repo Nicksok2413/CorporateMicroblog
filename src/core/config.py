@@ -15,9 +15,9 @@ class Settings(BaseSettings):
     # Версия API
     API_VERSION: str = "1.0.0"
     # Путь внутри контейнера к медиа-папке
-    STORAGE_PATH: Path = Path("/app/src/static/media")
+    STORAGE_PATH: Path = Path("src/static/media")
     # Разрешенные типы контента для загружаемых медиа
-    ALLOWED_CONTENT_TYPES = ["image/jpeg", "image/png", "image/gif"]
+    ALLOWED_CONTENT_TYPES: tuple[str] = ("image/jpeg", "image/png", "image/gif")
     # URL-префикс для доступа к медиа через FastAPI/Nginx
     MEDIA_URL_PREFIX: str = "/static/media"
     # Уровень логирования
@@ -37,7 +37,7 @@ class Settings(BaseSettings):
 
     # Настройки безопасности
     API_KEY_HEADER: str = Field("api-key", description="HTTP-заголовок с API-ключом")
-    SECRET_KEY: str = Field(..., description="Секретный API-ключ")
+    # SECRET_KEY: str = Field(..., description="Секретный API-ключ")
 
     # --- Вычисляемые поля ---
     # Продакшен режим
@@ -50,9 +50,9 @@ class Settings(BaseSettings):
     # Путь внутри контейнера к папке с файлом лога
     @computed_field
     @cached_property
-    def LOG_FILE(self) -> Path | None:
+    def LOG_FILE_PATH(self) -> Path | None:
         # Если включен PRODUCTION, то логгируем в файл
-        return Path("/app/src/logs/app.log") if self.PRODUCTION else None
+        return Path("src/logs/app.log") if self.PRODUCTION else None
 
     # Формируем URL БД
     @computed_field(repr=False)

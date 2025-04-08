@@ -94,7 +94,7 @@ def configure_logging():
     )
 
     # Файловый вывод (если включен PRODUCTION)
-    log_file_path = settings.LOG_FILE
+    log_file_path = settings.LOG_FILE_PATH
 
     if log_file_path:
         logger.info(f"Логирование в файл включено: {log_file_path}")

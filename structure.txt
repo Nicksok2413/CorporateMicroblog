@@ -9,7 +9,7 @@ microblog/
     ├── requirements.txt              # Зависимости (Production)
     ├── requirements-dev.txt          # Зависимости (Development)
     │
-    ├── app/                          # Основное приложение
+    ├── src/                          # Основное приложение
     │   ├── __init__.py
     │   ├── main.py                   # Точка входа в приложение
     │   │
