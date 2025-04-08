@@ -4,6 +4,7 @@ microblog/
     ├── alembic.ini                   # Настройки миграций
     ├── docker-compose.yml            # Композиция сервисов
     ├── Dockerfile                    # Образ приложения
+    ├── entrypoint.sh                 # ?
     ├── pytest.ini                    # Настройки тестирования
     ├── README.md                     # Документация
     ├── requirements.txt              # Зависимости (Production)
@@ -15,18 +16,13 @@ microblog/
     │   │
     │   ├── api/                      # API (роуты, зависимости)
     │   │   ├── __init__.py
-    │   │   ├── router.py             # Агрегация API роутеров
-    │   │   └── v1/                   # Версия API
+    │   │   ├── dependencies.py       # Зависимости
+    │   │   ├── router.py             # API роутер
+    │   │   └── routes/               # Маршруты
     │   │       ├── __init__.py
-    │   │       ├── dependencies.py   # Зависимости
-    │   │       ├── router.py         # Агрегация роутеров для API версии v1
-    │   │       └── routes/           # Маршруты
-    │   │         ├── __init__.py
-    │   │         ├── users.py        # /users/...
-    │   │         ├── tweets.py       # /tweets/...
-    │   │         ├── media.py        # /media
-    │   │         ├── likes.py        # /tweets/{tweet_id}/likes
-    │   │         └── follow.py       # /users/{user_id}/follow
+    │   │       ├── users.py          # /users/...
+    │   │       ├── tweets.py         # /tweets/...
+    │   │       └── media.py          # /media
     │   │
     │   ├── core/                     # Ядро приложения
     │   │   ├── __init__.py
@@ -34,6 +30,9 @@ microblog/
     │   │   ├── database.py           # Подключение к БД
     │   │   ├── exceptions.py         # Обработка исключений
     │   │   └── logging.py            # Настройка логгера
+    │   │
+    │   ├── logs/                     # Директория для лог-файлов
+    │   │   └── ...
     │   │
     │   ├── models/                   # SQLAlchemy модели
     │   │   ├── __init__.py
@@ -59,9 +58,7 @@ microblog/
     │   │   ├── base.py               # Базовая схема
     │   │   ├── user.py               # Схема для User
     │   │   ├── tweet.py              # Схема для Tweet
-    │   │   ├── media.py              # Схема для media
-    │   │   ├── like.py               # Схема для like
-    │   │   └── follow.py             # Схема для follow
+    │   │   └── media.py              # Схема для media
     │   │
     │   ├── services/                 # Бизнес-логика
     │   │   ├── __init__.py
@@ -82,7 +79,7 @@ microblog/
     │       └── js/
     │           └── ...
     │
-    ├── alembic/                   # Alembic миграции
+    ├── alembic/                      # Alembic миграции
     │   ├── versions/
     │   ├── env.py
     │   └── script.py.mako
