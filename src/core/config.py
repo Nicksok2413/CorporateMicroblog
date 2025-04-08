@@ -60,7 +60,7 @@ class Settings(BaseSettings):
     def DATABASE_URL(self) -> str:
         """URL для БД основной или тестовой."""
         return "sqlite+aiosqlite:///./test.db" if self.TESTING else (
-            f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
+            f"postgresql+psycopg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
             f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
         )
 

@@ -8,37 +8,39 @@ wait_for_db() {
     echo "Ожидание запуска PostgreSQL..."
     # Цикл будет пытаться подключиться, пока не получится
     python << END
+import os
+import psycopg
 import sys
 import time
-import psycopg2
-import os
+
+conn_str = (
+    f"dbname={os.environ['POSTGRES_DB']} "
+    f"user={os.environ['POSTGRES_USER']} "
+    f"password={os.environ['POSTGRES_PASSWORD']} "
+    f"host={os.environ['POSTGRES_HOST']} "
+    f"port={os.environ['POSTGRES_PORT']}"
+)
 
 try:
     conn = None
     print("Попытка подключения к БД...")
     for _ in range(30): # Пытаемся в течение ~30 секунд
         try:
-            conn = psycopg2.connect(
-                dbname=os.environ["POSTGRES_DB"],
-                user=os.environ["POSTGRES_USER"],
-                password=os.environ["POSTGRES_PASSWORD"],
-                host=os.environ["POSTGRES_HOST"],
-                port=os.environ["POSTGRES_PORT"],
-            )
-            print("PostgreSQL запущен - соединение установлено")
-            break # Выход из цикла, если успешно
-        except psycopg2.OperationalError as exc:
+            conn = psycopg.connect(conn_str, connect_timeout=2)
+            print("PostgreSQL запущен - соединение установлено.")
+            break
+        except psycopg.OperationalError as exc:
             print(f"PostgreSQL недоступен, ожидание... ({exc})")
             time.sleep(1)
     if conn is None:
         print("Не удалось подключиться к PostgreSQL после 30 секунд.")
-        sys.exit(1) # Выход с ошибкой, если не дождались
+        sys.exit(1)
     conn.close()
 except KeyError as exc:
     print(f"Ошибка: переменная окружения {exc} не установлена.")
     sys.exit(1)
 except Exception as exc:
-    print(f"Произошла ошибка при проверке БД: {exc}")
+    print(f"Произошла ошибка при проверке БД (psycopg3): {exc}")
     sys.exit(1)
 END
 }
