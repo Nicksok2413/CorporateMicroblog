@@ -26,7 +26,10 @@ class MediaService(BaseService[Media, MediaRepository]):
     Отвечает за сохранение файлов, создание записей в БД.
     Использует комбинацию timestamp + короткая случайная строка для имен файлов.
     """
-    RANDOM_PART_LENGTH = 6  # Длина случайной части имени файла
+    # Разрешенные типы контента для загружаемых медиа
+    ALLOWED_CONTENT_TYPES: set[str] = {"image/jpeg", "image/png", "image/gif"}
+    # Длина случайной части имени файла
+    RANDOM_PART_LENGTH: int = 6
 
     async def _validate_file(self, filename: str, content_type: str) -> None:
         """
@@ -41,9 +44,9 @@ class MediaService(BaseService[Media, MediaRepository]):
         """
         log.debug(f"Валидация файла: name='{filename}', type='{content_type}'")
 
-        if content_type not in settings.ALLOWED_CONTENT_TYPES:
+        if content_type not in self.ALLOWED_CONTENT_TYPES:
             msg = (f"Недопустимый тип файла '{content_type}'. "
-                   f"Разрешены: {', '.join(settings.ALLOWED_CONTENT_TYPES)}")
+                   f"Разрешены: {', '.join(self.ALLOWED_CONTENT_TYPES)}")
             log.warning(msg)
             raise MediaValidationError(detail=msg)
 

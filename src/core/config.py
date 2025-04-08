@@ -16,8 +16,6 @@ class Settings(BaseSettings):
     API_VERSION: str = "1.0.0"
     # Путь внутри контейнера к медиа-папке
     STORAGE_PATH: Path = Path("src/static/media")
-    # Разрешенные типы контента для загружаемых медиа
-    ALLOWED_CONTENT_TYPES: tuple[str] = ("image/jpeg", "image/png", "image/gif")
     # URL-префикс для доступа к медиа через FastAPI/Nginx
     MEDIA_URL_PREFIX: str = "/static/media"
     # Уровень логирования
