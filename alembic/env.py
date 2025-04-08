@@ -21,14 +21,14 @@ sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__), ".."
 
 # --- Импорт моделей ---
 # Импортируем базовую модель SQLAlchemy
-from app.models.base import Base
+from src.models.base import Base
 # Импортируем все модели, чтобы Alembic их обнаружил
-from app.models.associations import tweet_media_association_table
-from app.models.follow import Follow
-from app.models.like import Like
-from app.models.media import Media
-from app.models.tweet import Tweet
-from app.models.user import User
+from src.models.associations import tweet_media_association_table
+from src.models.follow import Follow
+from src.models.like import Like
+from src.models.media import Media
+from src.models.tweet import Tweet
+from src.models.user import User
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
