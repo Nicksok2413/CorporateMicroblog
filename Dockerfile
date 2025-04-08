@@ -9,10 +9,7 @@ ENV PYTHONDONTWRITEBYTECODE=1
 # Устанавливаем рабочую директорию
 WORKDIR /app
 
-# Системные зависимости (если нужны)
-# Например, для psycopg2 могут понадобиться build-essentials и libpq-dev
-# RUN apt-get update && apt-get install -y --no-install-recommends build-essential libpq-dev && rm -rf /var/lib/apt/lists/*
-# Для slim-образа Debian:
+# Системные зависимости для psycopg2-binary
 RUN apt-get update && apt-get install -y --no-install-recommends gcc libpq-dev && rm -rf /var/lib/apt/lists/*
 
 # Копируем файлы зависимостей

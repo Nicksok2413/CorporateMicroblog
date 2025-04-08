@@ -44,7 +44,6 @@ class Database:
         self.engine = create_async_engine(
             db_url,
             echo=settings.DEBUG,  # Включаем логирование SQL запросов в режиме DEBUG
-            future=True,   # Включение нового стиля использования SQLAlchemy
             pool_pre_ping=True,  # Проверять соединение перед использованием
             pool_recycle=3600,  # Переподключение каждый час
             **kwargs
