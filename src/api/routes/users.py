@@ -1,16 +1,83 @@
-"""API роуты для подписок пользователей."""
+"""API роуты для работы с пользователями, их профилями и подписками."""
 
 from fastapi import APIRouter, Path, status
 
-from src.api.v1.dependencies import CurrentUser, DBSession, FollowSvc
+from src.api.dependencies import CurrentUser, DBSession, FollowSvc, UserSvc
 from src.core.logging import log
 from src.schemas.base import ResultTrue
+from src.schemas.user import UserProfileResult
 
-router = APIRouter(tags=["Follows"])
+router = APIRouter(prefix="/users", tags=["Users"])
+
+
+@router.get(
+    "/me",
+    response_model=UserProfileResult,
+    status_code=status.HTTP_200_OK,
+    summary="Получение профиля текущего пользователя",
+    description="Возвращает информацию о профиле аутентифицированного пользователя, включая списки подписчиков и подписок.",
+)
+async def get_my_profile(
+        db: DBSession,
+        current_user: CurrentUser,
+        user_service: UserSvc,
+) -> UserProfileResult:
+    """
+    Возвращает профиль текущего пользователя.
+
+    Включает списки подписчиков и подписок.
+
+    Args:
+        db (DBSession): Сессия БД.
+        current_user (CurrentUser): Аутентифицированный пользователь.
+        user_service (UserSvc): Экземпляр сервиса `UserService`.
+
+    Returns:
+        UserProfileResult: Профиль пользователя.
+    """
+    log.info(f"Запрос профиля для текущего пользователя ID {current_user.id}")
+    profile = await user_service.get_user_profile(db=db, user_id=current_user.id)
+    return UserProfileResult(user=profile)
+
+
+@router.get(
+    "/{user_id}",
+    response_model=UserProfileResult,
+    status_code=status.HTTP_200_OK,
+    summary="Получение профиля пользователя по ID",
+    description="Возвращает информацию о профиле указанного пользователя, включая списки подписчиков и подписок.",
+    responses={
+        status.HTTP_404_NOT_FOUND: {"description": "Пользователь не найден"},
+    }
+)
+async def get_user_profile_by_id(
+        db: DBSession,
+        user_service: UserSvc,
+        user_id: int = Path(..., description="ID пользователя для просмотра профиля", gt=0),
+) -> UserProfileResult:
+    """
+    Возвращает профиль пользователя по указанному ID.
+
+    Включает списки подписчиков и подписок. Доступен без аутентификации.
+
+    Args:
+        db (DBSession): Сессия БД.
+        user_service (UserSvc): Экземпляр сервиса `UserService`.
+        user_id (int): ID пользователя.
+
+    Returns:
+        UserProfileResult: Профиль пользователя.
+
+    Raises:
+        NotFoundError: Если пользователь с указанным ID не найден.
+    """
+    log.info(f"Запрос профиля для пользователя ID {user_id}")
+    profile = await user_service.get_user_profile(db=db, user_id=user_id)
+    return UserProfileResult(user=profile)
 
 
 @router.post(
-    "/users/{user_id}/follow",
+    "{user_id}/follow",
     response_model=ResultTrue,
     status_code=status.HTTP_201_CREATED,
     summary="Подписаться на пользователя",
@@ -20,7 +87,7 @@ router = APIRouter(tags=["Follows"])
         status.HTTP_409_CONFLICT: {"description": "Уже подписаны"},
     }
 )
-async def follow_a_user(
+async def follow_user(
         db: DBSession,
         current_user: CurrentUser,
         follow_service: FollowSvc,
@@ -50,7 +117,7 @@ async def follow_a_user(
 
 
 @router.delete(
-    "/users/{user_id}/follow",
+    "/{user_id}/follow",
     response_model=ResultTrue,
     status_code=status.HTTP_200_OK,
     summary="Отписаться от пользователя",
@@ -59,7 +126,7 @@ async def follow_a_user(
         status.HTTP_403_FORBIDDEN: {"description": "Нельзя отписаться от себя"},
     }
 )
-async def unfollow_a_user(
+async def unfollow_user(
         db: DBSession,
         current_user: CurrentUser,
         follow_service: FollowSvc,

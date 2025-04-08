@@ -26,31 +26,28 @@ class MediaService(BaseService[Media, MediaRepository]):
     Отвечает за сохранение файлов, создание записей в БД.
     Использует комбинацию timestamp + короткая случайная строка для имен файлов.
     """
-    ALLOWED_CONTENT_TYPES = ["image/jpeg", "image/png", "image/gif"]
     RANDOM_PART_LENGTH = 6  # Длина случайной части имени файла
 
-    async def _validate_file(self, filename: str, content_type: Optional[str]) -> None:
+    async def _validate_file(self, filename: str, content_type: str) -> None:
         """
         Валидирует загружаемый файл по типу.
 
         Args:
             filename (str): Имя файла.
-            content_type (Optional[str]): MIME-тип файла (опционально).
+            content_type (str): MIME-type файла.
 
         Raises:
             MediaValidationError: Если тип файла не разрешен.
         """
-        file_name_log = filename or "unknown"
-        content_type_log = content_type or "unknown"
-        log.debug(f"Валидация файла: name='{file_name_log}', type='{content_type_log}'")
+        log.debug(f"Валидация файла: name='{filename}', type='{content_type}'")
 
-        if not content_type or content_type not in self.ALLOWED_CONTENT_TYPES:
-            msg = (f"Недопустимый тип файла '{content_type_log}'. "
-                   f"Разрешены: {', '.join(self.ALLOWED_CONTENT_TYPES)}")
+        if content_type not in settings.ALLOWED_CONTENT_TYPES:
+            msg = (f"Недопустимый тип файла '{content_type}'. "
+                   f"Разрешены: {', '.join(settings.ALLOWED_CONTENT_TYPES)}")
             log.warning(msg)
             raise MediaValidationError(detail=msg)
 
-        log.debug(f"Файл '{file_name_log}' прошел валидацию.")
+        log.debug(f"Файл '{filename}' прошел валидацию.")
 
     def _generate_short_random_string(self, length: int = RANDOM_PART_LENGTH) -> str:
         """
@@ -72,14 +69,14 @@ class MediaService(BaseService[Media, MediaRepository]):
             original_filename (str): Исходное имя файла.
 
         Returns:
-            str: Уникальное имя файла формата <timestamp_us>_<random_chars>.<ext>.
+            str: Уникальное имя файла формата <timestamp>_<random_chars>.<ext>.
                  Пример: 1678886400123456_a3x7p1.jpg
         """
-        extension = Path(original_filename).suffix.lower() or ".unknown"
         # Время в микросекундах для большей уникальности
-        timestamp_us = int(time() * 1_000_000)
+        timestamp = int(time() * 1_000_000)
         random_part = self._generate_short_random_string()
-        unique_name = f"{timestamp_us}_{random_part}{extension}"
+        extension = Path(original_filename).suffix.lower()
+        unique_name = f"{timestamp}_{random_part}{extension}"
         log.debug(f"Сгенерировано уникальное имя файла: '{unique_name}' для '{original_filename}'")
         return unique_name
 
@@ -98,7 +95,7 @@ class MediaService(BaseService[Media, MediaRepository]):
             db (AsyncSession): Сессия БД.
             file (IO[bytes]): Файловый объект.
             filename (str): Оригинальное имя файла.
-            content_type (str): MIME-тип файла.
+            content_type (str): MIME-type файла.
 
         Returns:
             Media: Созданный объект Media.
@@ -109,21 +106,9 @@ class MediaService(BaseService[Media, MediaRepository]):
         """
         await self._validate_file(filename, content_type)
 
-        unique_filename = self._generate_unique_filename(filename or "untitled")
+        unique_filename = self._generate_unique_filename(filename)
 
-        # Определяем путь для сохранения
-        storage_dir = getattr(settings, 'EFFECTIVE_STORAGE_PATH_OBJ', settings.STORAGE_PATH_OBJ)
-
-        if not storage_dir:
-            log.error("Директория для сохранения медиа не определена в настройках!")
-            raise BadRequestError("Ошибка конфигурации сервера: не настроено хранилище медиа.")
-
-        if isinstance(storage_dir, str):
-            storage_dir = Path(storage_dir)
-
-        save_path = storage_dir / unique_filename
-        # Путь, сохраняемый в БД - только имя файла (относительно storage_dir)
-        relative_path = unique_filename
+        save_path = settings.STORAGE_PATH / unique_filename
 
         log.info(f"Сохранение медиафайла '{filename}' как '{unique_filename}' в '{save_path}'")
         media: Optional[Media] = None
@@ -154,7 +139,7 @@ class MediaService(BaseService[Media, MediaRepository]):
 
             # Этап 2: Создание записи в БД
             try:
-                media_in = MediaCreate(file_path=relative_path)  # Сохраняем относительный путь
+                media_in = MediaCreate(file_path=unique_filename)
                 media = await self.repo.create(db=db, obj_in=media_in)
                 await db.commit()
                 await db.refresh(media)

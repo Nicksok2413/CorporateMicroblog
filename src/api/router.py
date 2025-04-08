@@ -1,12 +1,12 @@
-"""Главный агрегатор API роутеров."""
+"""Главный API роутер."""
 
 from fastapi import APIRouter
 
-from src.api.v1.router import router_v1
-from src.core.config import settings
+from src.api.routes import media, tweets, users
 
-# Роутер, объединяющий все версии API
 api_router = APIRouter()
 
-# Подключаем роутер для v1 с префиксом из настроек
-api_router.include_router(router_v1, prefix=settings.API_V1_STR)
+# Включаем роутеры
+api_router.include_router(media.router, prefix="/api")
+api_router.include_router(tweets.router, prefix="/api")
+api_router.include_router(users.router, prefix="/api")

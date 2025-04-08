@@ -1,6 +1,7 @@
 """Конфигурация приложения."""
 
 from functools import cached_property
+from pathlib import Path
 
 from pydantic import Field, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -13,10 +14,10 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Microblog Service"
     # Версия API
     API_VERSION: str = "1.0.0"
-    # Префикс v1 роутера
-    API_V1_STR: str = "/api/v1"
-    # Путь внутри контейнера к медиа-папке (создается в Dockerfile)
-    STORAGE_PATH: str = "/app/src/static/media"
+    # Путь внутри контейнера к медиа-папке
+    STORAGE_PATH: Path = Path("/app/src/static/media")
+    # Разрешенные типы контента для загружаемых медиа
+    ALLOWED_CONTENT_TYPES = ["image/jpeg", "image/png", "image/gif"]
     # URL-префикс для доступа к медиа через FastAPI/Nginx
     MEDIA_URL_PREFIX: str = "/static/media"
     # Уровень логирования
@@ -46,12 +47,12 @@ class Settings(BaseSettings):
         # Считаем продакшеном, если не DEBUG и не TESTING
         return not self.DEBUG and not self.TESTING
 
-    # Путь внутри контейнера к папке с логами
+    # Путь внутри контейнера к папке с файлом лога
     @computed_field
     @cached_property
-    def LOG_FILE(self):
+    def LOG_FILE(self) -> Path | None:
         # Если включен PRODUCTION, то логгируем в файл
-        return "/app/src/logs/app.log" if self.PRODUCTION else None
+        return Path("/app/src/logs/app.log") if self.PRODUCTION else None
 
     # Формируем URL БД
     @computed_field(repr=False)
