@@ -53,7 +53,7 @@ app = FastAPI(
     title=settings.PROJECT_NAME,
     debug=settings.DEBUG,
     version=settings.API_VERSION,
-    openapi_url=f"{settings.API_V1_STR}/openapi.json",
+    openapi_url=f"/api/openapi.json",
     description="Бэкенд для корпоративного сервиса микроблогов",
     lifespan=lifespan,  # Подключаем управление жизненным циклом
 )
@@ -82,12 +82,12 @@ log.info(f"CORS настроен. Разрешенный заголовок API 
 setup_exception_handlers(app)
 log.info("Обработчики исключений настроены.")
 
-# Подключаем роутеры API
-log.info(f"Подключение API роутера с префиксом '{settings.API_V1_STR}'...")
+# Подключаем API роутер
+log.info(f"Подключение API роутера...")
 app.include_router(api_router)
 
 # Монтируем статические файлы для медиа
-if settings.STORAGE_PATH and settings.STORAGE_PATH.is_dir():
+if settings.STORAGE_PATH:
     # Префикс URL, по которому будут доступны файлы (/static/media/filename.jpg)
     media_url_prefix = settings.MEDIA_URL_PREFIX
     # Имя для внутреннего использования FastAPI

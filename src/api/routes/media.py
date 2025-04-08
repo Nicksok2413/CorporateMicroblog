@@ -4,7 +4,7 @@ from typing import Optional
 
 from fastapi import APIRouter, File, UploadFile, status
 
-from src.api.v1.dependencies import CurrentUser, DBSession, MediaSvc
+from src.api.dependencies import CurrentUser, DBSession, MediaSvc
 from src.core.logging import log
 from src.schemas.media import MediaCreateResult
 
@@ -53,8 +53,8 @@ async def upload_media_file(
         media = await media_service.save_media_file(
             db=db,
             file=file.file,  # Передаем сам файловый объект
-            filename=file.filename or "unknown",  # Используем имя файла или заглушку
-            content_type=file.content_type or "application/octet-stream"
+            filename=file.filename or "untitled",  # Имя файла или заглушка
+            content_type=file.content_type or "application/octet-stream"  # MIME-type или заглушка
         )
     except Exception:
         log.exception(f"Ошибка при обработке загрузки файла от пользователя ID {current_user.id}")

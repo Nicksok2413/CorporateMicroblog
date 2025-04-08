@@ -28,28 +28,26 @@ class MediaService(BaseService[Media, MediaRepository]):
     """
     RANDOM_PART_LENGTH = 6  # Длина случайной части имени файла
 
-    async def _validate_file(self, filename: str, content_type: Optional[str]) -> None:
+    async def _validate_file(self, filename: str, content_type: str) -> None:
         """
         Валидирует загружаемый файл по типу.
 
         Args:
             filename (str): Имя файла.
-            content_type (Optional[str]): MIME-тип файла (опционально).
+            content_type (str): MIME-type файла.
 
         Raises:
             MediaValidationError: Если тип файла не разрешен.
         """
-        file_name_log = filename or "unknown"
-        content_type_log = content_type or "unknown"
-        log.debug(f"Валидация файла: name='{file_name_log}', type='{content_type_log}'")
+        log.debug(f"Валидация файла: name='{filename}', type='{content_type}'")
 
-        if not content_type or content_type not in settings.ALLOWED_CONTENT_TYPES:
-            msg = (f"Недопустимый тип файла '{content_type_log}'. "
+        if content_type not in settings.ALLOWED_CONTENT_TYPES:
+            msg = (f"Недопустимый тип файла '{content_type}'. "
                    f"Разрешены: {', '.join(settings.ALLOWED_CONTENT_TYPES)}")
             log.warning(msg)
             raise MediaValidationError(detail=msg)
 
-        log.debug(f"Файл '{file_name_log}' прошел валидацию.")
+        log.debug(f"Файл '{filename}' прошел валидацию.")
 
     def _generate_short_random_string(self, length: int = RANDOM_PART_LENGTH) -> str:
         """
@@ -97,7 +95,7 @@ class MediaService(BaseService[Media, MediaRepository]):
             db (AsyncSession): Сессия БД.
             file (IO[bytes]): Файловый объект.
             filename (str): Оригинальное имя файла.
-            content_type (str): MIME-тип файла.
+            content_type (str): MIME-type файла.
 
         Returns:
             Media: Созданный объект Media.
@@ -108,7 +106,7 @@ class MediaService(BaseService[Media, MediaRepository]):
         """
         await self._validate_file(filename, content_type)
 
-        unique_filename = self._generate_unique_filename(filename or "untitled")
+        unique_filename = self._generate_unique_filename(filename)
 
         save_path = settings.STORAGE_PATH / unique_filename
 

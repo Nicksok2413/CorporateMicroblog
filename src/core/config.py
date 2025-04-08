@@ -14,8 +14,6 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Microblog Service"
     # Версия API
     API_VERSION: str = "1.0.0"
-    # Префикс v1 роутера
-    API_V1_STR: str = "/api/v1"
     # Путь внутри контейнера к медиа-папке
     STORAGE_PATH: Path = Path("/app/src/static/media")
     # Разрешенные типы контента для загружаемых медиа
