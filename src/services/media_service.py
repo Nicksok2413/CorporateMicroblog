@@ -111,7 +111,7 @@ class MediaService(BaseService[Media, MediaRepository]):
 
         unique_filename = self._generate_unique_filename(filename)
 
-        save_path = settings.STORAGE_PATH / unique_filename
+        save_path = settings.MEDIA_ROOT_PATH / unique_filename
 
         log.info(f"Сохранение медиафайла '{filename}' как '{unique_filename}' в '{save_path}'")
         media: Optional[Media] = None
