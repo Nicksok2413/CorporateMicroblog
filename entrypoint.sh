@@ -49,11 +49,11 @@ END
 wait_for_db
 
 # Применяем миграции Alembic
-echo "Применение миграций Alembic..."
+#echo "Применение миграций Alembic..."
 # Запускаем от имени пользователя, чтобы права на файлы были корректными, если нужно
 # su-exec appuser alembic upgrade head
 # Или просто:
-alembic upgrade head
+#alembic upgrade head
 
 # Запускаем основное приложение (Uvicorn)
 echo "Запуск основного приложения Uvicorn..."

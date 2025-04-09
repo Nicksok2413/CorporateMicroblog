@@ -43,7 +43,7 @@ def get_database_url() -> URL:
     user = os.getenv("POSTGRES_USER", "default_user")
     password = os.getenv("POSTGRES_PASSWORD", "default_password")
     host = os.getenv("POSTGRES_HOST", "localhost")
-    port = os.getenv("POSTGRES_PORT", "5432")
+    port = os.getenv("POSTGRES_PORT", 5432)
     db_name = os.getenv("POSTGRES_DB", "default_db")
 
     # --- ОТЛАДОЧНЫЙ ВЫВОД ---
@@ -52,12 +52,6 @@ def get_database_url() -> URL:
         f"DEBUG [env.py]: Trying to connect with User='{user}', Password='{'*' * len(password) if password else 'None'}' (Actual retrieved: '{password}'), Host='{host}', Port='{port}', DB='{db_name}'",
         file=sys.stderr)
     # --- КОНЕЦ ОТЛАДОЧНОГО ВЫВОДА ---
-
-    # Валидация порта (Alembic упадет здесь, если порт не числовой)
-    try:
-        int(port)
-    except ValueError as exc:
-        raise ValueError(f"Переменная окружения POSTGRES_PORT ('{port}') должна быть числом.") from exc
 
     return URL.create(
         drivername="postgresql+psycopg",

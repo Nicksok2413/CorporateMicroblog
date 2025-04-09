@@ -3,13 +3,13 @@ services:
   db:
     image: postgres:17-alpine
     container_name: microblog_db
-    env_file:
-      - .env # Загружаем переменные из .env (POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB)
-#    environment:
-#      # Эти переменные используются Postgres для инициализации БД при первом запуске
-#      POSTGRES_USER: ${POSTGRES_USER}
-#      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-#      POSTGRES_DB: ${POSTGRES_DB}
+#    env_file:
+#      - .env # Загружаем переменные из .env (POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB)
+    environment:
+      # Эти переменные используются Postgres для инициализации БД при первом запуске
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - postgres_data:/var/lib/postgresql/data/ # Volume для данных PostgreSQL
 #      - ./custom_pg_hba.conf:/var/lib/postgresql/data/pg_hba.conf
