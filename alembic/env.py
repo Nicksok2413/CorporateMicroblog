@@ -9,6 +9,13 @@ from sqlalchemy.engine import URL
 
 from alembic import context
 
+# Импортируем базовую модель SQLAlchemy
+from src.models.base import Base
+
+# Импортируем все модели, чтобы они зарегистрировались в Base.metadata
+# noqa: F401 нужен, чтобы линтеры не ругались на неиспользуемый импорт, хотя он критически важен для Alembic.
+import src.models  # noqa: F401 (Импорт нужен для регистрации моделей)
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
@@ -22,13 +29,6 @@ sys.path.insert(0, project_dir)
 # dotenv_path = os.path.join(project_dir, '.env')
 # if os.path.exists(dotenv_path):
 #     load_dotenv(dotenv_path)
-
-# Импортируем базовую модель SQLAlchemy
-from src.models.base import Base
-
-# Импортируем все модели, чтобы они зарегистрировались в Base.metadata
-# noqa: F401 нужен, чтобы линтеры не ругались на неиспользуемый импорт, хотя он критически важен для Alembic.
-import src.models  # noqa: F401 (Импорт нужен для регистрации моделей)
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
