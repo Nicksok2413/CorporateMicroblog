@@ -1,6 +1,6 @@
 import os
 import sys
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config
@@ -19,9 +19,9 @@ project_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.insert(0, project_dir)
 
 # Загружаем переменные из .env файла
-dotenv_path = os.path.join(project_dir, '.env')
-if os.path.exists(dotenv_path):
-    load_dotenv(dotenv_path)
+# dotenv_path = os.path.join(project_dir, '.env')
+# if os.path.exists(dotenv_path):
+#     load_dotenv(dotenv_path)
 
 # Импортируем базовую модель SQLAlchemy
 from src.models.base import Base
@@ -45,6 +45,13 @@ def get_database_url() -> URL:
     host = os.getenv("POSTGRES_HOST", "localhost")
     port = os.getenv("POSTGRES_PORT", "5432")
     db_name = os.getenv("POSTGRES_DB", "default_db")
+
+    # --- ОТЛАДОЧНЫЙ ВЫВОД ---
+    # Выводим в stderr, чтобы точно увидеть в логах Docker
+    print(
+        f"DEBUG [env.py]: Trying to connect with User='{user}', Password='{'*' * len(password) if password else 'None'}' (Actual retrieved: '{password}'), Host='{host}', Port='{port}', DB='{db_name}'",
+        file=sys.stderr)
+    # --- КОНЕЦ ОТЛАДОЧНОГО ВЫВОДА ---
 
     # Валидация порта (Alembic упадет здесь, если порт не числовой)
     try:
