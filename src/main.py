@@ -31,7 +31,6 @@ async def lifespan(app: FastAPI):
     finally:
         log.info("Остановка приложения...")
         await db.disconnect()
-        log.info("Подключение к БД закрыто.")
         log.info("Приложение остановлено.")
 
 
