@@ -56,7 +56,7 @@ def configure_logging():
             backtrace=True,  # Подробный трейсбек
             diagnose=True  # Диагностика переменных
         )
-        log.info("Логирование настроено для DEBUG-режима.")
+        logger.info("Логирование настроено для DEBUG-режима.")
     else:
         # DEBUG=False: JSON вывод в stderr
         logger.add(
@@ -67,7 +67,7 @@ def configure_logging():
             backtrace=False,  # Можно оставить True для детальности в JSON
             diagnose=False  # Диагностику в JSON не включаем
         )
-        log.info("Логирование настроено на JSON вывод в stderr.")
+        logger.info("Логирование настроено на JSON вывод в stderr.")
 
     # Файловый вывод (если включен PRODUCTION)
     log_file_path = settings.LOG_FILE_PATH
