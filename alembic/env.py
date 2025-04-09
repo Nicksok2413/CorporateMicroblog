@@ -1,9 +1,11 @@
 import os
 import sys
+from dotenv import load_dotenv
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
+from sqlalchemy.engine import URL
 
 from alembic import context
 
@@ -15,6 +17,11 @@ config = context.config
 # Предполагаем, что env.py находится в alembic/, а src/ рядом с alembic/
 project_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.insert(0, project_dir)
+
+# Загружаем переменные из .env файла
+dotenv_path = os.path.join(project_dir, '.env')
+if os.path.exists(dotenv_path):
+    load_dotenv(dotenv_path)
 
 # Импортируем базовую модель SQLAlchemy
 from src.models.base import Base
@@ -28,16 +35,31 @@ import src.models  # noqa: F401 (Импорт нужен для регистра
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# add your model's MetaData object here
-# for 'autogenerate' support
-# from myapp import mymodel
-# target_metadata = mymodel.Base.metadata
 target_metadata = Base.metadata
 
-# other values from the config, defined by the needs of env.py,
-# can be acquired:
-# my_important_option = config.get_main_option("my_important_option")
-# ... etc.
+
+def get_database_url() -> URL:
+    """Читает переменные окружения и формирует объект URL для SQLAlchemy."""
+    user = os.getenv("POSTGRES_USER", "default_user")
+    password = os.getenv("POSTGRES_PASSWORD", "default_password")
+    host = os.getenv("POSTGRES_HOST", "localhost")
+    port = os.getenv("POSTGRES_PORT", "5432")
+    db_name = os.getenv("POSTGRES_DB", "default_db")
+
+    # Валидация порта (Alembic упадет здесь, если порт не числовой)
+    try:
+        int(port)
+    except ValueError as exc:
+        raise ValueError(f"Переменная окружения POSTGRES_PORT ('{port}') должна быть числом.") from exc
+
+    return URL.create(
+        drivername="postgresql+psycopg",
+        username=user,
+        password=password,
+        host=host,
+        port=int(port),
+        database=db_name,
+    )
 
 
 def run_migrations_offline() -> None:
@@ -52,7 +74,7 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = config.get_main_option("sqlalchemy.url")
+    url = get_database_url()
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -71,8 +93,13 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
+    # Собираем конфигурацию движка, исключая sqlalchemy.url
+    engine_config = config.get_section(config.config_ini_section, {})
+    db_url_object = get_database_url()
+    engine_config["sqlalchemy.url"] = str(db_url_object)
+
     connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
+        engine_config,
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
