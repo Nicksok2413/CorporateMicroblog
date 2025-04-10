@@ -1,11 +1,9 @@
 import os
 import sys
-# from dotenv import load_dotenv
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
-from sqlalchemy.engine import URL
 
 from alembic import context
 
@@ -25,11 +23,6 @@ config = context.config
 project_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.insert(0, project_dir)
 
-# Загружаем переменные из .env файла
-# dotenv_path = os.path.join(project_dir, '.env')
-# if os.path.exists(dotenv_path):
-#     load_dotenv(dotenv_path)
-
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
 if config.config_file_name is not None:
@@ -39,7 +32,7 @@ target_metadata = Base.metadata
 
 
 def get_database_url() -> str:
-    """Читает переменные окружения и формирует объект URL для SQLAlchemy."""
+    """Читает переменные окружения и формирует объект URL для БД."""
     user = os.getenv("POSTGRES_USER", "default_user")
     password = os.getenv("POSTGRES_PASSWORD", "default_password")
     host = os.getenv("POSTGRES_HOST", "localhost")
@@ -47,8 +40,8 @@ def get_database_url() -> str:
     db_name = os.getenv("POSTGRES_DB", "default_db")
 
     db_url = f"postgresql+psycopg://{user}:{password}@{host}:{port}/{db_name}"
+
     # --- ОТЛАДОЧНЫЙ ВЫВОД ---
-    # Выводим в stderr, чтобы точно увидеть в логах Docker
     print(f"DEBUG [env.py]: Trying to connect - {db_url}...", file=sys.stderr)
     # --- КОНЕЦ ОТЛАДОЧНОГО ВЫВОДА ---
 
