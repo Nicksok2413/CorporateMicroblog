@@ -38,7 +38,7 @@ if config.config_file_name is not None:
 target_metadata = Base.metadata
 
 
-def get_database_url() -> URL:
+def get_database_url() -> str:
     """Читает переменные окружения и формирует объект URL для SQLAlchemy."""
     user = os.getenv("POSTGRES_USER", "default_user")
     password = os.getenv("POSTGRES_PASSWORD", "default_password")
@@ -46,21 +46,13 @@ def get_database_url() -> URL:
     port = os.getenv("POSTGRES_PORT", 5432)
     db_name = os.getenv("POSTGRES_DB", "default_db")
 
+    db_url = f"postgresql+psycopg://{user}:{password}@{host}:{port}/{db_name}"
     # --- ОТЛАДОЧНЫЙ ВЫВОД ---
     # Выводим в stderr, чтобы точно увидеть в логах Docker
-    print(
-        f"DEBUG [env.py]: Trying to connect with User='{user}', Password='{'*' * len(password) if password else 'None'}' (Actual retrieved: '{password}'), Host='{host}', Port='{port}', DB='{db_name}'",
-        file=sys.stderr)
+    print(f"DEBUG [env.py]: Trying to connect - {db_url}...", file=sys.stderr)
     # --- КОНЕЦ ОТЛАДОЧНОГО ВЫВОДА ---
 
-    return URL.create(
-        drivername="postgresql+psycopg",
-        username=user,
-        password=password,
-        host=host,
-        port=int(port),
-        database=db_name,
-    )
+    return db_url
 
 
 def run_migrations_offline() -> None:
@@ -75,6 +67,7 @@ def run_migrations_offline() -> None:
     script output.
 
     """
+    # url = "postgresql+psycopg://microblog_user:secure_password@db:5432/microblog_db"
     url = get_database_url()
     context.configure(
         url=url,
