@@ -1,12 +1,10 @@
 #!/bin/bash
 
-# Выход при любой ошибке
 set -e
 
 # Функция для проверки готовности БД
 wait_for_db() {
     echo "Ожидание запуска PostgreSQL..."
-    # Цикл будет пытаться подключиться, пока не получится
     python << END
 import os
 import psycopg
@@ -24,7 +22,7 @@ conn_str = (
 try:
     conn = None
     print("Попытка подключения к БД...")
-    for _ in range(30): # Пытаемся в течение ~30 секунд
+    for _ in range(30):
         try:
             conn = psycopg.connect(conn_str, connect_timeout=2)
             print("PostgreSQL запущен - соединение установлено.")
@@ -45,14 +43,11 @@ except Exception as exc:
 END
 }
 
-# Дожидаемся БД
 wait_for_db
 
-# Применяем миграции Alembic
 echo "Применение миграций Alembic..."
 alembic upgrade head
 
-# Запускаем основное приложение (Uvicorn)
 echo "Запуск основного приложения Uvicorn..."
-# exec uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload # Для разработки
 exec uvicorn src.main:app --host 0.0.0.0 --port 8000
+# exec uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload # Для разработки
