@@ -62,7 +62,8 @@ def configure_logging():
         logger.add(
             sys.stderr,
             level=settings.LOG_LEVEL,
-            serialize=True,  # Используем встроенную JSON сериализацию
+            # serialize=True,  # Используем встроенную JSON сериализацию
+            format=development_formatter,  # Используем функцию-форматтер TODO: Вернуть JSON
             filter=lambda record: record["name"] != "uvicorn.access",
             backtrace=False,  # Можно оставить True для детальности в JSON
             diagnose=False  # Диагностику в JSON не включаем
@@ -101,7 +102,7 @@ def configure_logging():
     # Финальное сообщение о конфигурации
     logger.info(
         f"Loguru сконфигурирован. Уровень: {settings.LOG_LEVEL}. "
-        f"Режим DEBUG: {settings.DEBUG}"
+        f"Режим DEBUG: {settings.DEBUG}. "
         f"Логирование в файл: {'Включено' if log_file_path else 'Отключено'}."
     )
 

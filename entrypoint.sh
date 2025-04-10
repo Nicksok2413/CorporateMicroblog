@@ -49,7 +49,7 @@ END
 wait_for_db
 
 # Применяем миграции Alembic
-#echo "Применение миграций Alembic..."
+echo "Применение миграций Alembic..."
 alembic upgrade head
 
 # Запускаем основное приложение (Uvicorn)

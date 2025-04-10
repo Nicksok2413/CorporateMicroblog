@@ -56,9 +56,8 @@ def create_app() -> FastAPI:
     else:
         # allow_origins = ["https://your-corporate-portal.com", "http://localhost:xxxx"] # Пример
         allow_origins = []  # По умолчанию запретить все, если не задано
-        log.info(f"CORS настроен для production. Разрешенные источники: {allow_origins}")
+        log.info(f"CORS настроен для PRODUCTION. Разрешенные источники: {allow_origins}")
 
-    log.info("Настройка CORS...")
     app.add_middleware(
         CORSMiddleware,
         allow_origins=allow_origins,
@@ -66,7 +65,6 @@ def create_app() -> FastAPI:
         allow_methods=["*"],  # Разрешить все стандартные методы (GET, POST, etc.)
         allow_headers=["*", settings.API_KEY_HEADER],  # Разрешить все заголовки + наш кастомный
     )
-    log.info(f"CORS настроен. Разрешенный заголовок API ключа: '{settings.API_KEY_HEADER}'")
 
     # Настраиваем обработчики исключений
     setup_exception_handlers(app)
@@ -108,7 +106,7 @@ def create_app() -> FastAPI:
             "debug_mode": settings.DEBUG,
         }
 
-    log.info(f"Приложение '{settings.PROJECT_NAME}' сконфигурировано и готово к запуску.")
+    log.info(f"Приложение '{settings.PROJECT_NAME} {settings.API_VERSION}' сконфигурировано и готово к запуску.")
     return app
 
 
