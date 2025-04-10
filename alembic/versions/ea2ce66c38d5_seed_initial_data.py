@@ -59,10 +59,11 @@ def upgrade() -> None:
     """Seed data into tables."""
     # === Пользователи ===
     op.bulk_insert(users_table, [
-        {'id': 1, 'name': 'Alice', 'api_key': 'alice_key'},
-        {'id': 2, 'name': 'Bob', 'api_key': 'bob_key'},
-        {'id': 3, 'name': 'Charlie', 'api_key': 'charlie_key'},
-        {'id': 4, 'name': 'David (no tweets)', 'api_key': 'david_key'},
+        {'id': 1, 'name': 'Nick', 'api_key': 'test'},
+        {'id': 2, 'name': 'Alice', 'api_key': 'alice_key'},
+        {'id': 3, 'name': 'Bob', 'api_key': 'bob_key'},
+        {'id': 4, 'name': 'Charlie', 'api_key': 'charlie_key'},
+        {'id': 5, 'name': 'David (no tweets)', 'api_key': 'david_key'},
     ])
 
     # === Медиа (пример) ===
@@ -74,19 +75,19 @@ def upgrade() -> None:
 
     # === Твиты ===
     op.bulk_insert(tweets_table, [
-        # Твиты Alice (ID=1)
-        {'id': 1, 'content': 'Hello World! My first tweet!', 'author_id': 1},
-        {'id': 2, 'content': 'Enjoying the corporate life! #microblog', 'author_id': 1},
-        {'id': 3, 'content': 'Check out this cool picture!', 'author_id': 1},  # Твит с картинкой
+        # Твиты Alice (ID=2)
+        {'id': 1, 'content': 'Hello World! My first tweet!', 'author_id': 2},
+        {'id': 2, 'content': 'Enjoying the corporate life! #microblog', 'author_id': 2},
+        {'id': 3, 'content': 'Check out this cool picture!', 'author_id': 2},  # Твит с картинкой
 
-        # Твиты Bob (ID=2)
-        {'id': 4, 'content': 'Coding all day long...', 'author_id': 2},
-        {'id': 5, 'content': 'Just deployed a new feature.', 'author_id': 2},
+        # Твиты Bob (ID=3)
+        {'id': 4, 'content': 'Coding all day long...', 'author_id': 3},
+        {'id': 5, 'content': 'Just deployed a new feature.', 'author_id': 3},
 
-        # Твиты Charlie (ID=3)
-        {'id': 6, 'content': 'Meeting marathon today.', 'author_id': 3},
-        {'id': 7, 'content': 'Thinking about weekend plans.', 'author_id': 3},
-        {'id': 8, 'content': 'Another picture.', 'author_id': 3},  # Еще твит с картинкой
+        # Твиты Charlie (ID=4)
+        {'id': 6, 'content': 'Meeting marathon today.', 'author_id': 4},
+        {'id': 7, 'content': 'Thinking about weekend plans.', 'author_id': 4},
+        {'id': 8, 'content': 'Another picture.', 'author_id': 4},  # Еще твит с картинкой
     ])
 
     # === Привязка медиа к твитам ===
@@ -98,25 +99,25 @@ def upgrade() -> None:
     # === Лайки ===
     op.bulk_insert(likes_table, [
         # Bob лайкает твиты Alice
-        {'user_id': 2, 'tweet_id': 1},
-        {'user_id': 2, 'tweet_id': 3},
-        # Charlie лайкает твиты Alice и Bob
         {'user_id': 3, 'tweet_id': 1},
-        {'user_id': 3, 'tweet_id': 4},
-        {'user_id': 3, 'tweet_id': 5},
+        {'user_id': 3, 'tweet_id': 3},
+        # Charlie лайкает твиты Alice и Bob
+        {'user_id': 4, 'tweet_id': 1},
+        {'user_id': 4, 'tweet_id': 4},
+        {'user_id': 4, 'tweet_id': 5},
         # Alice лайкает твит Bob
-        {'user_id': 1, 'tweet_id': 5},
+        {'user_id': 2, 'tweet_id': 5},
     ])
 
     # === Подписки ===
     op.bulk_insert(follows_table, [
         # Alice подписана на Bob и Charlie
-        {'follower_id': 1, 'following_id': 2},
-        {'follower_id': 1, 'following_id': 3},
+        {'follower_id': 2, 'following_id': 3},
+        {'follower_id': 2, 'following_id': 4},
         # Bob подписан на Alice
-        {'follower_id': 2, 'following_id': 1},
+        {'follower_id': 3, 'following_id': 2},
         # Charlie подписан на Alice
-        {'follower_id': 3, 'following_id': 1},
+        {'follower_id': 4, 'following_id': 2},
     ])
 
 

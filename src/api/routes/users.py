@@ -77,7 +77,7 @@ async def get_user_profile_by_id(
 
 
 @router.post(
-    "{user_id}/follow",
+    "/{user_id}/follow",
     response_model=ResultTrue,
     status_code=status.HTTP_201_CREATED,
     summary="Подписаться на пользователя",
