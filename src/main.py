@@ -14,11 +14,10 @@ from src.core.database import db
 from src.core.exceptions import setup_exception_handlers
 from src.core.logging import log
 
-# Определяем путь к директории со статикой UI
-# Предполагаем, что main.py находится в src/, а static/ в src/static/
-APP_DIR = os.path.dirname(os.path.abspath(__file__))
-STATIC_DIR = os.path.join(APP_DIR, "static")
-INDEX_HTML_PATH = os.path.join(STATIC_DIR, "index.html")
+# Путь к директории со статикой фронтенда
+STATIC_FILES_DIR = os.path.join(os.path.dirname(__file__), "static")
+# Путь к index.html
+INDEX_HTML_PATH = os.path.join(STATIC_FILES_DIR, "index.html")
 
 
 # Определяем lifespan для управления подключением к БД
@@ -90,41 +89,29 @@ def create_app() -> FastAPI:
     else:
         log.warning("Путь или URL-префикс для медиа не настроены.")
 
-    # --- Catch-all роут для раздачи статики UI и SPA ---
-    # ВАЖНО: Этот роут должен быть определен ПОСЛЕ всех специфичных роутов (API, media)
-    @app.get("/{full_path:path}", response_class=HTMLResponse, include_in_schema=False)
-    async def serve_spa_or_static(request: Request, full_path: str):
+    # Монтируем статику фронтенда
+    log.info(f"Монтирование статики фронтенда из '{STATIC_FILES_DIR}' по пути '/'")
+    app.mount(
+        "/",
+        StaticFiles(directory=STATIC_FILES_DIR, html=True),  # html=True для обслуживания index.html
+        name="static_frontend"
+    )
+
+    # Catch-all: Обработчик для корневого пути (и всех остальных, не пойманных ранее),
+    # чтобы всегда возвращать index.html для SPA
+    @app.get("/{full_path:path}", include_in_schema=False)
+    async def serve_spa(full_path: str):
         """
-        Обрабатывает GET запросы, не соответствующие API или медиа.
-        Пытается найти и вернуть статический файл из STATIC_DIR.
-        Если файл не найден или это путь без расширения (вероятно, путь SPA),
-        возвращает INDEX_HTML_PATH для поддержки SPA.
+        Отдает index.html для любого пути, не обработанного ранее.
+        Необходимо для корректной работы роутинга в SPA (Vue Router).
         """
-        # Проверяем наличие директории статики и index.html (на случай, если они не были найдены при старте)
-        if not os.path.isdir(STATIC_DIR) or not os.path.isfile(INDEX_HTML_PATH):
-            log.error("Статика UI или index.html не доступны.")
-            return HTMLResponse(content="Internal Server Error: Frontend not available.", status_code=500)
+        # Проверяем, существует ли index.html
+        if not os.path.exists(INDEX_HTML_PATH):
+            log.error(f"Файл index.html не найден по пути: {INDEX_HTML_PATH}")
+            return {"error": "Frontend entrypoint not found"}, 500  # или другое сообщение
 
-        # Формируем путь к возможному статическому файлу
-        # Нормализуем путь для безопасности
-        static_file_path = os.path.normpath(os.path.join(STATIC_DIR, full_path))
-
-        # Проверка на выход за пределы STATIC_DIR
-        if not static_file_path.startswith(os.path.abspath(STATIC_DIR)):
-            log.warning(f"Попытка доступа к файлу вне '{STATIC_DIR}': '{full_path}'")
-            # Возвращаем index.html по умолчанию, чтобы не раскрывать структуру
-            return FileResponse(INDEX_HTML_PATH)
-
-        # Проверяем, существует ли файл и является ли он файлом
-        # Также проверяем, имеет ли путь расширение (чтобы отличить файлы от путей SPA)
-        if os.path.isfile(static_file_path) and "." in os.path.basename(static_file_path):
-            log.debug(f"Обслуживание статического файла: '{static_file_path}'")
-            return FileResponse(static_file_path)
-        else:
-            # Если файл не найден или путь похож на путь SPA (без расширения),
-            # возвращаем index.html
-            log.debug(f"Путь SPA или статический файл не найден: '{full_path}'. Возвращаем '{INDEX_HTML_PATH}'")
-            return FileResponse(INDEX_HTML_PATH)
+        log.debug(f"Путь '{full_path}' не найден, отдаем SPA index.html")
+        return FileResponse(INDEX_HTML_PATH)
 
     log.info(f"Приложение '{settings.PROJECT_NAME} {settings.API_VERSION}' сконфигурировано и готово к запуску.")
     return app
