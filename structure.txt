@@ -31,9 +31,6 @@ microblog/
     │   │   ├── exceptions.py         # Обработка исключений
     │   │   └── logging.py            # Настройка логгера
     │   │
-    │   ├── logs/                     # Директория для лог-файлов
-    │   │   └── ...
-    │   │
     │   ├── models/                   # SQLAlchemy модели
     │   │   ├── __init__.py
     │   │   ├── associations.py       # Модели ассоциативных таблиц
@@ -72,8 +69,6 @@ microblog/
     │   └── static/                   # Статические файлы
     │       ├── index.html
     │       ├── favicon.ico
-    │       ├── media/                # Загруженные медиа
-    │       │   └── ...
     │       ├── css/
     │       │   └── ...
     │       └── js/

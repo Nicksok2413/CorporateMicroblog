@@ -1,20 +1,15 @@
 services:
-  # Сервис базы данных PostgreSQL
   db:
-    image: postgres:17-alpine # Используем легковесный образ
+    image: postgres:17-alpine
     container_name: microblog_db
-    volumes:
-      - postgres_data:/var/lib/postgresql/data/ # Volume для сохранения данных БД
-    env_file:
-      - .env # Загружаем переменные из .env (POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB)
-    ports:
-      # Маппим порт 5433 хоста на 5432 контейнера, чтобы не конфликтовать с локальным Postgres
-      - "5433:5432"
     environment:
-      # Эти переменные используются Postgres для инициализации БД при первом запуске
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    ports:
+      - "5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"] # Экранируем $ для shell
       interval: 5s
@@ -25,21 +20,16 @@ services:
     networks:
       - microblog_network
 
-  # Сервис приложения FastAPI
   web:
-    build: . # Собираем образ из Dockerfile в текущей директории
+    build: .
     container_name: microblog_web
-    volumes:
-      # Монтируем код для live reload (удобно для разработки, можно убрать для чистого production)
-#      - ./src:/app/src
-#      - ./alembic:/app/alembic
-#      - ./alembic.ini:/app/alembic.ini
-      # Volume для сохранения загруженных медиафайлов
-      - media_volume:/app/src/static/media
-    ports:
-      - "8000:8000" # Маппим порт 8000 хоста на 8000 контейнера
     env_file:
-      - .env # Передаем все переменные окружения из .env в приложение
+      - .env
+    volumes:
+      - media_data:/media
+      - log_data:/logs
+    ports:
+      - "8000:8000"
     depends_on:
       db:
         condition: service_healthy # Запускаем web только после того, как db станет 'healthy'
@@ -47,12 +37,10 @@ services:
     networks:
       - microblog_network
 
+volumes:
+  postgres_data:
+  media_data:
+  log_data:
+
 networks:
   microblog_network:
-    driver: bridge
-
-volumes:
-  postgres_data: # Том для данных PostgreSQL
-    driver: local
-  media_volume: # Том для медиафайлов
-    driver: local

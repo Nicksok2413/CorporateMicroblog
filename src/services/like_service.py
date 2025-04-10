@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.exceptions import BadRequestError, ConflictError, NotFoundError
 from src.core.logging import log
-from src.models import Tweet, User
+from src.models.user import User
 from src.repositories import LikeRepository, TweetRepository
 
 
@@ -20,28 +20,6 @@ class LikeService:
     def __init__(self, repo: LikeRepository, tweet_repo: TweetRepository):
         self.repo = repo
         self.tweet_repo = tweet_repo
-
-    async def _get_tweet_or_404(self, db: AsyncSession, tweet_id: int) -> Tweet:
-        """
-        Вспомогательный метод для получения твита по ID или выброса NotFoundError.
-
-        Args:
-            db (AsyncSession): Сессия БД.
-            tweet_id (int): ID твита.
-
-        Returns:
-            Tweet: Найденный твит.
-
-        Raises:
-            NotFoundError: Если твит не найден.
-        """
-        tweet = await self.tweet_repo.get(db, obj_id=tweet_id)
-
-        if not tweet:
-            log.warning(f"Твит с ID {tweet_id} не найден при попытке лайка/анлайка.")
-            raise NotFoundError(f"Твит с ID {tweet_id} не найден.")
-
-        return tweet
 
     async def like_tweet(self, db: AsyncSession, current_user: User, *, tweet_id: int) -> None:
         """
@@ -58,7 +36,13 @@ class LikeService:
             BadRequestError: При ошибке сохранения лайка.
         """
         log.info(f"Пользователь ID {current_user.id} лайкает твит ID {tweet_id}")
-        await self._get_tweet_or_404(db, tweet_id)  # Проверяем, существует ли твит
+
+        # Проверяем, существует ли твит
+        tweet = await self.tweet_repo.get(db, obj_id=tweet_id)
+
+        if not tweet:
+            log.warning(f"Твит с ID {tweet_id} не найден при попытке лайка.")
+            raise NotFoundError(f"Твит с ID {tweet_id} не найден.")
 
         # Проверяем, не лайкнул ли уже
         existing_like = await self.repo.get_like(db, user_id=current_user.id, tweet_id=tweet_id)

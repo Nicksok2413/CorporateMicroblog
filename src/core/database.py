@@ -38,13 +38,9 @@ class Database:
         Raises:
             RuntimeError: При неудачной проверке подключения.
         """
-        db_url = settings.DATABASE_URL
-        log.info(f"Подключение к базе данных: {'*' * 5}{db_url[-20:]}")  # Логируем URL (частично скрытый)
-
         self.engine = create_async_engine(
-            db_url,
+            settings.DATABASE_URL,
             echo=settings.DEBUG,  # Включаем логирование SQL запросов в режиме DEBUG
-            future=True,   # Включение нового стиля использования SQLAlchemy
             pool_pre_ping=True,  # Проверять соединение перед использованием
             pool_recycle=3600,  # Переподключение каждый час
             **kwargs
@@ -103,6 +99,7 @@ class Database:
                 "База данных не инициализирована. Вызовите `await db.connect()` перед использованием сессий.")
 
         session: AsyncSession = self.session_factory()
+
         try:
             yield session
         except Exception as exc:

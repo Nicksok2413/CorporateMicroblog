@@ -29,10 +29,6 @@ ENV/
 *.db
 *.dump
 
-# === Docker ===
-docker-compose.override.yml
-data/  # Для volume PostgreSQL (если используется локально)
-
 # === IDE ===
 # PyCharm
 .idea/
@@ -49,12 +45,11 @@ desktop.ini
 *.log
 logs/
 
+# === Media ===
+media/
+
 # === Alembic alembic (исключаем всё, кроме самих миграций) ===
 alembic/
-!alembic/versions/.gitkeep
+!alembic/versions/
 !alembic/env.py
 !alembic/script.py.mako
-
-# === Static files ===
-app/static/media/*  # Исключаем загруженные файлы (храним только в production)
-!app/static/media/.gitkeep  # Пустой файл для сохранения папки

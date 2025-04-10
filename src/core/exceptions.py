@@ -167,4 +167,3 @@ def setup_exception_handlers(app: FastAPI):
     app.add_exception_handler(RequestValidationError, validation_exception_handler)
     # Обработчик для всех остальных непредвиденных исключений
     app.add_exception_handler(Exception, generic_exception_handler)
-    log.info("Обработчики исключений настроены.")

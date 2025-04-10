@@ -1,4 +1,4 @@
-"""Основной файл приложения FastAPI для сервиса микроблогов."""
+# src/main.py
 
 import os
 from contextlib import asynccontextmanager
@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse
-from fastapi.staticfiles import StaticFiles
+from fastapi.staticfiles import StaticFiles # Нужен для монтирования медиа
 
 from src.api.router import api_router
 from src.core.config import settings
@@ -20,28 +20,39 @@ APP_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(APP_DIR, "static")
 INDEX_HTML_PATH = os.path.join(STATIC_DIR, "index.html")
 
-
-# Определяем lifespan для управления подключением к БД
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
     Контекстный менеджер для управления жизненным циклом приложения.
     Выполняет подключение к БД при старте и отключение при завершении.
+    Также проверяет наличие статики UI.
     """
     log.info("Инициализация приложения...")
     try:
+        # Проверяем наличие директории статики и index.html при старте
+        if not os.path.isdir(STATIC_DIR):
+            log.warning(f"Предупреждение: Директория статики UI '{STATIC_DIR}' не найдена!")
+            # Не прерываем запуск, API все равно должен работать
+        elif not os.path.isfile(INDEX_HTML_PATH):
+            log.warning(f"Предупреждение: Файл '{INDEX_HTML_PATH}' не найден! SPA UI не будет работать.")
+            # Не прерываем запуск
+        else:
+            log.info(f"Статика UI найдена в '{STATIC_DIR}'.")
+
         await db.connect()
+        log.info("Подключение к БД установлено.")
         yield
     except Exception as exc:
-        log.critical(f"Критическая ошибка при старте приложения (БД?): {exc}", exc_info=True)
-        raise exc
+        log.critical(f"Критическая ошибка при старте приложения: {exc}", exc_info=True)
+        # Перевыбрасываем исключение, чтобы приложение не запустилось некорректно
+        raise exc from exc
     finally:
         log.info("Остановка приложения...")
         await db.disconnect()
+        log.info("Подключение к БД закрыто.")
         log.info("Приложение остановлено.")
 
 
-# Создаем экземпляр FastAPI
 def create_app() -> FastAPI:
     """Создает и конфигурирует экземпляр приложения FastAPI."""
     log.info(f"Создание экземпляра FastAPI для '{settings.PROJECT_NAME} {settings.API_VERSION}'")
@@ -53,9 +64,10 @@ def create_app() -> FastAPI:
         debug=settings.DEBUG,
         lifespan=lifespan,
         description="Бэкенд для корпоративного сервиса микроблогов",
+        # Документация остается доступной по /docs и /redoc
     )
 
-    # Настраиваем CORS (Cross-Origin Resource Sharing)
+    # --- Настройка CORS ---
     # Позволяет фронтенду с другого домена обращаться к API
     if settings.DEBUG or not settings.PRODUCTION:
         allow_origins = ["*"]  # Разрешаем все для разработки/тестирования
@@ -63,8 +75,9 @@ def create_app() -> FastAPI:
     else:
         # TODO: Заменить на реальные разрешенные домены в production
         allow_origins = []  # По умолчанию запретить все, если не задано
-        log.info(f"CORS настроен для PRODUCTION. Разрешенные источники: {allow_origins}")
+        log.info(f"CORS настроен для production. Разрешенные источники: {allow_origins}")
 
+    log.info("Настройка CORS...")
     app.add_middleware(
         CORSMiddleware,
         allow_origins=allow_origins,
@@ -72,21 +85,27 @@ def create_app() -> FastAPI:
         allow_methods=["*"],  # Разрешить все стандартные методы (GET, POST, etc.)
         allow_headers=["*", settings.API_KEY_HEADER],  # Разрешить все заголовки + наш кастомный
     )
+    log.info(f"CORS настроен. Разрешенный заголовок API ключа: '{settings.API_KEY_HEADER}'")
 
-    # Настраиваем обработчики исключений
+    # --- Настройка обработчиков исключений ---
     setup_exception_handlers(app)
     log.info("Обработчики исключений настроены.")
 
-    # Подключаем API роутер
-    log.info(f"Подключение API роутера...")
+    # --- Подключение API роутера ---
+    # API роуты должны быть определены ДО catch-all роута для SPA
+    log.info("Подключение API роутера...")
     app.include_router(api_router, prefix="/api")
 
-    # Монтируем статические файлы для медиа
+    # --- Монтируем статику для МЕДИА ---
+    # Этот mount также должен идти ПЕРЕД catch-all роутом
     if settings.MEDIA_ROOT_PATH and settings.MEDIA_URL_PREFIX:
         media_dir = settings.MEDIA_ROOT_PATH
         media_url = settings.MEDIA_URL_PREFIX
-        log.info(f"Монтирование статики: URL '{media_url}', Директория '{media_dir}'")
-        app.mount(media_url, StaticFiles(directory=media_dir), name="media")
+        log.info(f"Монтирование медиа-статики: URL '{media_url}', Директория '{media_dir}'")
+        if not os.path.isdir(media_dir):
+            log.warning(f"Директория для медиа '{media_dir}' не существует. Медиа не будет раздаваться.")
+        else:
+            app.mount(media_url, StaticFiles(directory=media_dir), name="media")
     else:
         log.warning("Путь или URL-префикс для медиа не настроены.")
 
@@ -102,8 +121,8 @@ def create_app() -> FastAPI:
         """
         # Проверяем наличие директории статики и index.html (на случай, если они не были найдены при старте)
         if not os.path.isdir(STATIC_DIR) or not os.path.isfile(INDEX_HTML_PATH):
-            log.error("Статика UI или index.html не доступны.")
-            return HTMLResponse(content="Internal Server Error: Frontend not available.", status_code=500)
+             log.error("Статика UI или index.html не доступны.")
+             return HTMLResponse(content="Internal Server Error: Frontend not available.", status_code=500)
 
         # Формируем путь к возможному статическому файлу
         # Нормализуем путь для безопасности
@@ -126,7 +145,7 @@ def create_app() -> FastAPI:
             log.debug(f"Путь SPA или статический файл не найден: '{full_path}'. Возвращаем '{INDEX_HTML_PATH}'")
             return FileResponse(INDEX_HTML_PATH)
 
-    log.info(f"Приложение '{settings.PROJECT_NAME} {settings.API_VERSION}' сконфигурировано и готово к запуску.")
+    log.info(f"Приложение '{settings.PROJECT_NAME}' сконфигурировано и готово к запуску.")
     return app
 
 
