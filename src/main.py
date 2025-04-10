@@ -23,7 +23,6 @@ async def lifespan(app: FastAPI):
     log.info("Инициализация приложения...")
     try:
         await db.connect()
-        log.info("Подключение к БД установлено.")
         yield
     except Exception as exc:
         log.critical(f"Критическая ошибка при старте приложения (БД?): {exc}", exc_info=True)

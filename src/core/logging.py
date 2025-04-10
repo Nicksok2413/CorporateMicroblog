@@ -20,9 +20,9 @@ def development_formatter(record):
     # Базовый формат
     log_format = (
         "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | "
-        "<level>{level: <8}</level> | "
+        "<level>{level: <5}</level> | "
         "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - "
-        "<level>{message}</level>"
+        "<level>{message}</level>\n"
     )
     # Добавляем информацию об исключении, если есть
     if record["exception"]:
@@ -64,6 +64,7 @@ def configure_logging():
             level=settings.LOG_LEVEL,
             # serialize=True,  # Используем встроенную JSON сериализацию
             format=development_formatter,  # Используем функцию-форматтер TODO: Вернуть JSON
+            colorize=True,  # Цветной вывод TODO: Remove
             filter=lambda record: record["name"] != "uvicorn.access",
             backtrace=False,  # Можно оставить True для детальности в JSON
             diagnose=False  # Диагностику в JSON не включаем
