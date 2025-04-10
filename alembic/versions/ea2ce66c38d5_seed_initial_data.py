@@ -59,7 +59,7 @@ def upgrade() -> None:
     """Seed data into tables."""
     # === Пользователи ===
     op.bulk_insert(users_table, [
-        {'id': 1, 'test': 'Nick', 'api_key': 'test'},
+        {'id': 1, 'name': 'Nick', 'api_key': 'test'},
         {'id': 2, 'name': 'Alice', 'api_key': 'alice_key'},
         {'id': 3, 'name': 'Bob', 'api_key': 'bob_key'},
         {'id': 4, 'name': 'Charlie', 'api_key': 'charlie_key'},
