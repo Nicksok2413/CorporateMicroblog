@@ -32,20 +32,18 @@ target_metadata = Base.metadata
 
 
 def get_database_url() -> str:
-    """Читает переменные окружения и формирует объект URL для БД."""
-    user = os.getenv("POSTGRES_USER", "default_user")
-    password = os.getenv("POSTGRES_PASSWORD", "default_password")
-    host = os.getenv("POSTGRES_HOST", "localhost")
-    port = os.getenv("POSTGRES_PORT", 5432)
-    db_name = os.getenv("POSTGRES_DB", "default_db")
+    """Читает переменные окружения и формирует URL для БД."""
+    user = os.getenv("POSTGRES_USER")
+    pwd = os.getenv("POSTGRES_PASSWORD")
+    host = os.getenv("POSTGRES_HOST")
+    port = os.getenv("POSTGRES_PORT")
+    db = os.getenv("POSTGRES_DB")
 
-    db_url = f"postgresql+psycopg://{user}:{password}@{host}:{port}/{db_name}"
+    # Проверка, что все переменные установлены
+    if not all([user, pwd, host, port, db]):
+        sys.exit("Database connection variables are missing.")
 
-    # --- ОТЛАДОЧНЫЙ ВЫВОД ---
-    print(f"DEBUG [env.py]: Trying to connect - {db_url}...", file=sys.stderr)
-    # --- КОНЕЦ ОТЛАДОЧНОГО ВЫВОДА ---
-
-    return db_url
+    return f"postgresql+psycopg://{user}:{pwd}@{host}:{port}/{db}"
 
 
 def run_migrations_offline() -> None:
@@ -60,8 +58,8 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    # url = "postgresql+psycopg://microblog_user:secure_password@db:5432/microblog_db"
     url = get_database_url()
+
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -80,13 +78,13 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
-    # Собираем конфигурацию движка, исключая sqlalchemy.url
-    engine_config = config.get_section(config.config_ini_section, {})
-    db_url_object = get_database_url()
-    engine_config["sqlalchemy.url"] = str(db_url_object)
+    db_url = get_database_url()
+
+    connectable_config = config.get_section(config.config_ini_section, {})
+    connectable_config['sqlalchemy.url'] = db_url
 
     connectable = engine_from_config(
-        engine_config,
+        connectable_config,
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
