@@ -119,12 +119,9 @@ class MediaService(BaseService[Media, MediaRepository]):
         try:
             # Этап 1: Сохранение файла
             try:
-                async with await aiofiles.open(save_path, 'wb') as out_file:
+                async with aiofiles.open(save_path, 'wb') as out_file:
                     while content := file.read(1024 * 1024):  # Читаем по 1MB
-                        if isinstance(content, bytes):
-                            await out_file.write(content)
-                        else:
-                            raise TypeError("Ошибка чтения файла: ожидались байты.")
+                        await out_file.write(content)
 
                 log.success(f"Файл '{unique_filename}' успешно сохранен.")
 
