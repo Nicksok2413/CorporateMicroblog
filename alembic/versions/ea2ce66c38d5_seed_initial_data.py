@@ -129,6 +129,24 @@ def upgrade() -> None:
         {'follower_id': 4, 'following_id': 2},
     ])
 
+    # Обновляем счетчик последовательности для таблицах tweets, users и media
+    # Устанавливаем следующее значение = MAX(id) + 1
+    # Используем pg_get_serial_sequence для надежности имени sequence
+    op.execute(
+        "SELECT setval(pg_get_serial_sequence('tweets', 'id'), "
+        "COALESCE((SELECT MAX(id) FROM tweets), 1))"
+    )
+    op.execute(
+        "SELECT setval(pg_get_serial_sequence('users', 'id'), "
+        "COALESCE((SELECT MAX(id) FROM users), 1))"
+    )
+    op.execute(
+        "SELECT setval(pg_get_serial_sequence('media', 'id'), "
+        "COALESCE((SELECT MAX(id) FROM media), 1))"
+    )
+    # Примечание: COALESCE нужен на случай, если бы таблица была пуста (здесь не актуально, но это best practice)
+    # setval без третьего аргумента или с 'true' установит ТЕКУЩЕЕ значение, т.е. следующее будет MAX + 1
+
 
 def downgrade() -> None:
     """Remove seeded data."""
