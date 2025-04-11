@@ -56,7 +56,7 @@ follows_table = sa.table(
 
 
 def upgrade() -> None:
-    """Seed data into tables."""
+    """Seed data."""
     # === Пользователи ===
     op.bulk_insert(users_table, [
         {'id': 1, 'name': 'Nick', 'api_key': 'test'},
@@ -67,56 +67,65 @@ def upgrade() -> None:
     ])
 
     # === Медиа (пример) ===
-    # Предположим, что файлы с такими именами были бы загружены
     op.bulk_insert(media_table, [
-        {'id': 1, 'file_path': '1712730000000000_abcdef.jpg'},
-        {'id': 2, 'file_path': '1712730000000001_ghijkl.png'},
+        {'id': 1, 'file_path': '1712730000000001_abcdef.jpg'},
+        {'id': 2, 'file_path': '1712730000000002_ghijkl.png'},
+        {'id': 3, 'file_path': '1712730000000003_mnopqr.png'},
     ])
 
     # === Твиты ===
     op.bulk_insert(tweets_table, [
+        # Твиты Nick (ID=1)
+        {'id': 1, 'content': 'Testing the new blog!', 'author_id': 1},
         # Твиты Alice (ID=2)
-        {'id': 1, 'content': 'Hello World! My first tweet!', 'author_id': 2},
-        {'id': 2, 'content': 'Enjoying the corporate life! #microblog', 'author_id': 2},
-        {'id': 3, 'content': 'Check out this cool picture!', 'author_id': 2},  # Твит с картинкой
-
+        {'id': 2, 'content': 'Hello World! My first tweet!', 'author_id': 2},
+        {'id': 3, 'content': 'Enjoying the corporate life! #microblog', 'author_id': 2},
+        {'id': 4, 'content': 'Check out this cool picture!', 'author_id': 2},
         # Твиты Bob (ID=3)
-        {'id': 4, 'content': 'Coding all day long...', 'author_id': 3},
-        {'id': 5, 'content': 'Just deployed a new feature.', 'author_id': 3},
-
+        {'id': 5, 'content': 'Coding all day long...', 'author_id': 3},
+        {'id': 6, 'content': 'Just deployed a new feature.', 'author_id': 3},
         # Твиты Charlie (ID=4)
-        {'id': 6, 'content': 'Meeting marathon today.', 'author_id': 4},
-        {'id': 7, 'content': 'Thinking about weekend plans.', 'author_id': 4},
-        {'id': 8, 'content': 'Another picture.', 'author_id': 4},  # Еще твит с картинкой
+        {'id': 7, 'content': 'Meeting marathon today.', 'author_id': 4},
+        {'id': 8, 'content': 'Thinking about weekend plans.', 'author_id': 4},
+        {'id': 9, 'content': 'Another picture.', 'author_id': 4},
     ])
 
     # === Привязка медиа к твитам ===
     op.bulk_insert(tweet_media_association_table, [
-        {'tweet_id': 3, 'media_id': 1},  # Твит 3 Alice -> Медиа 1
-        {'tweet_id': 8, 'media_id': 2},  # Твит 8 Charlie -> Медиа 2
+        {'tweet_id': 1, 'media_id': 1},  # Твит 1 Nick (ID=1) -> Медиа 1
+        {'tweet_id': 4, 'media_id': 2},  # Твит 4 Alice (ID=2) -> Медиа 2
+        {'tweet_id': 9, 'media_id': 3},  # Твит 9 Charlie (ID=4) -> Медиа 3
     ])
 
     # === Лайки ===
     op.bulk_insert(likes_table, [
-        # Bob лайкает твиты Alice
+        # Nick (ID=1) лайкает твит Alice (ID=2)
+        {'user_id': 1, 'tweet_id': 3},
+        # Alice (ID=2) лайкает твиты Nick (ID=1) и Bob (ID=3)
+        {'user_id': 2, 'tweet_id': 1},
+        {'user_id': 2, 'tweet_id': 6},
+        # Bob (ID=3) лайкает твиты Nick (ID=1) и Alice (ID=2)
         {'user_id': 3, 'tweet_id': 1},
-        {'user_id': 3, 'tweet_id': 3},
-        # Charlie лайкает твиты Alice и Bob
-        {'user_id': 4, 'tweet_id': 1},
-        {'user_id': 4, 'tweet_id': 4},
+        {'user_id': 3, 'tweet_id': 2},
+        {'user_id': 3, 'tweet_id': 4},
+        # Charlie (ID=4) лайкает твиты Alice (ID=2) и Bob (ID=3)
+        {'user_id': 4, 'tweet_id': 2},
         {'user_id': 4, 'tweet_id': 5},
-        # Alice лайкает твит Bob
-        {'user_id': 2, 'tweet_id': 5},
+        {'user_id': 4, 'tweet_id': 6},
     ])
 
     # === Подписки ===
     op.bulk_insert(follows_table, [
-        # Alice подписана на Bob и Charlie
+        # Nick (ID=1) подписан на Alice (ID=2)
+        {'follower_id': 1, 'following_id': 2},
+        # Alice (ID=2) подписана на Nick (ID=1), Bob (ID=3) и Charlie (ID=4)
+        {'follower_id': 2, 'following_id': 1},
         {'follower_id': 2, 'following_id': 3},
         {'follower_id': 2, 'following_id': 4},
-        # Bob подписан на Alice
+        # Bob (ID=3) подписан на Nick (ID=1) и Alice (ID=2)
+        {'follower_id': 3, 'following_id': 1},
         {'follower_id': 3, 'following_id': 2},
-        # Charlie подписан на Alice
+        # Charlie (ID=4) подписан на Alice (ID=2)
         {'follower_id': 4, 'following_id': 2},
     ])
 
