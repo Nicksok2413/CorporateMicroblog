@@ -48,7 +48,10 @@ class LikeService:
         existing_like = await self.repo.get_like(db, user_id=current_user.id, tweet_id=tweet_id)
 
         if existing_like:
-            raise ConflictError("Вы уже лайкнули этот твит.")
+            await self.repo.delete_like(db, user_id=current_user.id, tweet_id=tweet_id)
+            await db.commit()
+            return
+            # raise ConflictError("Вы уже лайкнули этот твит.")
 
         try:
             await self.repo.add_like(db, user_id=current_user.id, tweet_id=tweet_id)
