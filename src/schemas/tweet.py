@@ -2,7 +2,7 @@
 
 from typing import List, Optional
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 
 from src.schemas.base import BaseModel, ResultTrue, TunedModel
 from src.schemas.user import BaseUser
@@ -62,13 +62,21 @@ class TweetActionResult(ResultTrue):
 class LikeInfo(BaseUser):
     """
     Информация о пользователе, поставившем лайк.
-    Наследует id и name от BaseUser.
+    Наследует id и name от BaseUser, но поле id сериализуется как user_id.
 
     Fields:
-        id (int): ID пользователя.
+        id (int): ID пользователя (алиас: user_id).
         name (str): Имя пользователя.
     """
-    pass
+    id: int = Field(..., validation_alias="user_id", serialization_alias="user_id") # Используем алиас для сериализации
+    name: str
+
+    # Настраиваем модель для использования alias при сериализации
+    # и для работы с ORM
+    model_config = ConfigDict(
+        populate_by_name=True,  # Позволяет Pydantic читать 'user_id' как 'id' при необходимости (хотя здесь мы только пишем)
+        from_attributes=True
+    )
 
 
 class TweetAuthor(BaseUser):
