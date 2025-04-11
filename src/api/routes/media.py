@@ -8,7 +8,7 @@ from src.api.dependencies import CurrentUser, DBSession, MediaSvc
 from src.core.logging import log
 from src.schemas.media import MediaCreateResult
 
-router = APIRouter(prefix="/media", tags=["Media"])
+router = APIRouter(prefix="/medias", tags=["Media"])
 
 
 @router.post(
