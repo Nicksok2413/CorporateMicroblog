@@ -65,18 +65,10 @@ class LikeInfo(BaseUser):
     Наследует id и name от BaseUser, но поле id сериализуется как user_id.
 
     Fields:
-        id (int): ID пользователя (алиас: user_id).
+        user_id (int): ID пользователя (в JSON).
         name (str): Имя пользователя.
     """
-    id: int = Field(..., validation_alias="user_id", serialization_alias="user_id") # Используем алиас для сериализации
-    name: str
-
-    # Настраиваем модель для использования alias при сериализации
-    # и для работы с ORM
-    model_config = ConfigDict(
-        populate_by_name=True,  # Позволяет Pydantic читать 'user_id' как 'id' при необходимости (хотя здесь мы только пишем)
-        from_attributes=True
-    )
+    id: int = Field(..., serialization_alias='user_id')
 
 
 class TweetAuthor(BaseUser):

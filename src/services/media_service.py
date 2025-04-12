@@ -122,19 +122,16 @@ class MediaService(BaseService[Media, MediaRepository]):
                 async with aiofiles.open(save_path, 'wb') as out_file:
                     while content := file.read(1024 * 1024):  # Читаем по 1MB
                         await out_file.write(content)
-
                 log.success(f"Файл '{unique_filename}' успешно сохранен.")
 
             except (IOError, TypeError, Exception) as io_exc:
                 log.error(f"Ошибка при сохранении файла '{unique_filename}': {io_exc}", exc_info=True)
-
                 # Пытаемся удалить частично записанный файл
                 if save_path.exists():
                     try:
                         save_path.unlink(missing_ok=True)
                     except OSError:
                         pass
-
                 raise BadRequestError("Ошибка при сохранении файла.") from io_exc
 
             # Этап 2: Создание записи в БД
@@ -149,27 +146,23 @@ class MediaService(BaseService[Media, MediaRepository]):
             except SQLAlchemyError as db_exc:
                 await db.rollback()
                 log.error(f"Ошибка БД при создании записи Media для '{unique_filename}': {db_exc}", exc_info=True)
-
                 # Если запись в БД не удалась, удаляем сохраненный файл
                 if save_path.exists():
                     try:
                         save_path.unlink(missing_ok=True)
                     except OSError as unlink_err:
                         log.error(f"Не удалось удалить файл '{unique_filename}' после ошибки БД: {unlink_err}")
-
                 raise BadRequestError("Ошибка при сохранении информации о медиафайле.") from db_exc
 
         except Exception as outer_exc:
             log.exception(f"Непредвиденная внешняя ошибка при сохранении медиа {filename}: {outer_exc}")
             await db.rollback()  # Гарантируем откат, если транзакция была начата
-
             # Попытка удалить файл, если он существует
             if save_path.exists():
                 try:
                     save_path.unlink(missing_ok=True)
                 except OSError:
                     pass
-
             raise BadRequestError("Общая ошибка при сохранении медиа.") from outer_exc
 
     def get_media_url(self, media: Media) -> str:

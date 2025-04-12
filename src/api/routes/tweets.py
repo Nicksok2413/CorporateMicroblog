@@ -10,6 +10,34 @@ from src.schemas.tweet import (TweetActionResult, TweetCreateRequest,
 router = APIRouter(prefix="/tweets", tags=["Tweets"])
 
 
+@router.get(
+    "",
+    response_model=TweetFeedResult,
+    status_code=status.HTTP_200_OK,
+    summary="Получение ленты твитов",
+    description="Возвращает ленту твитов от пользователей, на которых подписан текущий пользователь, и его собственные твиты, отсортированные по популярности.",
+)
+async def get_tweets_feed(
+        db: DBSession,
+        current_user: CurrentUser,
+        tweet_service: TweetSvc,
+) -> TweetFeedResult:
+    """
+    Возвращает ленту твитов для текущего пользователя.
+
+    Args:
+        db (AsyncSession): Сессия БД.
+        current_user (CurrentUser): Аутентифицированный пользователь.
+        tweet_service (TweetSvc): Экземпляр сервиса `TweetService`.
+
+    Returns:
+        TweetFeedResult: Лента твитов.
+    """
+    log.info(f"Запрос ленты твитов для пользователя ID {current_user.id}")
+    feed = await tweet_service.get_tweet_feed(db=db, current_user=current_user)
+    return feed
+
+
 @router.post(
     "",
     response_model=TweetCreateResult,
@@ -159,31 +187,3 @@ async def unlike_tweet(
     log.info(f"Запрос на снятие лайка с твита ID {tweet_id} от пользователя ID {current_user.id}")
     await like_service.unlike_tweet(db=db, current_user=current_user, tweet_id=tweet_id)
     return TweetActionResult()
-
-
-@router.get(
-    "",
-    response_model=TweetFeedResult,
-    status_code=status.HTTP_200_OK,
-    summary="Получение ленты твитов",
-    description="Возвращает ленту твитов от пользователей, на которых подписан текущий пользователь, и его собственные твиты, отсортированные по популярности.",
-)
-async def get_tweets_feed(
-        db: DBSession,
-        current_user: CurrentUser,
-        tweet_service: TweetSvc,
-) -> TweetFeedResult:
-    """
-    Возвращает ленту твитов для текущего пользователя.
-
-    Args:
-        db (AsyncSession): Сессия БД.
-        current_user (CurrentUser): Аутентифицированный пользователь.
-        tweet_service (TweetSvc): Экземпляр сервиса `TweetService`.
-
-    Returns:
-        TweetFeedResult: Лента твитов.
-    """
-    log.info(f"Запрос ленты твитов для пользователя ID {current_user.id}")
-    feed = await tweet_service.get_tweet_feed(db=db, current_user=current_user)
-    return feed
