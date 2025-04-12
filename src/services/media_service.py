@@ -1,6 +1,7 @@
 """Сервис для работы с медиафайлами."""
 
 import asyncio
+import os
 from pathlib import Path
 from random import choice
 from string import ascii_lowercase, digits
@@ -168,7 +169,7 @@ class MediaService(BaseService[Media, MediaRepository]):
 
     async def delete_media_files(self, file_paths: List[str]) -> None:
         """
-        Удаляет список физических медиафайлов с диска.
+        Удаляет список физических медиафайлов с диска асинхронно.
 
         Логирует ошибки, но не прерывает выполнение из-за ошибки удаления одного файла.
 
@@ -181,9 +182,9 @@ class MediaService(BaseService[Media, MediaRepository]):
         log.info(f"Запуск удаления {len(file_paths)} физических медиафайлов...")
         delete_tasks = []
         for file_path_str in file_paths:
-            # Преобразуем относительный путь в полный путь
             full_path = settings.MEDIA_ROOT_PATH / file_path_str.lstrip('/')
-            delete_tasks.append(self._delete_single_file(full_path))
+            # Запускаем синхронное удаление в отдельном потоке
+            delete_tasks.append(asyncio.to_thread(self._delete_single_file_sync, full_path))
 
         # Запускаем удаление параллельно
         results = await asyncio.gather(*delete_tasks, return_exceptions=True)
@@ -193,17 +194,18 @@ class MediaService(BaseService[Media, MediaRepository]):
         for i, result in enumerate(results):
             file_to_log = file_paths[i]
             if isinstance(result, Exception):
+                # Ошибка будет содержать детали из _delete_single_file_sync
                 log.error(f"Ошибка при удалении файла '{file_to_log}': {result}")
             elif result is True:
                 success_count += 1
                 log.debug(f"Файл '{file_to_log}' успешно удален.")
-            # Случай result is False (файл не найден) уже залогирован в _delete_single_file
+            # Случай result is False (файл не найден) уже залогирован
 
         log.info(f"Завершено удаление файлов: {success_count} успешно из {len(file_paths)}.")
 
-    async def _delete_single_file(self, file_path: Path) -> bool:
+    def _delete_single_file_sync(self, file_path: Path) -> bool:
         """
-        Асинхронно удаляет один файл.
+        Синхронно удаляет один файл. Предназначена для запуска через asyncio.to_thread.
 
         Args:
             file_path (Path): Полный путь к файлу.
@@ -212,18 +214,19 @@ class MediaService(BaseService[Media, MediaRepository]):
             bool: True, если файл успешно удален, False, если файл не найден.
 
         Raises:
-            IOError: При других ошибках удаления файла.
+            OSError: При других ошибках удаления файла.
         """
         try:
-            await aiofiles.os.remove(file_path)
+            os.remove(file_path)  # Используем стандартный os.remove
+            log.debug(f"Синхронное удаление файла {file_path} успешно.")
             return True
         except FileNotFoundError:
-            log.warning(f"Файл для удаления не найден: {file_path}")
+            log.warning(f"Файл для синхронного удаления не найден: {file_path}")
             return False
         except OSError as e:
-            # Логируем ошибку, но пробрасываем ее для обработки в gather
-            log.error(f"Ошибка ОС при удалении файла {file_path}: {e}")
-            raise IOError(f"Ошибка при удалении файла {file_path}") from e
+            log.error(f"Ошибка ОС при синхронном удалении файла {file_path}: {e}")
+            # Перевыбрасываем ошибку, чтобы gather ее поймал
+            raise
 
     def get_media_url(self, media: Media) -> str:
         """
