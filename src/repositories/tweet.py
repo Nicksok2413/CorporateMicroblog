@@ -15,6 +15,38 @@ from src.schemas.tweet import TweetCreateInternal
 class TweetRepository(BaseRepository[Tweet, TweetCreateInternal]):
     """Репозиторий для выполнения CRUD операций с моделью Tweet."""
 
+    async def get_with_attachments(self, db: AsyncSession, *, tweet_id: int) -> Optional[Tweet]:
+        """
+        Получает твит по ID с принудительной загрузкой связанных медиафайлов.
+
+        Args:
+            db (AsyncSession): Сессия БД.
+            tweet_id (int): ID твита.
+
+        Returns:
+            Optional[Tweet]: Найденный твит с загруженными attachments или None.
+        """
+        log.debug(f"Получение твита ID {tweet_id} с загрузкой медиа")
+
+        statement = (
+            select(self.model)
+            .where(self.model.id == tweet_id)
+            .options(
+                selectinload(self.model.attachments)
+            )
+        )
+
+        result = await db.execute(statement)
+        # unique() нужен при eager loading коллекций
+        instance = result.unique().scalars().first()
+
+        if instance:
+            log.debug(f"Твит ID {tweet_id} с медиа найден.")
+        else:
+            log.debug(f"Твит ID {tweet_id} не найден.")
+
+        return instance
+
     async def create_with_author_and_media(
             self,
             db: AsyncSession,
