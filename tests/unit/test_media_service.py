@@ -7,6 +7,9 @@ from src.services.media_service import MediaService
 # Импортируем нужные исключения
 from src.core.exceptions import MediaValidationError
 
+# Помечаем тесты как асинхронные, т.к. будем использовать await
+pytestmark = pytest.mark.asyncio
+
 
 # --- Фикстура для создания экземпляра сервиса ---
 # (Репозиторий здесь не используется, поэтому можно передать mock или None)
@@ -20,26 +23,26 @@ def media_service() -> MediaService:
 
 # --- Тесты для _validate_file ---
 
-def test_validate_file_success(media_service: MediaService):
+async def test_validate_file_success(media_service: MediaService):
     """Тест успешной валидации разрешенного типа файла."""
     # Не должно вызывать исключений
-    media_service._validate_file("image.jpg", "image/jpeg")
-    media_service._validate_file("image.png", "image/png")
-    media_service._validate_file("image.gif", "image/gif")
+    await media_service._validate_file("image.jpg", "image/jpeg")
+    await media_service._validate_file("image.png", "image/png")
+    await media_service._validate_file("image.gif", "image/gif")
 
 
-def test_validate_file_failure(media_service: MediaService):
+async def test_validate_file_failure(media_service: MediaService):
     """Тест валидации запрещенного типа файла."""
     with pytest.raises(MediaValidationError) as exc_info:
-        media_service._validate_file("document.pdf", "application/pdf")
+        await media_service._validate_file("document.pdf", "application/pdf")
     assert "Недопустимый тип файла" in str(exc_info.value.detail)
 
     with pytest.raises(MediaValidationError):
-        media_service._validate_file("archive.zip", "application/zip")
+        await media_service._validate_file("archive.zip", "application/zip")
 
 
 # --- Тесты для _generate_unique_filename ---
-
+# Эти методы синхронные
 def test_generate_unique_filename_format(media_service: MediaService):
     """Тест формата генерируемого имени файла."""
     original_filename = "MyPhoto.JPG"
