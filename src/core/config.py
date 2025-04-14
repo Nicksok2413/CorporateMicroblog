@@ -73,11 +73,3 @@ class Settings(BaseSettings):
 
 # Кэшированный экземпляр настроек
 settings = Settings()
-
-# --- Создание директорий при необходимости ---
-# Эти строки выполнятся при импорте settings.
-# Они нужны, чтобы FastAPI/Loguru не падали, если директории еще не созданы
-# Docker Volume создаст их при первом запуске, но это полезно для локальной разработки/тестов вне Docker
-settings.MEDIA_ROOT_PATH.mkdir(parents=True, exist_ok=True)
-if settings.LOG_FILE_PATH:
-    settings.LOG_ROOT_PATH.mkdir(parents=True, exist_ok=True)
