@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.exceptions import BadRequestError, NotFoundError, PermissionDeniedError
 from src.core.logging import log
-from src.models import Media, Tweet, User, tweet_media_association_table
+from src.models import Media, Tweet, User
 from src.repositories import FollowRepository, MediaRepository, TweetRepository
 from src.schemas.tweet import LikeInfo, TweetAuthor, TweetCreateRequest, TweetFeedResult, TweetInFeed
 from src.services.base_service import BaseService
