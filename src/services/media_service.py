@@ -1,10 +1,12 @@
 """Сервис для работы с медиафайлами."""
 
+import asyncio
+import os
 from pathlib import Path
 from random import choice
 from string import ascii_lowercase, digits
 from time import time
-from typing import IO, Optional
+from typing import IO, List, Optional
 
 import aiofiles
 from sqlalchemy.exc import SQLAlchemyError
@@ -122,19 +124,16 @@ class MediaService(BaseService[Media, MediaRepository]):
                 async with aiofiles.open(save_path, 'wb') as out_file:
                     while content := file.read(1024 * 1024):  # Читаем по 1MB
                         await out_file.write(content)
-
                 log.success(f"Файл '{unique_filename}' успешно сохранен.")
 
             except (IOError, TypeError, Exception) as io_exc:
                 log.error(f"Ошибка при сохранении файла '{unique_filename}': {io_exc}", exc_info=True)
-
                 # Пытаемся удалить частично записанный файл
                 if save_path.exists():
                     try:
                         save_path.unlink(missing_ok=True)
                     except OSError:
                         pass
-
                 raise BadRequestError("Ошибка при сохранении файла.") from io_exc
 
             # Этап 2: Создание записи в БД
@@ -149,28 +148,85 @@ class MediaService(BaseService[Media, MediaRepository]):
             except SQLAlchemyError as db_exc:
                 await db.rollback()
                 log.error(f"Ошибка БД при создании записи Media для '{unique_filename}': {db_exc}", exc_info=True)
-
                 # Если запись в БД не удалась, удаляем сохраненный файл
                 if save_path.exists():
                     try:
                         save_path.unlink(missing_ok=True)
                     except OSError as unlink_err:
                         log.error(f"Не удалось удалить файл '{unique_filename}' после ошибки БД: {unlink_err}")
-
                 raise BadRequestError("Ошибка при сохранении информации о медиафайле.") from db_exc
 
         except Exception as outer_exc:
             log.exception(f"Непредвиденная внешняя ошибка при сохранении медиа {filename}: {outer_exc}")
             await db.rollback()  # Гарантируем откат, если транзакция была начата
-
             # Попытка удалить файл, если он существует
             if save_path.exists():
                 try:
                     save_path.unlink(missing_ok=True)
                 except OSError:
                     pass
-
             raise BadRequestError("Общая ошибка при сохранении медиа.") from outer_exc
+
+    async def delete_media_files(self, file_paths: List[str]) -> None:
+        """
+        Удаляет список физических медиафайлов с диска асинхронно.
+
+        Логирует ошибки, но не прерывает выполнение из-за ошибки удаления одного файла.
+
+        Args:
+            file_paths (List[str]): Список относительных путей к файлам для удаления.
+        """
+        if not file_paths:
+            return
+
+        log.info(f"Запуск удаления {len(file_paths)} физических медиафайлов...")
+        delete_tasks = []
+        for file_path_str in file_paths:
+            full_path = settings.MEDIA_ROOT_PATH / file_path_str.lstrip('/')
+            # Запускаем синхронное удаление в отдельном потоке
+            delete_tasks.append(asyncio.to_thread(self._delete_single_file_sync, full_path))
+
+        # Запускаем удаление параллельно
+        results = await asyncio.gather(*delete_tasks, return_exceptions=True)
+
+        # Обрабатываем результаты (логируем ошибки)
+        success_count = 0
+        for i, result in enumerate(results):
+            file_to_log = file_paths[i]
+            if isinstance(result, Exception):
+                # Ошибка будет содержать детали из _delete_single_file_sync
+                log.error(f"Ошибка при удалении файла '{file_to_log}': {result}")
+            elif result is True:
+                success_count += 1
+                log.debug(f"Файл '{file_to_log}' успешно удален.")
+            # Случай result is False (файл не найден) уже залогирован
+
+        log.info(f"Завершено удаление файлов: {success_count} успешно из {len(file_paths)}.")
+
+    def _delete_single_file_sync(self, file_path: Path) -> bool:
+        """
+        Синхронно удаляет один файл. Предназначена для запуска через asyncio.to_thread.
+
+        Args:
+            file_path (Path): Полный путь к файлу.
+
+        Returns:
+            bool: True, если файл успешно удален, False, если файл не найден.
+
+        Raises:
+            OSError: При других ошибках удаления файла.
+        """
+        try:
+            os.remove(file_path)  # Используем стандартный os.remove
+            log.debug(f"Синхронное удаление файла {file_path} успешно.")
+            return True
+        except FileNotFoundError:
+            log.warning(f"Файл для синхронного удаления не найден: {file_path}")
+            return False
+        except OSError as e:
+            log.error(f"Ошибка ОС при синхронном удалении файла {file_path}: {e}")
+            # Перевыбрасываем ошибку, чтобы gather ее поймал
+            raise
 
     def get_media_url(self, media: Media) -> str:
         """

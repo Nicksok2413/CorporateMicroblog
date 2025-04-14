@@ -93,7 +93,7 @@ def create_app() -> FastAPI:
     log.info(f"Монтирование статики фронтенда из '{STATIC_FILES_DIR}' по пути '/'")
     app.mount(
         "/",
-        StaticFiles(directory=STATIC_FILES_DIR, html=True),  # html=True для обслуживания index.html
+        StaticFiles(directory=STATIC_FILES_DIR, html=True),
         name="static_frontend"
     )
 
@@ -108,7 +108,7 @@ def create_app() -> FastAPI:
         # Проверяем, существует ли index.html
         if not os.path.exists(INDEX_HTML_PATH):
             log.error(f"Файл index.html не найден по пути: {INDEX_HTML_PATH}")
-            return {"error": "Frontend entrypoint not found"}, 500  # или другое сообщение
+            return {"error": "Frontend entrypoint not found"}, 500
 
         log.debug(f"Путь '{full_path}' не найден, отдаем SPA index.html")
         return FileResponse(INDEX_HTML_PATH)

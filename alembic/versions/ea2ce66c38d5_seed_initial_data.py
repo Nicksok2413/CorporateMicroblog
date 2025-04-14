@@ -68,9 +68,9 @@ def upgrade() -> None:
 
     # === Медиа (пример) ===
     op.bulk_insert(media_table, [
-        {'id': 1, 'file_path': '1712730000000001_abcdef.jpg'},
+        {'id': 1, 'file_path': '1712730000000001_abcdef.gif'},
         {'id': 2, 'file_path': '1712730000000002_ghijkl.png'},
-        {'id': 3, 'file_path': '1712730000000003_mnopqr.png'},
+        {'id': 3, 'file_path': '1712730000000003_mnopqr.jpg'},
     ])
 
     # === Твиты ===

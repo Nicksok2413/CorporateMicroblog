@@ -2,12 +2,13 @@
 
 from typing import List, Optional, Sequence
 
+from sqlalchemy import exists, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.exceptions import BadRequestError, NotFoundError, PermissionDeniedError
 from src.core.logging import log
-from src.models import Media, Tweet, User
+from src.models import Media, Tweet, User, tweet_media_association_table
 from src.repositories import FollowRepository, MediaRepository, TweetRepository
 from src.schemas.tweet import LikeInfo, TweetAuthor, TweetCreateRequest, TweetFeedResult, TweetInFeed
 from src.services.base_service import BaseService
@@ -88,7 +89,7 @@ class TweetService(BaseService[Tweet, TweetRepository]):
 
     async def delete_tweet(self, db: AsyncSession, current_user: User, *, tweet_id: int) -> None:
         """
-        Удаляет твит, если он принадлежит текущему пользователю.
+        Удаляет твит и связанные с ним медиафайлы.
 
         Args:
             db (AsyncSession): Сессия БД.
@@ -97,33 +98,67 @@ class TweetService(BaseService[Tweet, TweetRepository]):
 
         Raises:
             NotFoundError: Если твит не найден.
-            ForbiddenException: Если пользователь пытается удалить чужой твит.
-            BadRequestError: При ошибке удаления из БД.
+            PermissionDeniedError: Если пользователь пытается удалить чужой твит.
+            BadRequestError: При ошибке удаления из БД или файла.
         """
         log.info(f"Пользователь ID {current_user.id} пытается удалить твит ID {tweet_id}")
-        tweet = await self._get_obj_or_404(db, obj_id=tweet_id)
 
-        if tweet.author_id != current_user.id:
+        # Получаем твит
+        tweet_to_delete = await self.repo.get_with_attachments(db, tweet_id=tweet_id)
+
+        if not tweet_to_delete:
+            raise NotFoundError(f"Твит с ID {tweet_id} не найден.")
+
+        # Проверяем права доступа
+        if tweet_to_delete.author_id != current_user.id:
             log.warning(
                 f"Пользователь ID {current_user.id} не имеет прав на удаление твита ID {tweet_id}. "
-                f"(ID автора твита {tweet.author_id})."
+                f"(ID автора твита {tweet_to_delete.author_id})."
             )
             raise PermissionDeniedError("Вы не можете удалить этот твит.")
 
+        # Сохраняем список медиа ОБЪЕКТОВ этого твита
+        media_to_delete: List[Media] = list(tweet_to_delete.attachments)
+        # Собираем пути файлов для физического удаления
+        media_files_to_delete_paths: List[str] = [m.file_path for m in media_to_delete]
+
         try:
-            deleted_obj = await self.repo.remove(db, obj_id=tweet_id)
+            # Помечаем сам твит для удаления (CASCADE удалит строки в tweet_media_association)
+            await self.repo.delete(db, db_obj=tweet_to_delete)
+            log.debug(f"Твит ID {tweet_id} помечен для удаления.")
 
-            if not deleted_obj:
-                raise NotFoundError(f"Твит с ID {tweet_id} не найден для удаления (внутренняя ошибка).")
+            # Помечаем связанные объекты Media для удаления
+            if media_to_delete:
+                log.info(f"Пометка на удаление {len(media_to_delete)} связанных медиа записей...")
+                for media in media_to_delete:
+                    await self.media_repo.delete(db, db_obj=media)
 
+            # Коммитим изменения в БД (удаление твита, связей, и записей Media)
             await db.commit()
-            log.success(f"Твит ID {tweet_id} успешно удален пользователем ID {current_user.id}.")
+            log.success(f"Твит ID {tweet_id} и {len(media_to_delete)} связанных медиа записей успешно удалены из БД.")
+
+            # Удаляем физические файлы ПОСЛЕ успешного коммита
+            if media_files_to_delete_paths:
+                log.info(f"Удаление {len(media_files_to_delete_paths)} физических медиафайлов...")
+                await self.media_service.delete_media_files(media_files_to_delete_paths)
+
         except (NotFoundError, PermissionDeniedError):
+            # Эти ошибки уже обработаны, просто пробрасываем дальше
+            await db.rollback()  # Откатываем, если ошибка произошла до commit
             raise
         except SQLAlchemyError as exc:
             await db.rollback()
-            log.error(f"Ошибка при удалении твита ID {tweet_id} пользователем {current_user.id}: {exc}", exc_info=True)
-            raise BadRequestError("Не удалось удалить твит.") from exc
+            log.error(f"Ошибка БД при удалении твита ID {tweet_id} или медиа: {exc}", exc_info=True)
+            # Не пытаемся удалять файлы, если БД не удалось обновить
+            raise BadRequestError("Не удалось удалить твит или связанные медиа из базы данных.") from exc
+        except Exception as exc:
+            # Ловим другие возможные ошибки (например, при удалении файлов)
+            await db.rollback()  # Откатываем БД, если что-то пошло не так после commit
+            log.error(f"Ошибка при физическом удалении файлов для твита ID {tweet_id}: {exc}", exc_info=True)
+            # ВАЖНО: Данные из БД уже могли удалиться! Ситуация неидеальна.
+            # Можно добавить логику повторной попытки удаления файлов позже.
+            # Пока просто сообщаем об общей ошибке.
+            raise BadRequestError("Произошла ошибка при удалении твита и/или его медиафайлов.") from exc
 
     async def get_tweet_feed(self, db: AsyncSession, current_user: User) -> TweetFeedResult:
         """

@@ -44,12 +44,6 @@ class LikeService:
             log.warning(f"Твит с ID {tweet_id} не найден при попытке лайка.")
             raise NotFoundError(f"Твит с ID {tweet_id} не найден.")
 
-        # Проверяем, не лайкнул ли уже
-        existing_like = await self.repo.get_like(db, user_id=current_user.id, tweet_id=tweet_id)
-
-        if existing_like:
-            raise ConflictError("Вы уже лайкнули этот твит.")
-
         try:
             await self.repo.add_like(db, user_id=current_user.id, tweet_id=tweet_id)
             await db.commit()
