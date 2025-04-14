@@ -7,9 +7,6 @@ from src.services.media_service import MediaService
 # Импортируем нужные исключения
 from src.core.exceptions import MediaValidationError
 
-# Помечаем тесты как асинхронные, т.к. будем использовать await
-pytestmark = pytest.mark.asyncio
-
 
 # --- Фикстура для создания экземпляра сервиса ---
 # (Репозиторий здесь не используется, поэтому можно передать mock или None)
@@ -22,7 +19,7 @@ def media_service() -> MediaService:
 
 
 # --- Тесты для _validate_file ---
-
+@pytest.mark.asyncio
 async def test_validate_file_success(media_service: MediaService):
     """Тест успешной валидации разрешенного типа файла."""
     # Не должно вызывать исключений
@@ -31,6 +28,7 @@ async def test_validate_file_success(media_service: MediaService):
     await media_service._validate_file("image.gif", "image/gif")
 
 
+@pytest.mark.asyncio
 async def test_validate_file_failure(media_service: MediaService):
     """Тест валидации запрещенного типа файла."""
     with pytest.raises(MediaValidationError) as exc_info:

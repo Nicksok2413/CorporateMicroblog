@@ -29,7 +29,7 @@ from src.models import User  # Импортируем модель User для �
 
 # --- Настройка Тестовой Базы Данных ---
 # Создаем движок один раз на сессию
-@pytest.fixture(scope="session")
+@pytest_asyncio.fixture(scope="session")
 async def db_engine():
     """Создает асинхронный движок SQLAlchemy для тестовой БД SQLite."""
     engine = create_async_engine(settings.DATABASE_URL, poolclass=NullPool)
@@ -70,6 +70,7 @@ async def override_get_db(db_session: AsyncSession) -> AsyncGenerator[AsyncSessi
 
 
 # Фикстура для создания экземпляра тестового клиента
+@pytest_asyncio.fixture(scope="function")
 async def client(override_get_db: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
     """
     Создает асинхронный тестовый HTTP клиент (httpx.AsyncClient) для FastAPI приложения.
@@ -79,7 +80,7 @@ async def client(override_get_db: AsyncSession) -> AsyncGenerator[AsyncClient, N
     app.dependency_overrides[get_db_session] = lambda: override_get_db
 
     # Создаем транспорт для ASGI приложения
-    transport = ASGITransport(app=app) # type: ignore
+    transport = ASGITransport(app=app)
 
     # Создаем клиент с транспортом
     async with AsyncClient(transport=transport, base_url="http://test") as test_client:
