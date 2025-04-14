@@ -85,13 +85,6 @@ def upgrade() -> None:
         {'id': 9, 'content': 'Another picture.', 'author_id': 4},
     ])
 
-    # === Привязка медиа к твитам ===
-    op.bulk_insert(tweet_media_association_table, [
-        {'tweet_id': 1, 'media_id': 1},  # Твит 1 Nick (ID=1) -> Медиа 1
-        {'tweet_id': 4, 'media_id': 2},  # Твит 4 Alice (ID=2) -> Медиа 2
-        {'tweet_id': 9, 'media_id': 3},  # Твит 9 Charlie (ID=4) -> Медиа 3
-    ])
-
     # === Лайки ===
     op.bulk_insert(likes_table, [
         # Nick (ID=1) лайкает твит Alice (ID=2)
@@ -148,7 +141,6 @@ def downgrade() -> None:
     # Удаляем в обратном порядке зависимостей
     op.execute(f"DELETE FROM {follows_table.name}")
     op.execute(f"DELETE FROM {likes_table.name}")
-    op.execute(f"DELETE FROM {tweet_media_association_table.name}")
     op.execute(f"DELETE FROM {tweets_table.name}")
     op.execute(f"DELETE FROM {media_table.name}")
     op.execute(f"DELETE FROM {users_table.name}")
