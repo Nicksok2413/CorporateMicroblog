@@ -3,7 +3,7 @@ from typing import AsyncGenerator, Generator
 
 import pytest
 import pytest_asyncio
-from httpx import AsyncClient
+from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
@@ -17,14 +17,14 @@ from src.main import app  # Импортируем наше FastAPI прилож
 from src.models import User  # Импортируем модель User для фикстуры
 
 
-# --- Настройка Event Loop ---
-# Используем один event loop для всех тестов в сессии
-@pytest.fixture(scope="session")
-def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
-    """Create an instance of the default event loop for each test session."""
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
+# # --- Настройка Event Loop ---
+# # Используем один event loop для всех тестов в сессии
+# @pytest.fixture(scope="session")
+# def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
+#     """Create an instance of the default event loop for each test session."""
+#     loop = asyncio.get_event_loop_policy().new_event_loop()
+#     yield loop
+#     loop.close()
 
 
 # --- Настройка Тестовой Базы Данных ---
@@ -70,19 +70,22 @@ async def override_get_db(db_session: AsyncSession) -> AsyncGenerator[AsyncSessi
 
 
 # Фикстура для создания экземпляра тестового клиента
-@pytest.fixture(scope="function")
 async def client(override_get_db: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
     """
     Создает асинхронный тестовый HTTP клиент (httpx.AsyncClient) для FastAPI приложения.
     Переопределяет зависимость get_db_session для использования тестовой БД.
     """
-    # Переопределяем зависимость get_db_session на время работы клиента
+    # Переопределяем зависимость get_db_session
     app.dependency_overrides[get_db_session] = lambda: override_get_db
 
-    async with AsyncClient(app=app, base_url="http://test") as test_client:
+    # Создаем транспорт для ASGI приложения
+    transport = ASGITransport(app=app) # type: ignore
+
+    # Создаем клиент с транспортом
+    async with AsyncClient(transport=transport, base_url="http://test") as test_client:
         yield test_client
 
-    # Удаляем переопределение после теста (хотя для function scope это не так критично)
+    # Удаляем переопределение
     del app.dependency_overrides[get_db_session]
 
 
