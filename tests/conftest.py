@@ -1,5 +1,4 @@
-import asyncio
-from typing import AsyncGenerator, Generator
+from typing import AsyncGenerator
 
 import pytest
 import pytest_asyncio
@@ -15,16 +14,6 @@ assert settings.TESTING, "Тесты должны запускаться с TEST
 from src.core.database import Base, get_db_session  # Импортируем зависимость БД
 from src.main import app  # Импортируем наше FastAPI приложение
 from src.models import User  # Импортируем модель User для фикстуры
-
-
-# # --- Настройка Event Loop ---
-# # Используем один event loop для всех тестов в сессии
-# @pytest.fixture(scope="session")
-# def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
-#     """Create an instance of the default event loop for each test session."""
-#     loop = asyncio.get_event_loop_policy().new_event_loop()
-#     yield loop
-#     loop.close()
 
 
 # --- Настройка Тестовой Базы Данных ---
@@ -53,6 +42,12 @@ def db_session_factory(db_engine) -> async_sessionmaker[AsyncSession]:
 async def db_session(db_session_factory: async_sessionmaker[AsyncSession]) -> AsyncGenerator[AsyncSession, None]:
     """Yields a SQLAlchemy session with a transaction that is rolled back after the test."""
     async with db_session_factory() as session:
+        # # --- РАСКОММЕНТИРОВАТЬ ДЛЯ ДИАГНОСТИКИ ---
+        # print("\n--- Очистка таблицы users перед тестом ---")
+        # await session.execute(sa.delete(User))
+        # await session.commit()  # Коммит для DELETE перед begin() теста
+        # # --- КОНЕЦ ДИАГНОСТИКИ ---
+
         await session.begin()
         try:
             yield session

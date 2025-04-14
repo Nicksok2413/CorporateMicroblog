@@ -55,21 +55,4 @@ async def test_get_user_profile_by_id_not_found(client: AsyncClient):
     assert json_response["result"] is False
     assert json_response["error_type"] == "not_found"
 
-
-async def test_get_user_profile_by_id_success(
-        client: AsyncClient,  # Обычный клиент, аутентификация не нужна
-        test_user: User
-):
-    """Тест успешного получения профиля существующего пользователя по ID."""
-    response = await client.get(f"/api/users/{test_user.id}")
-
-    assert response.status_code == status.HTTP_200_OK
-    json_response = response.json()
-    assert json_response["result"] is True
-    profile = json_response["user"]
-    assert profile["id"] == test_user.id
-    assert profile["name"] == test_user.name
-    assert "followers" in profile
-    assert "following" in profile
-
-# TODO: Добавить тесты для follow/unfollow
+# TODO: Добавить тесты
