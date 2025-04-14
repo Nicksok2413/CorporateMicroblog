@@ -61,13 +61,6 @@ def upgrade() -> None:
         {'id': 5, 'name': 'David (no tweets)', 'api_key': 'david_key'},
     ])
 
-    # === Медиа ===
-    op.bulk_insert(media_table, [
-        {'id': 1, 'file_path': '1712730000000001_abcdef.gif', 'tweet_id': 1},  # Твит 1 Nick (ID=1) -> Медиа 1
-        {'id': 2, 'file_path': '1712730000000002_ghijkl.png', 'tweet_id': 4},  # Твит 4 Alice (ID=2) -> Медиа 2
-        {'id': 3, 'file_path': '1712730000000003_mnopqr.jpg', 'tweet_id': 9},  # Твит 9 Charlie (ID=4) -> Медиа 3
-    ])
-
     # === Твиты ===
     op.bulk_insert(tweets_table, [
         # Твиты Nick (ID=1)
@@ -83,6 +76,13 @@ def upgrade() -> None:
         {'id': 7, 'content': 'Meeting marathon today.', 'author_id': 4},
         {'id': 8, 'content': 'Thinking about weekend plans.', 'author_id': 4},
         {'id': 9, 'content': 'Another picture.', 'author_id': 4},
+    ])
+
+    # === Медиа ===
+    op.bulk_insert(media_table, [
+        {'id': 1, 'file_path': '1712730000000001_abcdef.gif', 'tweet_id': 1},  # Твит 1 Nick (ID=1) -> Медиа 1
+        {'id': 2, 'file_path': '1712730000000002_ghijkl.png', 'tweet_id': 4},  # Твит 4 Alice (ID=2) -> Медиа 2
+        {'id': 3, 'file_path': '1712730000000003_mnopqr.jpg', 'tweet_id': 9},  # Твит 9 Charlie (ID=4) -> Медиа 3
     ])
 
     # === Лайки ===
@@ -141,6 +141,6 @@ def downgrade() -> None:
     # Удаляем в обратном порядке зависимостей
     op.execute(f"DELETE FROM {follows_table.name}")
     op.execute(f"DELETE FROM {likes_table.name}")
-    op.execute(f"DELETE FROM {tweets_table.name}")
     op.execute(f"DELETE FROM {media_table.name}")
+    op.execute(f"DELETE FROM {tweets_table.name}")
     op.execute(f"DELETE FROM {users_table.name}")
