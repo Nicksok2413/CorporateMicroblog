@@ -89,7 +89,7 @@ class TweetService(BaseService[Tweet, TweetRepository]):
 
     async def delete_tweet(self, db: AsyncSession, current_user: User, *, tweet_id: int) -> None:
         """
-        Удаляет твит и связанные с ним медиафайлы, если они больше нигде не используются.
+        Удаляет твит и связанные с ним медиафайлы.
 
         Args:
             db (AsyncSession): Сессия БД.
@@ -117,47 +117,25 @@ class TweetService(BaseService[Tweet, TweetRepository]):
             )
             raise PermissionDeniedError("Вы не можете удалить этот твит.")
 
-        # Сохраняем список медиафайлов этого твита перед его удалением из сессии
-        media_to_check: List[Media] = list(tweet_to_delete.attachments)
-        media_ids_to_potentially_delete: set[int] = {media.id for media in media_to_check}
+        # Сохраняем список медиа ОБЪЕКТОВ этого твита
+        media_to_delete: List[Media] = list(tweet_to_delete.attachments)
+        # Собираем пути файлов для физического удаления
+        media_files_to_delete_paths: List[str] = [m.file_path for m in media_to_delete]
 
         try:
             # Помечаем сам твит для удаления (CASCADE удалит строки в tweet_media_association)
             await self.repo.delete(db, db_obj=tweet_to_delete)
-            # Важно! Не коммитим сразу, сначала проверим медиа.
-            # Но нужно выполнить flush, чтобы изменения (удаление связей из tweet_media_association)
-            # были видны в последующих запросах в этой же транзакции.
-            await db.flush()
-            log.debug(f"Твит ID {tweet_id} помечен для удаления, выполнен flush.")
+            log.debug(f"Твит ID {tweet_id} помечен для удаления.")
 
-            # Проверяем каждый связанный медиафайл
-            media_files_to_delete_paths: List[str] = []
-            media_objects_to_delete: List[Media] = []
-
-            for media in media_to_check:
-                log.debug(f"Проверка медиа ID {media.id} на другие связи...")
-                # Запрос для проверки, существует ли ХОТЯ БЫ ОДНА другая связь для этого media_id
-                # в ассоциативной таблице. Мы уже удалили связь с текущим tweet_id через flush.
-                exists_statement = select(
-                    exists().where(tweet_media_association_table.c.media_id == media.id)
-                )
-                result = await db.execute(exists_statement)
-                is_still_linked = result.scalar()
-
-                if not is_still_linked:
-                    log.info(f"Медиа ID {media.id} больше не связано с другими твитами. Помечаем на удаление.")
-                    # Помечаем объект Media на удаление из БД
+            # Помечаем связанные объекты Media для удаления
+            if media_to_delete:
+                log.info(f"Пометка на удаление {len(media_to_delete)} связанных медиа записей...")
+                for media in media_to_delete:
                     await self.media_repo.delete(db, db_obj=media)
-                    # Добавляем путь к файлу в список на физическое удаление
-                    media_files_to_delete_paths.append(media.file_path)
-                    media_objects_to_delete.append(media)
-                else:
-                    log.debug(f"Медиа ID {media.id} все еще связано с другими твитами.")
 
             # Коммитим изменения в БД (удаление твита, связей, и записей Media)
             await db.commit()
-            log.success(
-                f"Твит ID {tweet_id} и {len(media_objects_to_delete)} неиспользуемых медиа записей успешно удалены из БД.")
+            log.success(f"Твит ID {tweet_id} и {len(media_to_delete)} связанных медиа записей успешно удалены из БД.")
 
             # Удаляем физические файлы ПОСЛЕ успешного коммита
             if media_files_to_delete_paths:
