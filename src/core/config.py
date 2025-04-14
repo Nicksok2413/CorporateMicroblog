@@ -14,8 +14,6 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Microblog Service"
     # Версия API
     API_VERSION: str = "1.0.0"
-    # Уровень логирования
-    LOG_LEVEL: str = "INFO"
     # URL-префикс для доступа к медиа через FastAPI/Nginx
     MEDIA_URL_PREFIX: str = "/media"
 
@@ -35,6 +33,7 @@ class Settings(BaseSettings):
     # Настройки режимов приложения
     DEBUG: bool = Field(default=False, description="Режим отладки")
     TESTING: bool = Field(default=False, description="Режим тестирования")
+    LOG_LEVEL: str = Field(default="INFO", description="Уровень логирования")
     # Настройки безопасности
     API_KEY_HEADER: str = Field("api-key", description="HTTP-заголовок с API-ключом")
 
