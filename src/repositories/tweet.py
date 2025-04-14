@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from src.core.logging import log
-from src.models import Like, Media, Tweet
+from src.models import Like, Tweet
 from src.repositories.base import BaseRepository
 from src.schemas.tweet import TweetCreateInternal
 
@@ -17,7 +17,7 @@ class TweetRepository(BaseRepository[Tweet, TweetCreateInternal]):
 
     async def get_with_attachments(self, db: AsyncSession, *, tweet_id: int) -> Optional[Tweet]:
         """
-        Получает твит по ID с принудительной загрузкой связанных медиафайлов.
+        Получает твит по ID с загрузкой связанных медиафайлов.
 
         Args:
             db (AsyncSession): Сессия БД.
@@ -37,8 +37,7 @@ class TweetRepository(BaseRepository[Tweet, TweetCreateInternal]):
         )
 
         result = await db.execute(statement)
-        # unique() нужен при eager loading коллекций
-        instance = result.unique().scalars().first()
+        instance = result.scalars().first()
 
         if instance:
             log.debug(f"Твит ID {tweet_id} с медиа найден.")
@@ -46,39 +45,6 @@ class TweetRepository(BaseRepository[Tweet, TweetCreateInternal]):
             log.debug(f"Твит ID {tweet_id} не найден.")
 
         return instance
-
-    async def create_with_author_and_media(
-            self,
-            db: AsyncSession,
-            *,
-            content: str,
-            author_id: int,
-            media_items: Optional[List[Media]] = None
-    ) -> Tweet:
-        """
-        Создает и добавляет твит в сессию, связывая его с автором и медиафайлами.
-
-        Это специфичный метод, более удобный, чем базовый create,
-        когда нужно сразу прикрепить медиа.
-
-        Args:
-            db (AsyncSession): Сессия БД.
-            content (str): Содержимое твита.
-            author_id (int): ID автора твита.
-            media_items (Optional[List[Media]]): Список объектов Media для прикрепления (опционально).
-
-        Returns:
-            Tweet: Созданный объект твита.
-        """
-        log.debug(f"Подготовка к созданию твита для автора ID {author_id} с медиа: {'Да' if media_items else 'Нет'}")
-        db_obj = Tweet(content=content, author_id=author_id)
-
-        if media_items:
-            # Присоединяем медиа к твиту (SQLAlchemy обработает M2M связь)
-            db_obj.attachments.extend(media_items)
-
-        await self.add(db, db_obj=db_obj)
-        return db_obj
 
     async def get_feed_for_user(
             self,

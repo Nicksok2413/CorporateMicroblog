@@ -181,6 +181,7 @@ class MediaService(BaseService[Media, MediaRepository]):
 
         log.info(f"Запуск удаления {len(file_paths)} физических медиафайлов...")
         delete_tasks = []
+
         for file_path_str in file_paths:
             full_path = settings.MEDIA_ROOT_PATH / file_path_str.lstrip('/')
             # Запускаем синхронное удаление в отдельном потоке
@@ -191,15 +192,16 @@ class MediaService(BaseService[Media, MediaRepository]):
 
         # Обрабатываем результаты (логируем ошибки)
         success_count = 0
+
         for i, result in enumerate(results):
             file_to_log = file_paths[i]
+
             if isinstance(result, Exception):
                 # Ошибка будет содержать детали из _delete_single_file_sync
                 log.error(f"Ошибка при удалении файла '{file_to_log}': {result}")
             elif result is True:
                 success_count += 1
                 log.debug(f"Файл '{file_to_log}' успешно удален.")
-            # Случай result is False (файл не найден) уже залогирован
 
         log.info(f"Завершено удаление файлов: {success_count} успешно из {len(file_paths)}.")
 
@@ -218,13 +220,13 @@ class MediaService(BaseService[Media, MediaRepository]):
         """
         try:
             os.remove(file_path)  # Используем стандартный os.remove
-            log.debug(f"Синхронное удаление файла {file_path} успешно.")
+            log.debug(f"Удаление файла {file_path} успешно.")
             return True
         except FileNotFoundError:
-            log.warning(f"Файл для синхронного удаления не найден: {file_path}")
+            log.warning(f"Файл для удаления не найден: {file_path}")
             return False
-        except OSError as e:
-            log.error(f"Ошибка ОС при синхронном удалении файла {file_path}: {e}")
+        except OSError as exc:
+            log.error(f"Ошибка ОС при удалении файла {file_path}: {exc}")
             # Перевыбрасываем ошибку, чтобы gather ее поймал
             raise
 
