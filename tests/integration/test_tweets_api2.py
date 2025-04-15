@@ -4,6 +4,7 @@ from httpx import AsyncClient
 from fastapi import status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from typing import Awaitable, Callable, List
 
 from src.core.config import settings
 from src.models import Follow, Like, Media, Tweet, User
@@ -76,16 +77,21 @@ async def test_create_tweet_unauthorized(client: AsyncClient):
 
 # --- Тесты на создание твита с медиа ---
 
-async def test_create_tweet_with_media_success(
+async def test_create_tweet_with_one_media(
         authenticated_client: AsyncClient,
         test_user: User,
-        uploaded_media: Media,  # Используем фикстуру для загруженного медиа
+        create_uploaded_media_list: Callable[[int], Awaitable[List[Media]]],
         db_session: AsyncSession
 ):
-    """Тест успешного создания твита с одним медиа."""
+    """Тест успешного создания твита с одним медиа ."""
+    # Вызываем фабрику для создания 1 медиа
+    uploaded_media_list = await create_uploaded_media_list(count=1)
+    assert len(uploaded_media_list) == 1
+    uploaded_media = uploaded_media_list[0]  # Берем первый (и единственный) элемент
+
     tweet_data = {
-        "tweet_data": "Tweet with media!",
-        "tweet_media_ids": [uploaded_media.id]  # Передаем ID загруженного медиа
+        "tweet_data": "Tweet with one media from factory!",
+        "tweet_media_ids": [uploaded_media.id]
     }
     response = await authenticated_client.post("/api/tweets", json=tweet_data)
 
@@ -111,33 +117,21 @@ async def test_create_tweet_with_media_success(
     assert tweet_in_db.attachments[0].id == uploaded_media.id
 
 
-async def test_create_tweet_with_nonexistent_media(authenticated_client: AsyncClient):
-    """Тест создания твита с несуществующим media_id."""
-    tweet_data = {
-        "tweet_data": "Tweet with bad media!",
-        "tweet_media_ids": [99999]  # Несуществующий ID
-    }
-    response = await authenticated_client.post("/api/tweets", json=tweet_data)
-
-    assert response.status_code == status.HTTP_404_NOT_FOUND
-    json_response = response.json()
-    assert json_response["result"] is False
-    assert json_response["error_type"] == "not_found"
-    assert "Медиафайл с ID 99999 не найден" in json_response["error_message"]
-
-
 async def test_create_tweet_with_multiple_media(
         authenticated_client: AsyncClient,
         test_user: User,
-        uploaded_media_list: list[Media],
+        create_uploaded_media_list: Callable[[int], Awaitable[List[Media]]],
         db_session: AsyncSession
 ):
-    """Тест успешного создания твита с несколькими медиа."""
-    media_ids = [m.id for m in uploaded_media_list]
-    assert len(media_ids) == 2  # Убедимся, что фикстура вернула 2 медиа
+    """Тест успешного создания твита с двумя медиа."""
+    # Вызываем фабрику, чтобы создать 2 медиафайла
+    uploaded_media_list = await create_uploaded_media_list(count=2)
+    assert len(uploaded_media_list) == 2  # Убедимся, что фабрика сработала
+
+    media_ids = [media.id for media in uploaded_media_list]
 
     tweet_data = {
-        "tweet_data": "Tweet with multiple media!",
+        "tweet_data": "Tweet with 2 media items!",
         "tweet_media_ids": media_ids
     }
     response = await authenticated_client.post("/api/tweets", json=tweet_data)
@@ -162,6 +156,97 @@ async def test_create_tweet_with_multiple_media(
     attached_ids = sorted([a.id for a in tweet_in_db.attachments])
     expected_ids = sorted(media_ids)
     assert attached_ids == expected_ids
+
+
+# --- Тест создания твита с одним медиа (можно тоже переделать) ---
+
+
+# async def test_create_tweet_with_media_success(
+#         authenticated_client: AsyncClient,
+#         test_user: User,
+#         uploaded_media: Media,  # Используем фикстуру для загруженного медиа
+#         db_session: AsyncSession
+# ):
+#     """Тест успешного создания твита с одним медиа."""
+#     tweet_data = {
+#         "tweet_data": "Tweet with media!",
+#         "tweet_media_ids": [uploaded_media.id]  # Передаем ID загруженного медиа
+#     }
+#     response = await authenticated_client.post("/api/tweets", json=tweet_data)
+#
+#     assert response.status_code == status.HTTP_201_CREATED
+#     json_response = response.json()
+#     assert json_response["result"] is True
+#     new_tweet_id = json_response["tweet_id"]
+#
+#     # Проверяем твит в БД
+#     tweet_in_db = await db_session.get(Tweet, new_tweet_id)
+#     assert tweet_in_db is not None
+#     assert tweet_in_db.content == tweet_data["tweet_data"]
+#     assert tweet_in_db.author_id == test_user.id
+#
+#     # Проверяем медиа в БД
+#     await db_session.refresh(uploaded_media)  # Обновляем объект media
+#     assert uploaded_media is not None
+#     assert uploaded_media.tweet_id == new_tweet_id  # Проверяем, что tweet_id установился
+#
+#     # Проверяем связь через твит
+#     await db_session.refresh(tweet_in_db, attribute_names=['attachments'])  # Обновляем твит со связью
+#     assert len(tweet_in_db.attachments) == 1
+#     assert tweet_in_db.attachments[0].id == uploaded_media.id
+#
+#
+# async def test_create_tweet_with_multiple_media(
+#         authenticated_client: AsyncClient,
+#         test_user: User,
+#         uploaded_media_list: list[Media],
+#         db_session: AsyncSession
+# ):
+#     """Тест успешного создания твита с несколькими медиа."""
+#     media_ids = [m.id for m in uploaded_media_list]
+#     assert len(media_ids) == 2  # Убедимся, что фикстура вернула 2 медиа
+#
+#     tweet_data = {
+#         "tweet_data": "Tweet with multiple media!",
+#         "tweet_media_ids": media_ids
+#     }
+#     response = await authenticated_client.post("/api/tweets", json=tweet_data)
+#
+#     assert response.status_code == status.HTTP_201_CREATED
+#     json_response = response.json()
+#     assert json_response["result"] is True
+#     new_tweet_id = json_response["tweet_id"]
+#
+#     tweet_in_db = await db_session.get(Tweet, new_tweet_id)
+#     assert tweet_in_db is not None
+#     assert tweet_in_db.author_id == test_user.id
+#
+#     # Проверяем, что оба медиа привязались
+#     for media in uploaded_media_list:
+#         await db_session.refresh(media)
+#         assert media.tweet_id == new_tweet_id
+#
+#     await db_session.refresh(tweet_in_db, attribute_names=['attachments'])
+#     assert len(tweet_in_db.attachments) == 2
+#     # Проверяем ID привязанных медиа (сортируем для стабильности теста)
+#     attached_ids = sorted([a.id for a in tweet_in_db.attachments])
+#     expected_ids = sorted(media_ids)
+#     assert attached_ids == expected_ids
+
+
+async def test_create_tweet_with_nonexistent_media(authenticated_client: AsyncClient):
+    """Тест создания твита с несуществующим media_id."""
+    tweet_data = {
+        "tweet_data": "Tweet with bad media!",
+        "tweet_media_ids": [99999]  # Несуществующий ID
+    }
+    response = await authenticated_client.post("/api/tweets", json=tweet_data)
+
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    json_response = response.json()
+    assert json_response["result"] is False
+    assert json_response["error_type"] == "not_found"
+    assert "Медиафайл с ID 99999 не найден" in json_response["error_message"]
 
 
 # --- Тесты на удаление твитов ---

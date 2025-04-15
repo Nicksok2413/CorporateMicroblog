@@ -10,80 +10,6 @@ from src.core.config import settings  # Нужен API_KEY_HEADER
 pytestmark = pytest.mark.asyncio
 
 
-# Вспомогательная функция для загрузки медиа
-async def upload_test_media(client: AsyncClient) -> int:
-    files = {'file': ('test_image.png', b'fake png data', 'image/png')}
-    response = await client.post("/api/media", files=files)
-    assert response.status_code == status.HTTP_201_CREATED
-    return response.json()["media_id"]
-
-
-# === POST /api/tweets ===
-
-async def test_create_tweet_unauthorized(client: AsyncClient):
-    payload = {"tweet_data": "My first tweet"}
-    response = await client.post("/api/tweets", json=payload)
-    assert response.status_code == status.HTTP_401_UNAUTHORIZED
-
-
-async def test_create_tweet_simple_success(authenticated_client: AsyncClient, test_user_nick: User,
-                                           db_session: AsyncSession):
-    tweet_text = "A simple tweet without media."
-    payload = {"tweet_data": tweet_text}
-    response = await authenticated_client.post("/api/tweets", json=payload)
-
-    assert response.status_code == status.HTTP_201_CREATED
-    json_response = response.json()
-    assert json_response["result"] is True
-    assert "tweet_id" in json_response
-    tweet_id = json_response["tweet_id"]
-    assert tweet_id > 0
-
-    # Проверяем в БД
-    tweet = await db_session.get(Tweet, tweet_id)
-    assert tweet is not None
-    assert tweet.id == tweet_id
-    assert tweet.content == tweet_text
-    assert tweet.author_id == test_user.id
-    assert tweet.attachments == []  # В SQLAlchemy 2.0 пустая коллекция
-
-
-async def test_create_tweet_with_media_success(authenticated_client: AsyncClient, test_user_nick: User,
-                                               db_session: AsyncSession):
-    # Сначала загружаем медиа
-    media_id = await upload_test_media(authenticated_client)
-
-    tweet_text = "Tweet with media!"
-    payload = {"tweet_data": tweet_text, "tweet_media_ids": [media_id]}
-    response = await authenticated_client.post("/api/tweets", json=payload)
-
-    assert response.status_code == status.HTTP_201_CREATED
-    json_response = response.json()
-    tweet_id = json_response["tweet_id"]
-
-    # Проверяем твит в БД
-    tweet = await db_session.get(Tweet, tweet_id)
-    assert tweet is not None
-    assert tweet.content == tweet_text
-    assert tweet.author_id == test_user.id
-
-    # Проверяем медиа в БД
-    media = await db_session.get(Media, media_id)
-    assert media is not None
-    assert media.tweet_id == tweet_id  # Проверяем связь
-
-    # Проверяем связь через ORM (если нужно)
-    await db_session.refresh(tweet, attribute_names=['attachments'])
-    assert len(tweet.attachments) == 1
-    assert tweet.attachments[0].id == media_id
-
-
-async def test_create_tweet_with_nonexistent_media(authenticated_client: AsyncClient):
-    payload = {"tweet_data": "Bad media", "tweet_media_ids": [9999]}
-    response = await authenticated_client.post("/api/tweets", json=payload)
-    assert response.status_code == status.HTTP_404_NOT_FOUND
-
-
 async def test_create_tweet_with_used_media(authenticated_client: AsyncClient, test_user_nick: User):
     # Загружаем медиа
     media_id = await upload_test_media(authenticated_client)
@@ -95,31 +21,10 @@ async def test_create_tweet_with_used_media(authenticated_client: AsyncClient, t
     assert response.status_code == status.HTTP_409_CONFLICT  # Ошибка, что медиа уже использовано
 
 
-async def test_create_tweet_invalid_data(authenticated_client: AsyncClient):
-    # Слишком длинный твит
-    long_text = "a" * 281
-    payload = {"tweet_data": long_text}
-    response = await authenticated_client.post("/api/tweets", json=payload)
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-    # Пустой твит
-    payload = {"tweet_data": ""}
-    response = await authenticated_client.post("/api/tweets", json=payload)
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
 
 
 # === GET /api/tweets (Feed) ===
-
-async def test_get_feed_unauthorized(client: AsyncClient):
-    response = await client.get("/api/tweets")
-    assert response.status_code == status.HTTP_401_UNAUTHORIZED
-
-
-async def test_get_feed_empty(authenticated_client: AsyncClient):
-    response = await authenticated_client.get("/api/tweets")
-    assert response.status_code == status.HTTP_200_OK
-    json_response = response.json()
-    assert json_response["result"] is True
-    assert json_response["tweets"] == []
 
 
 async def test_get_feed_with_own_tweets(authenticated_client: AsyncClient, test_user_nick: User):
