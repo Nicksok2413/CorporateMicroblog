@@ -367,6 +367,7 @@ async def test_like_tweet_not_found(authenticated_client: AsyncClient):
     json_response = response.json()
     assert json_response["result"] is False
     assert json_response["error_type"] == "not_found"
+    assert f"Твит с ID 99999 не найден" in json_response["error_message"]
 
 
 async def test_like_tweet_unauthorized(client: AsyncClient, tweet_for_likes: Tweet):
