@@ -179,71 +179,6 @@ async def tweet_for_tests(db_session: AsyncSession, test_user_alice: User) -> Tw
     return tweet
 
 
-# Фикстура для загрузки медиа
-@pytest_asyncio.fixture(scope="function")
-async def uploaded_media(
-        authenticated_client: AsyncClient,
-        db_session: AsyncSession
-) -> Media:
-    """
-    Загружает тестовый медиафайл через API /medias,
-    проверяет запись в БД и возвращает объект Media.
-    Доступна для всех тестов.
-    """
-    # Создаем "файл" в памяти
-    file_content = b"this is a test image content"
-    filename = "test_upload.png"
-    content_type = "image/png"
-
-    files = {"file": (filename, file_content, content_type)}
-
-    # Используем API для загрузки
-    response = await authenticated_client.post("/api/medias", files=files)
-
-    # Проверяем успешность загрузки
-    assert response.status_code == status.HTTP_201_CREATED
-    json_response = response.json()
-    assert json_response["result"] is True
-    assert "media_id" in json_response
-    media_id = json_response["media_id"]
-
-    # Получаем объект Media из БД
-    media: Media | None = await db_session.get(Media, media_id)
-    assert media is not None
-
-    # Проверяем, что файл физически создался
-    assert media.file_path.endswith(filename.split('.')[-1])  # Проверяем расширение
-
-    # Проверяем что tweet_id пока NULL
-    assert media.tweet_id is None  # Медиа еще не привязано
-
-    # Возвращаем созданный и проверенный объект Media
-    return media
-
-
-# # Фикстура для загрузки нескольких медиа
-# @pytest_asyncio.fixture(scope="function")
-# async def uploaded_media_list(
-#         authenticated_client: AsyncClient,
-#         db_session: AsyncSession
-# ) -> list[Media]:
-#     """Фикстура, загружающая два медиафайла."""
-#     media_list = []
-#     for i in range(2):
-#         file_content = f"test content {i}".encode()
-#         filename = f"test_multi_{i}.jpg"
-#         content_type = "image/jpeg"
-#         files = {"file": (filename, file_content, content_type)}
-#         response = await authenticated_client.post("/api/medias", files=files)
-#         assert response.status_code == status.HTTP_201_CREATED
-#         json_response = response.json()
-#         media_id = json_response["media_id"]
-#         media: Media | None = await db_session.get(Media, media_id)
-#         assert media is not None
-#         media_list.append(media)
-#     return media_list
-
-
 # Фикстура фабрики загрузки медиафайлов
 @pytest.fixture(scope="function")
 def create_uploaded_media_list(
@@ -258,33 +193,91 @@ def create_uploaded_media_list(
     """
 
     async def _factory(count: int = 1) -> List[Media]:
-        """Асинхронная фабрика, создающая 'count' медиа."""
+        """
+        Асинхронная фабрика, создающая 'count' медиафайлов.
+
+        Загружает тестовые медиафайлы через API /medias,
+        проверяет записи в БД и возвращает объекты Media.
+        """
         if count <= 0:
             return []
 
         media_list = []
-        print(f"\n--- Фабрика: Создание {count} медиа ---")  # Отладочный принт
 
         for i in range(count):
+            # Создаем "файл" в памяти
             file_content = f"test content {i}".encode()
             filename = f"test_factory_{i}.jpg"
             content_type = "image/jpeg"
+
             files = {"file": (filename, file_content, content_type)}
+
+            # Используем API для загрузки
             response = await authenticated_client.post("/api/medias", files=files)
-            # Важно: Проверяем статус прямо здесь, чтобы тест упал, если фабрика не сработала
-            assert response.status_code == status.HTTP_201_CREATED, \
-                f"Фабрика не смогла загрузить медиа {i + 1}/{count}. Ответ: {response.text}"
+
+            # Проверяем успешность загрузки
+            assert response.status_code == status.HTTP_201_CREATED
             json_response = response.json()
+            assert json_response["result"] is True
+            assert "media_id" in json_response
             media_id = json_response["media_id"]
+
+            # Получаем объект Media из БД
             media: Media | None = await db_session.get(Media, media_id)
-            assert media is not None, f"Фабрика не нашла медиа ID {media_id} в БД после загрузки."
+            assert media is not None
+
+            # Проверяем, что файл физически создался
+            assert media.file_path.endswith(filename.split('.')[-1])
+
+            # Проверяем что tweet_id пока NULL
+            assert media.tweet_id is None  # Медиа еще не привязано
+
             media_list.append(media)
 
-            print(f"--- Фабрика: Медиа ID {media_id} создано ---")  # Отладочный принт
-
-        # Объекты уже в сессии, коммит не нужен, т.к. API эндпоинт его сделал.
         # Возвращаем список созданных объектов
         return media_list
 
     # Фикстура возвращает саму функцию _factory
     return _factory
+
+
+# # Фикстура для загрузки медиа
+# @pytest_asyncio.fixture(scope="function")
+# async def uploaded_media(
+#         authenticated_client: AsyncClient,
+#         db_session: AsyncSession
+# ) -> Media:
+#     """
+#     Загружает тестовый медиафайл через API /medias,
+#     проверяет запись в БД и возвращает объект Media.
+#     Доступна для всех тестов.
+#     """
+#     # Создаем "файл" в памяти
+#     file_content = b"this is a test image content"
+#     filename = "test_upload.png"
+#     content_type = "image/png"
+#
+#     files = {"file": (filename, file_content, content_type)}
+#
+#     # Используем API для загрузки
+#     response = await authenticated_client.post("/api/medias", files=files)
+#
+#     # Проверяем успешность загрузки
+#     assert response.status_code == status.HTTP_201_CREATED
+#     json_response = response.json()
+#     assert json_response["result"] is True
+#     assert "media_id" in json_response
+#     media_id = json_response["media_id"]
+#
+#     # Получаем объект Media из БД
+#     media: Media | None = await db_session.get(Media, media_id)
+#     assert media is not None
+#
+#     # Проверяем, что файл физически создался
+#     assert media.file_path.endswith(filename.split('.')[-1])  # Проверяем расширение
+#
+#     # Проверяем что tweet_id пока NULL
+#     assert media.tweet_id is None  # Медиа еще не привязано
+#
+#     # Возвращаем созданный и проверенный объект Media
+#     return media
