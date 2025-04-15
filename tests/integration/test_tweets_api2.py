@@ -1,5 +1,4 @@
 import pytest
-import pytest_asyncio
 from httpx import AsyncClient
 from fastapi import status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -73,30 +72,6 @@ async def test_create_tweet_unauthorized(client: AsyncClient):
 
 
 # --- Тесты на создание твита с медиа ---
-
-# Фикстура для загрузки медиа
-@pytest_asyncio.fixture(scope="function")
-async def uploaded_media(authenticated_client: AsyncClient, db_session: AsyncSession) -> Media:
-    """Загружает тестовый медиафайл и возвращает объект Media."""
-    # Создаем "файл" в памяти
-    file_content = b"this is a test image content"
-    files = {"file": ("test_image.jpg", file_content, "image/jpeg")}
-    response = await authenticated_client.post("/api/medias", files=files)
-
-    assert response.status_code == status.HTTP_201_CREATED
-    json_response = response.json()
-    assert json_response["result"] is True
-    media_id = json_response["media_id"]
-
-    # Получаем объект Media из БД
-    media = await db_session.get(Media, media_id)
-    assert media is not None
-    # Проверяем, что файл физически создался
-    assert media.file_path.endswith(".jpg")
-    # Убедимся, что tweet_id пока NULL
-    assert media.tweet_id is None
-    return media
-
 
 async def test_create_tweet_with_media_success(
         authenticated_client: AsyncClient,
