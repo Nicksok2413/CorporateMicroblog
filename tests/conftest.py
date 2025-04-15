@@ -1,5 +1,8 @@
-import uuid
+from pathlib import Path
+from shutil import rmtree
+from tempfile import gettempdir
 from typing import AsyncGenerator
+from uuid import uuid4
 
 import pytest
 import pytest_asyncio
@@ -15,6 +18,43 @@ assert settings.TESTING, "Тесты должны запускаться с TEST
 from src.core.database import Base, get_db_session
 from src.main import app
 from src.models import User
+
+
+# --- Фикстура для автоматической очистки временных папок ---
+# Используем scope="session", чтобы выполнилось один раз после всех тестов
+# autouse=True означает, что фикстура будет использоваться автоматически без явного запроса
+@pytest.fixture(scope="session", autouse=True)
+def cleanup_temp_dirs(request):
+    """Очищает временные директории для медиа и логов после завершения сессии тестов."""
+    # Код до yield выполнится перед началом сессии (здесь не нужен)
+    yield
+    # Код после yield выполнится после завершения сессии
+    print("\nОчистка временных директорий после тестов...")
+
+    temp_media_path = Path(gettempdir()) / "temp_media"
+    temp_log_path = Path(gettempdir()) / "temp_logs"
+
+    deleted_count = 0
+    errors = []
+
+    for temp_path in [temp_media_path, temp_log_path]:
+        if temp_path.exists() and temp_path.is_dir():
+            try:
+                # Используем shutil.rmtree для рекурсивного удаления директории и ее содержимого
+                rmtree(temp_path)
+                print(f"Успешно удалена директория: {temp_path}")
+                deleted_count += 1
+            except OSError as exc:
+                error_msg = f"Ошибка при удалении директории {temp_path}: {exc}"
+                print(error_msg)
+                errors.append(error_msg)
+        else:
+            print(f"Директория для очистки не найдена: {temp_path}")
+
+    if errors:
+        print(f"Завершено с ошибками при очистке: {errors}")
+    else:
+        print(f"Очистка временных директорий завершена ({deleted_count} удалено).")
 
 
 # --- Настройка Тестовой Базы Данных ---
@@ -89,7 +129,7 @@ async def client(override_get_db: AsyncSession) -> AsyncGenerator[AsyncClient, N
 @pytest_asyncio.fixture(scope="function")
 async def test_user(db_session: AsyncSession) -> User:
     """Создает тестового пользователя с уникальным api_key в БД и возвращает его объект."""
-    unique_suffix = uuid.uuid4().hex[:6]  # Генерируем короткий уникальный суффикс
+    unique_suffix = uuid4().hex[:6]  # Генерируем короткий уникальный суффикс
     user = User(name=f"Test User", api_key=f"test_key_{unique_suffix}")  # Делаем api_key уникальным
     db_session.add(user)
     await db_session.commit()
