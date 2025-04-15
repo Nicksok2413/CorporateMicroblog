@@ -392,7 +392,7 @@ async def test_get_tweet_feed_unauthorized(client: AsyncClient):
 
 async def test_like_tweet_success(
         authenticated_client: AsyncClient,  # Клиент test_user
-        tweet_for_likes: Tweet,
+        tweet_for_tests: Tweet,
         test_user: User,
         db_session: AsyncSession
 ):
@@ -421,7 +421,7 @@ async def test_like_tweet_not_found(authenticated_client: AsyncClient):
     assert f"Твит с ID 99999 не найден" in json_response["error_message"]
 
 
-async def test_like_tweet_unauthorized(client: AsyncClient, tweet_for_likes: Tweet):
+async def test_like_tweet_unauthorized(client: AsyncClient, tweet_for_tests: Tweet):
     """Тест лайка без аутентификации."""
     response = await client.post(f"/api/tweets/{tweet_for_tests.id}/likes")
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
@@ -431,7 +431,7 @@ async def test_like_tweet_unauthorized(client: AsyncClient, tweet_for_likes: Twe
 
 async def test_unlike_tweet_success(
         authenticated_client: AsyncClient,
-        tweet_for_likes: Tweet,
+        tweet_for_tests: Tweet,
         test_user: User,
         db_session: AsyncSession
 ):
@@ -457,7 +457,7 @@ async def test_unlike_tweet_success(
 
 async def test_unlike_tweet_not_found_like(
         authenticated_client: AsyncClient,
-        tweet_for_likes: Tweet
+        tweet_for_tests: Tweet
 ):
     """Тест удаления несуществующего лайка (твит не был лайкнут)."""
     response = await authenticated_client.delete(f"/api/tweets/{tweet_for_tests.id}/likes")
@@ -478,7 +478,7 @@ async def test_unlike_tweet_not_found_tweet(authenticated_client: AsyncClient):
     assert json_response["error_type"] == "not_found"
 
 
-async def test_unlike_tweet_unauthorized(client: AsyncClient, tweet_for_likes: Tweet):
+async def test_unlike_tweet_unauthorized(client: AsyncClient, tweet_for_tests: Tweet):
     """Тест удаления лайка без аутентификации."""
     response = await client.delete(f"/api/tweets/{tweet_for_tests.id}/likes")
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
