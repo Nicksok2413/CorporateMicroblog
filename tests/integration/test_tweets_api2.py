@@ -3,7 +3,6 @@ import pytest_asyncio
 from httpx import AsyncClient
 from fastapi import status
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Type
 
 from src.models import User, Tweet, Media
 
@@ -77,7 +76,7 @@ async def test_create_tweet_unauthorized(client: AsyncClient):
 
 # Фикстура для загрузки медиа
 @pytest_asyncio.fixture(scope="function")
-async def uploaded_media(authenticated_client: AsyncClient, db_session: AsyncSession) -> Type[Media]:
+async def uploaded_media(authenticated_client: AsyncClient, db_session: AsyncSession) -> Media:
     """Загружает тестовый медиафайл и возвращает объект Media."""
     # Создаем "файл" в памяти
     file_content = b"this is a test image content"
@@ -147,7 +146,6 @@ async def test_create_tweet_with_nonexistent_media(authenticated_client: AsyncCl
     assert json_response["result"] is False
     assert json_response["error_type"] == "not_found"
     assert "Медиафайл с ID 99999 не найден" in json_response["error_message"]
-
 
 # TODO: Добавить тесты для создания твита с несколькими медиа
 # TODO: Добавить тесты для получения ленты твитов
