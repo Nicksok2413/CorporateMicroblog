@@ -11,9 +11,9 @@ from src.core.config import settings
 
 assert settings.TESTING, "Тесты должны запускаться с TESTING=True"
 
-from src.core.database import Base, get_db_session  # Импортируем зависимость БД
-from src.main import app  # Импортируем наше FastAPI приложение
-from src.models import User  # Импортируем модель User для фикстуры
+from src.core.database import Base, get_db_session
+from src.main import app
+from src.models import User
 
 
 # --- Настройка Тестовой Базы Данных ---
@@ -40,14 +40,8 @@ def db_session_factory(db_engine) -> async_sessionmaker[AsyncSession]:
 # Создаем новую сессию для каждой тестовой функции (используем транзакции для изоляции тестов)
 @pytest_asyncio.fixture(scope="function")
 async def db_session(db_session_factory: async_sessionmaker[AsyncSession]) -> AsyncGenerator[AsyncSession, None]:
-    """Yields a SQLAlchemy session with a transaction that is rolled back after the test."""
+    """Создает сеанс SQLAlchemy с транзакцией, которая откатывается после теста."""
     async with db_session_factory() as session:
-        # # --- РАСКОММЕНТИРОВАТЬ ДЛЯ ДИАГНОСТИКИ ---
-        # print("\n--- Очистка таблицы users перед тестом ---")
-        # await session.execute(sa.delete(User))
-        # await session.commit()  # Коммит для DELETE перед begin() теста
-        # # --- КОНЕЦ ДИАГНОСТИКИ ---
-
         await session.begin()
         try:
             yield session
@@ -88,9 +82,19 @@ async def client(override_get_db: AsyncSession) -> AsyncGenerator[AsyncClient, N
 # --- Вспомогательные фикстуры ---
 
 @pytest_asyncio.fixture(scope="function")
-async def test_user(db_session: AsyncSession) -> User:
+async def test_user_nick(db_session: AsyncSession) -> User:
     """Создает тестового пользователя в БД и возвращает его объект."""
-    user = User(name="Test User", api_key="test_key")
+    user = User(name="Test Nick", api_key="test")
+    db_session.add(user)
+    await db_session.commit()
+    await db_session.refresh(user)
+    return user
+
+
+@pytest_asyncio.fixture(scope="function")
+async def test_user_alice(db_session: AsyncSession) -> User:
+    """Создает второго тестового пользователя."""
+    user = User(name="Test Alice", api_key="alice_test_key")
     db_session.add(user)
     await db_session.commit()
     await db_session.refresh(user)
@@ -99,7 +103,7 @@ async def test_user(db_session: AsyncSession) -> User:
 
 @pytest_asyncio.fixture(scope="function")
 async def test_user_bob(db_session: AsyncSession) -> User:
-    """Создает второго тестового пользователя."""
+    """Создает третьего тестового пользователя."""
     user = User(name="Test Bob", api_key="bob_test_key")
     db_session.add(user)
     await db_session.commit()
