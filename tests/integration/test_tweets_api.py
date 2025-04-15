@@ -44,7 +44,7 @@ async def test_create_tweet_simple_success(authenticated_client: AsyncClient, te
     assert tweet is not None
     assert tweet.id == tweet_id
     assert tweet.content == tweet_text
-    assert tweet.author_id == test_user_nick.id
+    assert tweet.author_id == test_user.id
     assert tweet.attachments == []  # В SQLAlchemy 2.0 пустая коллекция
 
 
@@ -65,7 +65,7 @@ async def test_create_tweet_with_media_success(authenticated_client: AsyncClient
     tweet = await db_session.get(Tweet, tweet_id)
     assert tweet is not None
     assert tweet.content == tweet_text
-    assert tweet.author_id == test_user_nick.id
+    assert tweet.author_id == test_user.id
 
     # Проверяем медиа в БД
     media = await db_session.get(Media, media_id)
@@ -135,8 +135,8 @@ async def test_get_feed_with_own_tweets(authenticated_client: AsyncClient, test_
     assert len(tweets) == 1
     assert tweets[0]["id"] == tweet_id
     assert tweets[0]["content"] == "My own tweet"
-    assert tweets[0]["author"]["id"] == test_user_nick.id
-    assert tweets[0]["author"]["name"] == test_user_nick.name
+    assert tweets[0]["author"]["id"] == test_user.id
+    assert tweets[0]["author"]["name"] == test_user.name
     assert tweets[0]["likes"] == []
     assert tweets[0]["attachments"] == []
 
@@ -182,13 +182,13 @@ async def test_get_feed_with_followed_tweets(
     assert alice_tweet_in_feed["content"] == "Alice's tweet"
     assert alice_tweet_in_feed["author"]["id"] == test_user_alice.id
     assert len(alice_tweet_in_feed["likes"]) == 1
-    assert alice_tweet_in_feed["likes"][0]["user_id"] == test_user_nick.id  # Проверяем алиас user_id
-    assert alice_tweet_in_feed["likes"][0]["name"] == test_user_nick.name
+    assert alice_tweet_in_feed["likes"][0]["user_id"] == test_user.id  # Проверяем алиас user_id
+    assert alice_tweet_in_feed["likes"][0]["name"] == test_user.name
 
     # Проверяем твит Nick'а в ленте Nick'а
     nick_tweet_in_feed = next(t for t in tweets_in_feed if t["id"] == nick_tweet_id)
     assert nick_tweet_in_feed["content"] == "Nick's tweet"
-    assert nick_tweet_in_feed["author"]["id"] == test_user_nick.id
+    assert nick_tweet_in_feed["author"]["id"] == test_user.id
     assert len(nick_tweet_in_feed["likes"]) == 0
 
 
@@ -295,9 +295,9 @@ async def test_like_tweet_success(authenticated_client: AsyncClient, test_user_n
     assert response_like.json()["result"] is True
 
     # Проверяем лайк в БД
-    like = await db_session.get(Like, (test_user_nick.id, tweet_id))
+    like = await db_session.get(Like, (test_user.id, tweet_id))
     assert like is not None
-    assert like.user_id == test_user_nick.id
+    assert like.user_id == test_user.id
     assert like.tweet_id == tweet_id
 
 
@@ -349,7 +349,7 @@ async def test_unlike_tweet_success(authenticated_client: AsyncClient, test_user
     # Лайкаем
     await authenticated_client.post(f"/api/tweets/{tweet_id}/likes")
     # Проверяем, что лайк есть
-    like_before = await db_session.get(Like, (test_user_nick.id, tweet_id))
+    like_before = await db_session.get(Like, (test_user.id, tweet_id))
     assert like_before is not None
 
     # Убираем лайк
@@ -359,5 +359,5 @@ async def test_unlike_tweet_success(authenticated_client: AsyncClient, test_user
 
     # Проверяем, что лайка нет
     await db_session.flush()
-    like_after = await db_session.get(Like, (test_user_nick.id, tweet_id))
+    like_after = await db_session.get(Like, (test_user.id, tweet_id))
     assert like_after is None

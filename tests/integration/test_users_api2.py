@@ -22,12 +22,12 @@ async def test_get_my_profile_invalid_key(client: AsyncClient):
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
-async def test_get_my_profile_success(authenticated_client: AsyncClient, test_user_nick: User):
+async def test_get_my_profile_success(authenticated_client: AsyncClient, test_user: User):
     response = await authenticated_client.get("/api/users/me")
     assert response.status_code == status.HTTP_200_OK
     profile = response.json()["user"]
-    assert profile["id"] == test_user_nick.id
-    assert profile["name"] == test_user_nick.name
+    assert profile["id"] == test_user.id
+    assert profile["name"] == test_user.name
     assert profile["followers"] == []
     assert profile["following"] == []
 
@@ -56,8 +56,8 @@ async def test_follow_user_unauthorized(client: AsyncClient, test_user_alice: Us
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 
-async def test_follow_user_self(authenticated_client: AsyncClient, test_user_nick: User):
-    response = await authenticated_client.post(f"/api/users/{test_user_nick.id}/follow")
+async def test_follow_user_self(authenticated_client: AsyncClient, test_user: User):
+    response = await authenticated_client.post(f"/api/users/{test_user.id}/follow")
     assert response.status_code == status.HTTP_403_FORBIDDEN  # Используем PermissionDeniedError
 
 
@@ -66,18 +66,18 @@ async def test_follow_non_existent_user(authenticated_client: AsyncClient):
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
-async def test_follow_user_success(authenticated_client: AsyncClient, test_user_nick: User, test_user_alice: User,
+async def test_follow_user_success(authenticated_client: AsyncClient, test_user: User, test_user_alice: User,
                                    db_session: AsyncSession):
     response = await authenticated_client.post(f"/api/users/{test_user_alice.id}/follow")
     assert response.status_code == status.HTTP_201_CREATED
     assert response.json()["result"] is True
 
     # Проверяем в БД (хотя можно и через API профиля)
-    await db_session.refresh(test_user_nick, attribute_names=['following'])
+    await db_session.refresh(test_user, attribute_names=['following'])
     await db_session.refresh(test_user_alice, attribute_names=['followers'])
-    follow_relation = await db_session.get(Follow, (test_user_nick.id, test_user_alice.id))
+    follow_relation = await db_session.get(Follow, (test_user.id, test_user_alice.id))
     assert follow_relation is not None
-    assert follow_relation.follower_id == test_user_nick.id
+    assert follow_relation.follower_id == test_user.id
     assert follow_relation.following_id == test_user_alice.id
 
     # Проверка через API
@@ -89,7 +89,7 @@ async def test_follow_user_success(authenticated_client: AsyncClient, test_user_
     response_alice = await authenticated_client.get(f"/api/users/{test_user_alice.id}")
     followers_list = response_alice.json()["user"]["followers"]
     assert len(followers_list) == 1
-    assert followers_list[0]["id"] == test_user_nick.id
+    assert followers_list[0]["id"] == test_user.id
 
 
 async def test_follow_user_already_followed(authenticated_client: AsyncClient, test_user_alice: User):
@@ -107,8 +107,8 @@ async def test_unfollow_user_unauthorized(client: AsyncClient, test_user_alice: 
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 
-async def test_unfollow_user_self(authenticated_client: AsyncClient, test_user_nick: User):
-    response = await authenticated_client.delete(f"/api/users/{test_user_nick.id}/follow")
+async def test_unfollow_user_self(authenticated_client: AsyncClient, test_user: User):
+    response = await authenticated_client.delete(f"/api/users/{test_user.id}/follow")
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
@@ -133,7 +133,7 @@ async def test_unfollow_user_success(authenticated_client: AsyncClient, test_use
     assert response.json()["result"] is True
 
     # Проверяем в БД
-    follow_relation = await db_session.get(Follow, (test_user_nick.id, test_user_alice.id))
+    follow_relation = await db_session.get(Follow, (test_user.id, test_user_alice.id))
     assert follow_relation is None
 
     # Проверка через API

@@ -82,9 +82,9 @@ async def client(override_get_db: AsyncSession) -> AsyncGenerator[AsyncClient, N
 # --- Вспомогательные фикстуры ---
 
 @pytest_asyncio.fixture(scope="function")
-async def test_user_nick(db_session: AsyncSession) -> User:
+async def test_user(db_session: AsyncSession) -> User:
     """Создает тестового пользователя в БД и возвращает его объект."""
-    user = User(name="Test Nick", api_key="test")
+    user = User(name="Test User", api_key="test_key")
     db_session.add(user)
     await db_session.commit()
     await db_session.refresh(user)
@@ -113,7 +113,7 @@ async def test_user_bob(db_session: AsyncSession) -> User:
 
 # Фикстура для аутентифицированного клиента
 @pytest.fixture(scope="function")
-def authenticated_client(client: AsyncClient, test_user_nick: User) -> AsyncClient:
+def authenticated_client(client: AsyncClient, test_user: User) -> AsyncClient:
     """Возвращает тестовый клиент с установленным заголовком api-key тестового пользователя."""
-    client.headers[settings.API_KEY_HEADER] = test_user_nick.api_key
+    client.headers[settings.API_KEY_HEADER] = test_user.api_key
     return client
