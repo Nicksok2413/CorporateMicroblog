@@ -113,7 +113,7 @@ async def test_user_bob(db_session: AsyncSession) -> User:
 
 # Фикстура для аутентифицированного клиента
 @pytest.fixture(scope="function")
-def authenticated_client(client: AsyncClient, test_user: User) -> AsyncClient:
+def authenticated_client(client: AsyncClient, test_user_nick: User) -> AsyncClient:
     """Возвращает тестовый клиент с установленным заголовком api-key тестового пользователя."""
-    client.headers[settings.API_KEY_HEADER] = test_user.api_key
+    client.headers[settings.API_KEY_HEADER] = test_user_nick.api_key
     return client
