@@ -18,7 +18,7 @@ assert settings.TESTING, "Тесты должны запускаться с TEST
 
 from src.core.database import Base, get_db_session
 from src.main import app
-from src.models import Media, User
+from src.models import Follow, Like, Media, Tweet, User
 
 
 # --- Фикстура для автоматической очистки временных папок ---
@@ -130,8 +130,7 @@ async def client(override_get_db: AsyncSession) -> AsyncGenerator[AsyncClient, N
 @pytest_asyncio.fixture(scope="function")
 async def test_user(db_session: AsyncSession) -> User:
     """Создает тестового пользователя с уникальным api_key в БД и возвращает его объект."""
-    unique_suffix = uuid4().hex[:6]  # Генерируем короткий уникальный суффикс
-    user = User(name=f"Test User", api_key=f"test_key_{unique_suffix}")  # Делаем api_key уникальным
+    user = User(name=f"Test User", api_key=f"test_key_{uuid4().hex[:6]}")  # Делаем api_key уникальным
     db_session.add(user)
     await db_session.commit()
     await db_session.refresh(user)
@@ -140,8 +139,8 @@ async def test_user(db_session: AsyncSession) -> User:
 
 @pytest_asyncio.fixture(scope="function")
 async def test_user_alice(db_session: AsyncSession) -> User:
-    """Создает второго тестового пользователя."""
-    user = User(name="Test Alice", api_key="alice_test_key")
+    """Создает второго тестового пользователя с уникальным api_key."""
+    user = User(name="Test Alice", api_key=f"alice_test_{uuid4().hex[:6]}")
     db_session.add(user)
     await db_session.commit()
     await db_session.refresh(user)
@@ -150,8 +149,8 @@ async def test_user_alice(db_session: AsyncSession) -> User:
 
 @pytest_asyncio.fixture(scope="function")
 async def test_user_bob(db_session: AsyncSession) -> User:
-    """Создает третьего тестового пользователя."""
-    user = User(name="Test Bob", api_key="bob_test_key")
+    """Создает третьего тестового пользователя с уникальным api_key."""
+    user = User(name="Test Bob", api_key=f"bob_test_{uuid4().hex[:6]}")
     db_session.add(user)
     await db_session.commit()
     await db_session.refresh(user)
@@ -206,3 +205,84 @@ async def uploaded_media(
 
     # Возвращаем созданный и проверенный объект Media
     return media
+
+
+@pytest_asyncio.fixture(scope="function")
+async def uploaded_media_list(
+        authenticated_client: AsyncClient,
+        db_session: AsyncSession
+) -> list[Media]:
+    """Фикстура, загружающая два медиафайла."""
+    media_list = []
+    for i in range(2):
+        file_content = f"test content {i}".encode()
+        filename = f"test_multi_{i}.jpg"
+        content_type = "image/jpeg"
+        files = {"file": (filename, file_content, content_type)}
+        response = await authenticated_client.post("/api/medias", files=files)
+        assert response.status_code == status.HTTP_201_CREATED
+        json_response = response.json()
+        media_id = json_response["media_id"]
+        media: Media | None = await db_session.get(Media, media_id)
+        assert media is not None
+        media_list.append(media)
+    return media_list
+
+
+@pytest_asyncio.fixture(scope="function")
+async def feed_setup(
+        db_session: AsyncSession,
+        test_user: User,
+        test_user_alice: User,
+        test_user_bob: User,
+        uploaded_media: Media
+):
+    """Настраивает данные для тестов ленты: пользователи, подписки, твиты, лайки."""
+    # 1. Подписки: test_user -> alice
+    follow = Follow(follower_id=test_user.id, following_id=test_user_alice.id)
+    db_session.add(follow)
+
+    # 2. Твиты
+    tweet_user = Tweet(author_id=test_user.id, content="My own tweet")
+    tweet_alice_1 = Tweet(author_id=test_user_alice.id, content="Alice's tweet 1")
+    tweet_alice_2 = Tweet(author_id=test_user_alice.id, content="Alice's tweet 2 with media")
+    tweet_bob = Tweet(author_id=test_user_bob.id, content="Bob's tweet (should not be in feed)")
+    db_session.add_all([tweet_user, tweet_alice_1, tweet_alice_2, tweet_bob])
+    await db_session.flush()  # Получаем ID твитов
+
+    # Привязываем медиа к tweet_alice_2
+    uploaded_media.tweet_id = tweet_alice_2.id
+    # db_session.add(uploaded_media) # Не нужно, уже отслеживается
+
+    # 3. Лайки (для проверки структуры и сортировки)
+    # bob лайкает tweet_alice_1
+    like1 = Like(user_id=test_user_bob.id, tweet_id=tweet_alice_1.id)
+    # bob и test_user лайкают tweet_alice_2
+    like2 = Like(user_id=test_user_bob.id, tweet_id=tweet_alice_2.id)
+    like3 = Like(user_id=test_user.id, tweet_id=tweet_alice_2.id)
+    # alice лайкает tweet_user
+    like4 = Like(user_id=test_user_alice.id, tweet_id=tweet_user.id)
+    db_session.add_all([like1, like2, like3, like4])
+
+    await db_session.commit()
+    # Возвращаем ID для проверок
+    return {
+        "user": test_user,
+        "alice": test_user_alice,
+        "bob": test_user_bob,
+        "tweet_user_id": tweet_user.id,
+        "tweet_alice_1_id": tweet_alice_1.id,
+        "tweet_alice_2_id": tweet_alice_2.id,
+        "tweet_bob_id": tweet_bob.id,
+        "media": uploaded_media
+    }
+
+
+@pytest_asyncio.fixture(scope="function")
+async def tweet_for_likes(db_session: AsyncSession, test_user_alice: User) -> Tweet:
+    """Фикстура, создающая твит для тестов лайков."""
+    tweet = Tweet(author_id=test_user_alice.id, content="Tweet to be liked")
+    db_session.add(tweet)
+    await db_session.commit()
+    await db_session.refresh(tweet)
+    return tweet
