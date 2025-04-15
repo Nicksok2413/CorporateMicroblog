@@ -3,6 +3,7 @@ import pytest_asyncio
 from httpx import AsyncClient
 from fastapi import status
 from sqlalchemy.ext.asyncio import AsyncSession
+from typing import Type
 
 from src.models import User, Tweet, Media
 
@@ -26,6 +27,7 @@ async def test_create_tweet_success_no_media(
     assert json_response["result"] is True
     assert "tweet_id" in json_response
     new_tweet_id = json_response["tweet_id"]
+    assert new_tweet_id > 0
 
     # Проверяем, что твит реально создался в БД
     tweet_in_db = await db_session.get(Tweet, new_tweet_id)
@@ -33,7 +35,7 @@ async def test_create_tweet_success_no_media(
     assert tweet_in_db.content == tweet_data["tweet_data"]
     assert tweet_in_db.author_id == test_user.id
     # Проверяем, что медиа не привязаны
-    assert not tweet_in_db.attachments  # В модели 1:N это будет пустой список
+    assert not tweet_in_db.attachments
 
 
 async def test_create_tweet_too_long(authenticated_client: AsyncClient):
@@ -71,11 +73,11 @@ async def test_create_tweet_unauthorized(client: AsyncClient):
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 
-# --- Тесты на создание твита с медиа (требуют загрузки файлов) ---
+# --- Тесты на создание твита с медиа ---
 
-# Сначала нужно создать фикстуру для загрузки медиа
+# Фикстура для загрузки медиа
 @pytest_asyncio.fixture(scope="function")
-async def uploaded_media(authenticated_client: AsyncClient, db_session: AsyncSession) -> Media:
+async def uploaded_media(authenticated_client: AsyncClient, db_session: AsyncSession) -> Type[Media]:
     """Загружает тестовый медиафайл и возвращает объект Media."""
     # Создаем "файл" в памяти
     file_content = b"this is a test image content"
@@ -90,10 +92,9 @@ async def uploaded_media(authenticated_client: AsyncClient, db_session: AsyncSes
     # Получаем объект Media из БД
     media = await db_session.get(Media, media_id)
     assert media is not None
-    # Проверяем, что файл физически создался (если используется файловая система)
-    # Для тестов с SQLite это менее актуально, но можно добавить проверку пути
+    # Проверяем, что файл физически создался
     assert media.file_path.endswith(".jpg")
-    # ВАЖНО: Убедимся, что tweet_id пока NULL
+    # Убедимся, что tweet_id пока NULL
     assert media.tweet_id is None
     return media
 
@@ -119,10 +120,12 @@ async def test_create_tweet_with_media_success(
     # Проверяем твит в БД
     tweet_in_db = await db_session.get(Tweet, new_tweet_id)
     assert tweet_in_db is not None
+    assert tweet_in_db.content == tweet_data["tweet_data"]
     assert tweet_in_db.author_id == test_user.id
 
     # Проверяем медиа в БД
     await db_session.refresh(uploaded_media)  # Обновляем объект media
+    assert uploaded_media is not None
     assert uploaded_media.tweet_id == new_tweet_id  # Проверяем, что tweet_id установился
 
     # Проверяем связь через твит
@@ -131,9 +134,7 @@ async def test_create_tweet_with_media_success(
     assert tweet_in_db.attachments[0].id == uploaded_media.id
 
 
-async def test_create_tweet_with_nonexistent_media(
-        authenticated_client: AsyncClient,
-):
+async def test_create_tweet_with_nonexistent_media(authenticated_client: AsyncClient):
     """Тест создания твита с несуществующим media_id."""
     tweet_data = {
         "tweet_data": "Tweet with bad media!",
@@ -149,3 +150,7 @@ async def test_create_tweet_with_nonexistent_media(
 
 
 # TODO: Добавить тесты для создания твита с несколькими медиа
+# TODO: Добавить тесты для получения ленты твитов
+# TODO: Добавить тесты для удаления твитов
+# TODO: Добавить тесты для лайков
+# TODO: Добавить тесты для удаления лайков
