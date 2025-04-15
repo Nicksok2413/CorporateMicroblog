@@ -84,9 +84,9 @@ async def client(override_get_db: AsyncSession) -> AsyncGenerator[AsyncClient, N
 @pytest_asyncio.fixture(scope="function")
 async def test_user(db_session: AsyncSession) -> User:
     """Создает тестового пользователя в БД и возвращает его объект."""
-    user = User(name="Test User", api_key="test_key")
+    user = User(name="test user", api_key="test")
     db_session.add(user)
-    await db_session.commit()
+    await db_session.flush()
     await db_session.refresh(user)
     return user
 
@@ -96,7 +96,7 @@ async def test_user_alice(db_session: AsyncSession) -> User:
     """Создает второго тестового пользователя."""
     user = User(name="Test Alice", api_key="alice_test_key")
     db_session.add(user)
-    await db_session.commit()
+    await db_session.flush()
     await db_session.refresh(user)
     return user
 
@@ -106,7 +106,7 @@ async def test_user_bob(db_session: AsyncSession) -> User:
     """Создает третьего тестового пользователя."""
     user = User(name="Test Bob", api_key="bob_test_key")
     db_session.add(user)
-    await db_session.commit()
+    await db_session.flush()
     await db_session.refresh(user)
     return user
 
