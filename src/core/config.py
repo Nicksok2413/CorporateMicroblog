@@ -2,6 +2,7 @@
 
 from functools import cached_property
 from pathlib import Path
+from tempfile import gettempdir
 
 from pydantic import Field, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -16,12 +17,6 @@ class Settings(BaseSettings):
     API_VERSION: str = "1.0.0"
     # URL-префикс для доступа к медиа через FastAPI/Nginx
     MEDIA_URL_PREFIX: str = "/media"
-
-    # --- Пути внутри контейнера (для монтирования Volumes) ---
-    # Путь к папке для хранения загруженных медиафайлов
-    MEDIA_ROOT_PATH: Path = Path("/media")
-    # Путь к папке для хранения лог-файлов
-    LOG_ROOT_PATH: Path = Path("/logs")
 
     # --- Настройки, читаемые из .env ---
     # Настройки БД
@@ -45,6 +40,50 @@ class Settings(BaseSettings):
         # Считаем продакшеном, если не DEBUG и не TESTING
         return not self.DEBUG and not self.TESTING
 
+    # Формируем URL БД
+    @computed_field(repr=False)
+    @cached_property
+    def DATABASE_URL(self) -> str:
+        """URL для БД основной или тестовой."""
+        if self.TESTING:
+            # Используем SQLite in-memory для тестов
+            # Важно: ":memory:" создает новую БД для каждого *соединения*
+            # Чтобы одна и та же БД использовалась в рамках сессии pytest,
+            # нужно добавить "?cache=shared" и, возможно, "&uri=true"
+            return "sqlite+aiosqlite:///:memory:?cache=shared&uri=true"
+            # return "sqlite+aiosqlite:///:memory"
+        else:
+            return (
+                f"postgresql+psycopg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
+                f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+            )
+
+    # Путь к папке для хранения загруженных медиафайлов
+    @computed_field
+    @cached_property
+    def MEDIA_ROOT_PATH(self) -> Path:
+        if self.TESTING:
+            # Используем временную директорию системы, если TESTING=True
+            temp_media_path = Path(gettempdir()) / "temp_media"
+            temp_media_path.mkdir(parents=True, exist_ok=True)
+            return temp_media_path
+        else:
+            # Путь внутри Docker-контейнера
+            return Path("/media")
+
+    # Путь к папке для хранения лог-файлов
+    @computed_field
+    @cached_property
+    def LOG_ROOT_PATH(self) -> Path:
+        # Используем временную директорию системы, если TESTING=True
+        if self.TESTING:
+            temp_log_path = Path(gettempdir()) / "temp_logs"
+            temp_log_path.mkdir(parents=True, exist_ok=True)
+            return temp_log_path
+        else:
+            # Путь внутри Docker-контейнера
+            return Path("/logs")
+
     # Путь внутри контейнера к файлу лога
     @computed_field
     @cached_property
@@ -52,16 +91,6 @@ class Settings(BaseSettings):
         # Пишем в файл только в production режиме
         # Файл будет находиться в volume, смонтированном в LOG_ROOT_PATH
         return self.LOG_ROOT_PATH / "app.log" if self.PRODUCTION else None
-
-    # Формируем URL БД
-    @computed_field(repr=False)
-    @cached_property
-    def DATABASE_URL(self) -> str:
-        """URL для БД основной или тестовой."""
-        return "sqlite+aiosqlite:///./test.db" if self.TESTING else (
-            f"postgresql+psycopg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
-            f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
-        )
 
     model_config = SettingsConfigDict(
         env_file=".env",
