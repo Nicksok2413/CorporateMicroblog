@@ -1,3 +1,4 @@
+import uuid
 from typing import AsyncGenerator
 
 import pytest
@@ -18,7 +19,7 @@ from src.models import User
 
 # --- Настройка Тестовой Базы Данных ---
 # Создаём движок один раз на сессию
-@pytest_asyncio.fixture(scope="function")
+@pytest_asyncio.fixture(scope="session")
 async def db_engine() -> AsyncGenerator[AsyncEngine, None]:
     """
     Создает асинхронный движок SQLAlchemy для тестовой БД SQLite in-memory.
@@ -35,7 +36,7 @@ async def db_engine() -> AsyncGenerator[AsyncEngine, None]:
 
 
 # Создаем фабрику сессий один раз на сессию
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="session")
 def db_session_factory(db_engine: AsyncEngine) -> async_sessionmaker[AsyncSession]:
     """Возвращает фабрику сессий SQLAlchemy."""
     return async_sessionmaker(bind=db_engine, class_=AsyncSession, expire_on_commit=False)
@@ -87,12 +88,12 @@ async def client(override_get_db: AsyncSession) -> AsyncGenerator[AsyncClient, N
 
 @pytest_asyncio.fixture(scope="function")
 async def test_user(db_session: AsyncSession) -> User:
-    """Создает тестового пользователя в БД и возвращает его объект."""
-    user = User(name="test user", api_key="test")
+    """Создает тестового пользователя с уникальным api_key в БД и возвращает его объект."""
+    unique_suffix = uuid.uuid4().hex[:6]  # Генерируем короткий уникальный суффикс
+    user = User(name=f"Test User", api_key=f"test_key_{unique_suffix}")  # Делаем api_key уникальным
     db_session.add(user)
     await db_session.commit()
-    # await db_session.flush()
-    # await db_session.refresh(user)
+    await db_session.refresh(user)
     return user
 
 
@@ -102,8 +103,7 @@ async def test_user_alice(db_session: AsyncSession) -> User:
     user = User(name="Test Alice", api_key="alice_test_key")
     db_session.add(user)
     await db_session.commit()
-    # await db_session.flush()
-    # await db_session.refresh(user)
+    await db_session.refresh(user)
     return user
 
 
@@ -113,8 +113,7 @@ async def test_user_bob(db_session: AsyncSession) -> User:
     user = User(name="Test Bob", api_key="bob_test_key")
     db_session.add(user)
     await db_session.commit()
-    # await db_session.flush()
-    # await db_session.refresh(user)
+    await db_session.refresh(user)
     return user
 
 
