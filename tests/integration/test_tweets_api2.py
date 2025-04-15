@@ -1,11 +1,12 @@
 import pytest
+import pytest_asyncio
 from httpx import AsyncClient
 from fastapi import status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.config import settings
-from src.models import Like, Media, Tweet, User
+from src.models import Follow, Like, Media, Tweet, User
 
 # Помечаем все тесты в этом модуле как асинхронные
 pytestmark = pytest.mark.asyncio
@@ -163,76 +164,6 @@ async def test_create_tweet_with_multiple_media(
     assert attached_ids == expected_ids
 
 
-# --- Тесты на получение ленты твитов ---
-
-async def test_get_tweet_feed_success(
-        authenticated_client: AsyncClient,
-        feed_setup: dict
-):
-    """Тест успешного получения ленты твитов."""
-    response = await authenticated_client.get("/api/tweets")
-
-    assert response.status_code == status.HTTP_200_OK
-    json_response = response.json()
-    assert json_response["result"] is True
-    tweets_in_feed = json_response["tweets"]
-
-    # Ожидаем 3 твита: свой и два от alice
-    assert len(tweets_in_feed) == 3
-
-    # Проверяем ID твитов (порядок может зависеть от сортировки по лайкам)
-    feed_tweet_ids = {t["id"] for t in tweets_in_feed}
-    expected_ids = {
-        feed_setup["tweet_user_id"],
-        feed_setup["tweet_alice_1_id"],
-        feed_setup["tweet_alice_2_id"]
-    }
-    assert feed_tweet_ids == expected_ids
-
-    # Проверяем структуру одного из твитов (например, tweet_alice_2 с медиа и 2 лайками)
-    tweet_alice_2_data = next((t for t in tweets_in_feed if t["id"] == feed_setup["tweet_alice_2_id"]), None)
-    assert tweet_alice_2_data is not None
-    assert tweet_alice_2_data["content"] == "Alice's tweet 2 with media"
-    assert tweet_alice_2_data["author"]["id"] == feed_setup["alice"].id
-    assert tweet_alice_2_data["author"]["name"] == feed_setup["alice"].name
-
-    # Проверяем лайки
-    assert len(tweet_alice_2_data["likes"]) == 2
-    liker_ids = {like["user_id"] for like in tweet_alice_2_data["likes"]}
-    assert liker_ids == {feed_setup["user"].id, feed_setup["bob"].id}
-    # Проверяем, что имена лайкнувших тоже есть
-    assert all("name" in like for like in tweet_alice_2_data["likes"])
-
-    # Проверяем медиа
-    assert len(tweet_alice_2_data["attachments"]) == 1
-    # Проверяем, что это URL, сформированный правильно
-    media_url = tweet_alice_2_data["attachments"][0]
-    expected_media_path = feed_setup["media"].file_path
-    expected_url_part = f"{settings.MEDIA_URL_PREFIX.rstrip('/')}/{expected_media_path.lstrip('/')}"
-    assert media_url == expected_url_part
-
-    # Проверим сортировку (tweet_alice_2 с 2 лайками должен быть выше, чем tweet_alice_1 с 1 лайком)
-    # Если сортировка по ID вторична, то tweet_user (1 лайк) может быть между ними или последним
-    ids_ordered = [t["id"] for t in tweets_in_feed]
-    assert ids_ordered[0] == feed_setup["tweet_alice_2_id"]  # 2 лайка - первый
-
-
-async def test_get_tweet_feed_empty(authenticated_client: AsyncClient):
-    """Тест получения пустой ленты (пользователь ни на кого не подписан и не имеет твитов)."""
-    response = await authenticated_client.get("/api/tweets")
-
-    assert response.status_code == status.HTTP_200_OK
-    json_response = response.json()
-    assert json_response["result"] is True
-    assert json_response["tweets"] == []
-
-
-async def test_get_tweet_feed_unauthorized(client: AsyncClient):
-    """Тест получения ленты без аутентификации."""
-    response = await client.get("/api/tweets")
-    assert response.status_code == status.HTTP_401_UNAUTHORIZED
-
-
 # --- Тесты на удаление твитов ---
 
 async def test_delete_tweet_success_no_media(
@@ -337,6 +268,126 @@ async def test_delete_tweet_unauthorized(client: AsyncClient):
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 
+# --- Тесты на получение ленты твитов ---
+
+# # Фикстура создания состояния системы
+@pytest_asyncio.fixture(scope="function")
+async def feed_setup(
+        db_session: AsyncSession,
+        test_user: User,
+        test_user_alice: User,
+        test_user_bob: User,
+        uploaded_media: Media
+):
+    """Настраивает данные для тестов ленты: пользователи, подписки, твиты, лайки."""
+    # 1. Подписки: test_user -> alice
+    follow = Follow(follower_id=test_user.id, following_id=test_user_alice.id)
+    db_session.add(follow)
+
+    # 2. Твиты
+    tweet_user = Tweet(author_id=test_user.id, content="My own tweet")
+    tweet_alice_1 = Tweet(author_id=test_user_alice.id, content="Alice's tweet 1")
+    tweet_alice_2 = Tweet(author_id=test_user_alice.id, content="Alice's tweet 2 with media")
+    tweet_bob = Tweet(author_id=test_user_bob.id, content="Bob's tweet (should not be in feed)")
+    db_session.add_all([tweet_user, tweet_alice_1, tweet_alice_2, tweet_bob])
+    await db_session.flush()  # Получаем ID твитов
+
+    # Привязываем медиа к tweet_alice_2
+    uploaded_media.tweet_id = tweet_alice_2.id
+    # db_session.add(uploaded_media) # Не нужно, уже отслеживается
+
+    # 3. Лайки (для проверки структуры и сортировки)
+    # bob лайкает tweet_alice_1
+    like1 = Like(user_id=test_user_bob.id, tweet_id=tweet_alice_1.id)
+    # bob и test_user лайкают tweet_alice_2
+    like2 = Like(user_id=test_user_bob.id, tweet_id=tweet_alice_2.id)
+    like3 = Like(user_id=test_user.id, tweet_id=tweet_alice_2.id)
+    # alice лайкает tweet_user
+    like4 = Like(user_id=test_user_alice.id, tweet_id=tweet_user.id)
+    db_session.add_all([like1, like2, like3, like4])
+
+    await db_session.commit()
+    # Возвращаем ID для проверок
+    return {
+        "user": test_user,
+        "alice": test_user_alice,
+        "bob": test_user_bob,
+        "tweet_user_id": tweet_user.id,
+        "tweet_alice_1_id": tweet_alice_1.id,
+        "tweet_alice_2_id": tweet_alice_2.id,
+        "tweet_bob_id": tweet_bob.id,
+        "media": uploaded_media
+    }
+
+
+async def test_get_tweet_feed_success(
+        authenticated_client: AsyncClient,
+        feed_setup: dict
+):
+    """Тест успешного получения ленты твитов."""
+    response = await authenticated_client.get("/api/tweets")
+
+    assert response.status_code == status.HTTP_200_OK
+    json_response = response.json()
+    assert json_response["result"] is True
+    tweets_in_feed = json_response["tweets"]
+
+    # Ожидаем 3 твита: свой и два от alice
+    assert len(tweets_in_feed) == 3
+
+    # Проверяем ID твитов (порядок может зависеть от сортировки по лайкам)
+    feed_tweet_ids = {t["id"] for t in tweets_in_feed}
+    expected_ids = {
+        feed_setup["tweet_user_id"],
+        feed_setup["tweet_alice_1_id"],
+        feed_setup["tweet_alice_2_id"]
+    }
+    assert feed_tweet_ids == expected_ids
+
+    # Проверяем структуру одного из твитов (например, tweet_alice_2 с медиа и 2 лайками)
+    tweet_alice_2_data = next((t for t in tweets_in_feed if t["id"] == feed_setup["tweet_alice_2_id"]), None)
+    assert tweet_alice_2_data is not None
+    assert tweet_alice_2_data["content"] == "Alice's tweet 2 with media"
+    assert tweet_alice_2_data["author"]["id"] == feed_setup["alice"].id
+    assert tweet_alice_2_data["author"]["name"] == feed_setup["alice"].name
+
+    # Проверяем лайки
+    assert len(tweet_alice_2_data["likes"]) == 2
+    liker_ids = {like["user_id"] for like in tweet_alice_2_data["likes"]}
+    assert liker_ids == {feed_setup["user"].id, feed_setup["bob"].id}
+    # Проверяем, что имена лайкнувших тоже есть
+    assert all("name" in like for like in tweet_alice_2_data["likes"])
+
+    # Проверяем медиа
+    assert len(tweet_alice_2_data["attachments"]) == 1
+    # Проверяем, что это URL, сформированный правильно
+    media_url = tweet_alice_2_data["attachments"][0]
+    expected_media_path = feed_setup["media"].file_path
+    expected_url_part = f"{settings.MEDIA_URL_PREFIX.rstrip('/')}/{expected_media_path.lstrip('/')}"
+    assert media_url == expected_url_part
+
+    # Проверим сортировку (tweet_alice_2 с 2 лайками должен быть выше, чем tweet_alice_1 с 1 лайком)
+    # Если сортировка по ID вторична, то tweet_user (1 лайк) может быть между ними или последним
+    ids_ordered = [t["id"] for t in tweets_in_feed]
+    assert ids_ordered[0] == feed_setup["tweet_alice_2_id"]  # 2 лайка - первый
+
+
+async def test_get_tweet_feed_empty(authenticated_client: AsyncClient):
+    """Тест получения пустой ленты (пользователь ни на кого не подписан и не имеет твитов)."""
+    response = await authenticated_client.get("/api/tweets")
+
+    assert response.status_code == status.HTTP_200_OK
+    json_response = response.json()
+    assert json_response["result"] is True
+    assert json_response["tweets"] == []
+
+
+async def test_get_tweet_feed_unauthorized(client: AsyncClient):
+    """Тест получения ленты без аутентификации."""
+    response = await client.get("/api/tweets")
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
 # --- Тесты для лайков ---
 
 async def test_like_tweet_success(
@@ -346,7 +397,7 @@ async def test_like_tweet_success(
         db_session: AsyncSession
 ):
     """Тест успешного лайка твита."""
-    tweet_id = tweet_for_likes.id
+    tweet_id = tweet_for_tests.id
     response = await authenticated_client.post(f"/api/tweets/{tweet_id}/likes")
 
     assert response.status_code == status.HTTP_201_CREATED
@@ -372,7 +423,7 @@ async def test_like_tweet_not_found(authenticated_client: AsyncClient):
 
 async def test_like_tweet_unauthorized(client: AsyncClient, tweet_for_likes: Tweet):
     """Тест лайка без аутентификации."""
-    response = await client.post(f"/api/tweets/{tweet_for_likes.id}/likes")
+    response = await client.post(f"/api/tweets/{tweet_for_tests.id}/likes")
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 
@@ -385,7 +436,7 @@ async def test_unlike_tweet_success(
         db_session: AsyncSession
 ):
     """Тест успешного удаления лайка."""
-    tweet_id = tweet_for_likes.id
+    tweet_id = tweet_for_tests.id
     # Сначала ставим лайк
     like = Like(user_id=test_user.id, tweet_id=tweet_id)
     db_session.add(like)
@@ -409,7 +460,7 @@ async def test_unlike_tweet_not_found_like(
         tweet_for_likes: Tweet
 ):
     """Тест удаления несуществующего лайка (твит не был лайкнут)."""
-    response = await authenticated_client.delete(f"/api/tweets/{tweet_for_likes.id}/likes")
+    response = await authenticated_client.delete(f"/api/tweets/{tweet_for_tests.id}/likes")
     assert response.status_code == status.HTTP_404_NOT_FOUND
     json_response = response.json()
     assert json_response["result"] is False
@@ -429,5 +480,5 @@ async def test_unlike_tweet_not_found_tweet(authenticated_client: AsyncClient):
 
 async def test_unlike_tweet_unauthorized(client: AsyncClient, tweet_for_likes: Tweet):
     """Тест удаления лайка без аутентификации."""
-    response = await client.delete(f"/api/tweets/{tweet_for_likes.id}/likes")
+    response = await client.delete(f"/api/tweets/{tweet_for_tests.id}/likes")
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
