@@ -1,9 +1,9 @@
 """Сервис для управления лайками."""
 
-from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.core.exceptions import BadRequestError, ConflictError, NotFoundError
+from src.core.exceptions import BadRequestError, NotFoundError
 from src.core.logging import log
 from src.models.user import User
 from src.repositories import LikeRepository, TweetRepository
