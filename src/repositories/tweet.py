@@ -91,7 +91,9 @@ class TweetRepository(BaseRepository[Tweet, TweetCreateInternal]):
             )
             # Сортировка: по убыванию лайков, NULL значения (0 лайков) в конце
             .order_by(
-                desc(like_count_subquery.c.like_count).nulls_last()
+                desc(like_count_subquery.c.like_count).nulls_last(),
+                # Вторичная сортировка: по ID твита по убыванию (новые выше)
+                desc(Tweet.id)
             )
         )
 

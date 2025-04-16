@@ -168,17 +168,6 @@ def authenticated_client(client: AsyncClient, test_user: User) -> AsyncClient:
     return client
 
 
-# Фикстура твита
-@pytest_asyncio.fixture(scope="function")
-async def tweet_for_tests(db_session: AsyncSession, test_user_alice: User) -> Tweet:
-    """Фикстура, создающая твит для тестов."""
-    tweet = Tweet(author_id=test_user_alice.id, content="Tweet for tests")
-    db_session.add(tweet)
-    await db_session.commit()
-    await db_session.refresh(tweet)
-    return tweet
-
-
 # Фикстура фабрики загрузки медиафайлов
 @pytest.fixture(scope="function")
 def create_uploaded_media_list(
@@ -227,6 +216,7 @@ def create_uploaded_media_list(
             assert media is not None
 
             # Проверяем, что файл физически создался
+            assert (settings.MEDIA_ROOT_PATH / media.file_path).exists()
             assert media.file_path.endswith(filename.split('.')[-1])
 
             # Проверяем что tweet_id пока NULL
@@ -239,7 +229,6 @@ def create_uploaded_media_list(
 
     # Фикстура возвращает саму функцию _factory
     return _factory
-
 
 # # Фикстура для загрузки медиа
 # @pytest_asyncio.fixture(scope="function")
