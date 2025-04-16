@@ -126,7 +126,7 @@ class MediaService(BaseService[Media, MediaRepository]):
                         await out_file.write(content)
                 log.success(f"Файл '{unique_filename}' успешно сохранен.")
 
-            except (IOError, TypeError, Exception) as io_exc:
+            except (IOError, TypeError) as io_exc:
                 log.error(f"Ошибка при сохранении файла '{unique_filename}': {io_exc}", exc_info=True)
                 # Пытаемся удалить частично записанный файл
                 if save_path.exists():
@@ -156,6 +156,9 @@ class MediaService(BaseService[Media, MediaRepository]):
                         log.error(f"Не удалось удалить файл '{unique_filename}' после ошибки БД: {unlink_err}")
                 raise BadRequestError("Ошибка при сохранении информации о медиафайле.") from db_exc
 
+        except (MediaValidationError, BadRequestError):
+            # Пробрасываем наши ожидаемые ошибки дальше
+            raise
         except Exception as outer_exc:
             log.exception(f"Непредвиденная внешняя ошибка при сохранении медиа {filename}: {outer_exc}")
             await db.rollback()  # Гарантируем откат, если транзакция была начата
