@@ -168,6 +168,17 @@ def authenticated_client(client: AsyncClient, test_user: User) -> AsyncClient:
     return client
 
 
+# Фикстура твита для тестов
+@pytest_asyncio.fixture(scope="function")
+async def tweet_for_tests(db_session: AsyncSession, test_user: User) -> Tweet:
+    """Фикстура, создающая твит для тестов."""
+    tweet = Tweet(author_id=test_user.id, content="Tweet for tests")
+    db_session.add(tweet)
+    await db_session.commit()
+    await db_session.refresh(tweet)
+    return tweet
+
+
 # Фикстура фабрики загрузки медиафайлов
 @pytest.fixture(scope="function")
 def create_uploaded_media_list(
