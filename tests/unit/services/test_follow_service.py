@@ -39,9 +39,6 @@ def follow_service(
         mock_user_repo: MagicMock
 ) -> FollowService:
     service = FollowService(repo=mock_follow_repo, user_repo=mock_user_repo)
-    # Сохраняем моки для доступа в тестах
-    service._mock_follow_repo = mock_follow_repo
-    service._mock_user_repo = mock_user_repo
     return service
 
 
@@ -51,11 +48,12 @@ async def test_validate_follow_action_success(
         follow_service: FollowService,
         mock_db_session: MagicMock,
         test_user_obj: User,
-        test_alice_obj: User
+        test_alice_obj: User,
+        mock_user_repo: MagicMock,
 ):
     """Тест успешной валидации (не себя, цель существует)."""
     # Настраиваем мок
-    follow_service._mock_user_repo.get.return_value = test_alice_obj
+    mock_user_repo.get.return_value = test_alice_obj
 
     # Вызываем метод сервиса
     target_user = await follow_service._validate_follow_action(
@@ -65,13 +63,14 @@ async def test_validate_follow_action_success(
     )
 
     assert target_user == test_alice_obj
-    follow_service._mock_user_repo.get.assert_awaited_once_with(mock_db_session, obj_id=test_alice_obj.id)
+    mock_user_repo.get.assert_awaited_once_with(mock_db_session, obj_id=test_alice_obj.id)
 
 
 async def test_validate_follow_action_self_follow(
         follow_service: FollowService,
         mock_db_session: MagicMock,
-        test_user_obj: User
+        test_user_obj: User,
+        mock_user_repo: MagicMock,
 ):
     """Тест валидации при попытке подписаться/отписаться от себя."""
     # Проверяем, что выбрасывается PermissionDeniedError
@@ -83,18 +82,19 @@ async def test_validate_follow_action_self_follow(
         )
 
     assert "Вы не можете подписаться на себя" in str(exc_info.value)
-    follow_service._mock_user_repo.get.assert_not_awaited()
+    mock_user_repo.get.assert_not_awaited()
 
 
 async def test_validate_follow_action_target_not_found(
         follow_service: FollowService,
         mock_db_session: MagicMock,
-        test_user_obj: User
+        test_user_obj: User,
+        mock_user_repo: MagicMock,
 ):
     """Тест валидации, когда целевой пользователь не найден."""
     target_id = 999
     # Настраиваем мок
-    follow_service._mock_user_repo.get.return_value = None  # Цель не найдена
+    mock_user_repo.get.return_value = None  # Цель не найдена
 
     # Проверяем, что выбрасывается NotFoundError
     with pytest.raises(NotFoundError) as exc_info:
@@ -105,7 +105,7 @@ async def test_validate_follow_action_target_not_found(
         )
 
     assert f"Пользователь с ID {target_id} не найден" in str(exc_info.value)
-    follow_service._mock_user_repo.get.assert_awaited_once_with(mock_db_session, obj_id=target_id)
+    mock_user_repo.get.assert_awaited_once_with(mock_db_session, obj_id=target_id)
 
 
 # --- Тесты для follow_user ---
@@ -114,13 +114,15 @@ async def test_follow_user_success(
         follow_service: FollowService,
         mock_db_session: MagicMock,
         test_user_obj: User,
-        test_alice_obj: User
+        test_alice_obj: User,
+        mock_user_repo: MagicMock,
+        mock_follow_repo: MagicMock,
 ):
     """Тест успешной подписки."""
     # Настраиваем моки
-    follow_service._mock_user_repo.get.return_value = test_alice_obj  # Цель найдена
-    follow_service._mock_follow_repo.get_follow.return_value = None  # Еще не подписан
-    follow_service._mock_follow_repo.add_follow.return_value = None
+    mock_user_repo.get.return_value = test_alice_obj  # Цель найдена
+    mock_follow_repo.get_follow.return_value = None  # Еще не подписан
+    mock_follow_repo.add_follow.return_value = None
 
     # Вызываем метод сервиса
     await follow_service.follow_user(
@@ -128,10 +130,10 @@ async def test_follow_user_success(
     )
 
     # Проверяем вызовы
-    follow_service._mock_user_repo.get.assert_awaited_once_with(mock_db_session, obj_id=test_alice_obj.id)
-    follow_service._mock_follow_repo.get_follow.assert_awaited_once_with(mock_db_session, follower_id=test_user_obj.id,
+    mock_user_repo.get.assert_awaited_once_with(mock_db_session, obj_id=test_alice_obj.id)
+    mock_follow_repo.get_follow.assert_awaited_once_with(mock_db_session, follower_id=test_user_obj.id,
                                                                          following_id=test_alice_obj.id)
-    follow_service._mock_follow_repo.add_follow.assert_awaited_once_with(mock_db_session, follower_id=test_user_obj.id,
+    mock_follow_repo.add_follow.assert_awaited_once_with(mock_db_session, follower_id=test_user_obj.id,
                                                                          following_id=test_alice_obj.id)
     mock_db_session.commit.assert_awaited_once()  # Должен быть коммит
     mock_db_session.rollback.assert_not_awaited()  # Роллбэка быть не должно
@@ -140,7 +142,8 @@ async def test_follow_user_success(
 async def test_follow_user_validation_fails(
         follow_service: FollowService,
         mock_db_session: MagicMock,
-        test_user_obj: User
+        test_user_obj: User,
+        mock_follow_repo: MagicMock,
 ):
     """Тест подписки, когда валидация не проходит (на себя)."""
     # Используем ID текущего пользователя как цель
@@ -151,8 +154,8 @@ async def test_follow_user_validation_fails(
         )
 
     # Проверяем, что другие методы не вызывались
-    follow_service._mock_follow_repo.get_follow.assert_not_awaited()
-    follow_service._mock_follow_repo.add_follow.assert_not_awaited()
+    mock_follow_repo.get_follow.assert_not_awaited()
+    mock_follow_repo.add_follow.assert_not_awaited()
     mock_db_session.commit.assert_not_awaited()
 
 
@@ -161,13 +164,15 @@ async def test_follow_user_already_following(
         mock_db_session: MagicMock,
         test_user_obj: User,
         test_alice_obj: User,
-        test_follow_obj: Follow
+        test_follow_obj: Follow,
+        mock_user_repo: MagicMock,
+        mock_follow_repo: MagicMock,
 ):
     """Тест попытки подписаться на пользователя, на которого уже подписан."""
     # Настраиваем моки
-    follow_service._mock_user_repo.get.return_value = test_alice_obj
+    mock_user_repo.get.return_value = test_alice_obj
     # Имитируем, что подписка уже есть
-    follow_service._mock_follow_repo.get_follow.return_value = test_follow_obj
+    mock_follow_repo.get_follow.return_value = test_follow_obj
 
     # Проверяем, что выбрасывается ConflictError
     with pytest.raises(ConflictError):
@@ -176,10 +181,10 @@ async def test_follow_user_already_following(
         )
 
     # Проверяем вызовы
-    follow_service._mock_user_repo.get.assert_awaited_once()
-    follow_service._mock_follow_repo.get_follow.assert_awaited_once()
+    mock_user_repo.get.assert_awaited_once()
+    mock_follow_repo.get_follow.assert_awaited_once()
     # Проверяем, что другие методы не вызывались
-    follow_service._mock_follow_repo.add_follow.assert_not_awaited()
+    mock_follow_repo.add_follow.assert_not_awaited()
     mock_db_session.commit.assert_not_awaited()  # Коммита быть не должно
     mock_db_session.rollback.assert_not_awaited()  # Роллбэка быть не должно
 
@@ -188,14 +193,16 @@ async def test_follow_user_db_error(
         follow_service: FollowService,
         mock_db_session: MagicMock,
         test_user_obj: User,
-        test_alice_obj: User
+        test_alice_obj: User,
+        mock_user_repo: MagicMock,
+        mock_follow_repo: MagicMock,
 ):
     """Тест ошибки БД при добавлении подписки."""
     # Настраиваем моки
-    follow_service._mock_user_repo.get.return_value = test_alice_obj
-    follow_service._mock_follow_repo.get_follow.return_value = None
+    mock_user_repo.get.return_value = test_alice_obj
+    mock_follow_repo.get_follow.return_value = None
     # Имитируем ошибку БД
-    follow_service._mock_follow_repo.add_follow.side_effect = SQLAlchemyError("DB insert error")
+    mock_follow_repo.add_follow.side_effect = SQLAlchemyError("DB insert error")
 
     # Проверяем, что выбрасывается BadRequestError
     with pytest.raises(BadRequestError):
@@ -204,9 +211,9 @@ async def test_follow_user_db_error(
         )
 
     # Проверяем вызовы
-    follow_service._mock_user_repo.get.assert_awaited_once()
-    follow_service._mock_follow_repo.get_follow.assert_awaited_once()
-    follow_service._mock_follow_repo.add_follow.assert_awaited_once()
+    mock_user_repo.get.assert_awaited_once()
+    mock_follow_repo.get_follow.assert_awaited_once()
+    mock_follow_repo.add_follow.assert_awaited_once()
     mock_db_session.commit.assert_not_awaited()  # Коммита быть не должно
     mock_db_session.rollback.assert_awaited_once()  # Должен быть роллбэк
 
@@ -218,14 +225,16 @@ async def test_unfollow_user_success(
         mock_db_session: MagicMock,
         test_user_obj: User,
         test_alice_obj: User,
-        test_follow_obj: Follow
+        test_follow_obj: Follow,
+        mock_user_repo: MagicMock,
+        mock_follow_repo: MagicMock,
 ):
     """Тест успешной отписки."""
     # Настраиваем моки
-    follow_service._mock_user_repo.get.return_value = test_alice_obj
+    mock_user_repo.get.return_value = test_alice_obj
     # Имитируем, что подписка существует
-    follow_service._mock_follow_repo.get_follow.return_value = test_follow_obj
-    follow_service._mock_follow_repo.delete_follow.return_value = None
+    mock_follow_repo.get_follow.return_value = test_follow_obj
+    mock_follow_repo.delete_follow.return_value = None
 
     # Вызываем метод сервиса
     await follow_service.unfollow_user(
@@ -233,9 +242,9 @@ async def test_unfollow_user_success(
     )
 
     # Проверяем вызовы
-    follow_service._mock_user_repo.get.assert_awaited_once()
-    follow_service._mock_follow_repo.get_follow.assert_awaited_once()
-    follow_service._mock_follow_repo.delete_follow.assert_awaited_once_with(mock_db_session,
+    mock_user_repo.get.assert_awaited_once()
+    mock_follow_repo.get_follow.assert_awaited_once()
+    mock_follow_repo.delete_follow.assert_awaited_once_with(mock_db_session,
                                                                             follower_id=test_user_obj.id,
                                                                             following_id=test_alice_obj.id)
     mock_db_session.commit.assert_awaited_once()  # Должен быть коммит
@@ -246,13 +255,15 @@ async def test_unfollow_user_not_following(
         follow_service: FollowService,
         mock_db_session: MagicMock,
         test_user_obj: User,
-        test_alice_obj: User
+        test_alice_obj: User,
+        mock_user_repo: MagicMock,
+        mock_follow_repo: MagicMock,
 ):
     """Тест отписки от пользователя, на которого не подписан."""
     # Настраиваем моки
-    follow_service._mock_user_repo.get.return_value = test_alice_obj
+    mock_user_repo.get.return_value = test_alice_obj
     # Имитируем, что подписки нет
-    follow_service._mock_follow_repo.get_follow.return_value = None
+    mock_follow_repo.get_follow.return_value = None
 
     # Проверяем, что выбрасывается NotFoundError
     with pytest.raises(NotFoundError):
@@ -261,10 +272,10 @@ async def test_unfollow_user_not_following(
         )
 
     # Проверяем вызовы
-    follow_service._mock_user_repo.get.assert_awaited_once()
-    follow_service._mock_follow_repo.get_follow.assert_awaited_once()
+    mock_user_repo.get.assert_awaited_once()
+    mock_follow_repo.get_follow.assert_awaited_once()
     # Проверяем, что другие методы не вызывались
-    follow_service._mock_follow_repo.delete_follow.assert_not_awaited()
+    mock_follow_repo.delete_follow.assert_not_awaited()
     mock_db_session.commit.assert_not_awaited()
     mock_db_session.rollback.assert_not_awaited()
 
@@ -274,14 +285,16 @@ async def test_unfollow_user_db_error(
         mock_db_session: MagicMock,
         test_user_obj: User,
         test_alice_obj: User,
-        test_follow_obj: Follow
+        test_follow_obj: Follow,
+        mock_user_repo: MagicMock,
+        mock_follow_repo: MagicMock,
 ):
     """Тест ошибки БД при удалении подписки."""
     # Настраиваем моки
-    follow_service._mock_user_repo.get.return_value = test_alice_obj
-    follow_service._mock_follow_repo.get_follow.return_value = test_follow_obj
+    mock_user_repo.get.return_value = test_alice_obj
+    mock_follow_repo.get_follow.return_value = test_follow_obj
     # Имитируем ошибку БД
-    follow_service._mock_follow_repo.delete_follow.side_effect = SQLAlchemyError("DB delete error")
+    mock_follow_repo.delete_follow.side_effect = SQLAlchemyError("DB delete error")
 
     # Проверяем, что выбрасывается BadRequestError
     with pytest.raises(BadRequestError):
@@ -290,8 +303,8 @@ async def test_unfollow_user_db_error(
         )
 
     # Проверяем вызовы
-    follow_service._mock_user_repo.get.assert_awaited_once()
-    follow_service._mock_follow_repo.get_follow.assert_awaited_once()
-    follow_service._mock_follow_repo.delete_follow.assert_awaited_once()
+    mock_user_repo.get.assert_awaited_once()
+    mock_follow_repo.get_follow.assert_awaited_once()
+    mock_follow_repo.delete_follow.assert_awaited_once()
     mock_db_session.commit.assert_not_awaited()  # Коммита быть не должно
     mock_db_session.rollback.assert_awaited_once()  # Должен быть роллбэк
