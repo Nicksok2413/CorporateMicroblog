@@ -52,6 +52,23 @@ async def test_get_my_profile_success(authenticated_client: AsyncClient, test_us
 
 # --- Тесты для /api/users/{user_id} ---
 
+async def test_get_user_profile_by_id_success(authenticated_client: AsyncClient, test_user_alice: User):
+    """Тест успешного получения своего профиля /me."""
+    response = await authenticated_client.get(f"/api/users/{test_user_alice.id}")
+
+    assert response.status_code == status.HTTP_200_OK
+    json_response = response.json()
+    assert json_response["result"] is True
+    profile = json_response["user"]
+    assert profile["id"] == test_user_alice.id
+    assert profile["name"] == test_user_alice.name
+    # Проверяем наличие подписчиков и подписок, списки должны быть пустыми по умолчанию
+    assert "followers" in profile
+    assert profile["followers"] == []
+    assert "following" in profile
+    assert profile["following"] == []
+
+
 async def test_get_user_profile_by_id_not_found(client: AsyncClient):
     """Тест получения профиля несуществующего пользователя по ID."""
     response = await client.get("/api/users/9999")
@@ -61,7 +78,7 @@ async def test_get_user_profile_by_id_not_found(client: AsyncClient):
     assert json_response["error_type"] == "not_found"
 
 
-async def test_get_user_profile_by_id_success(
+async def test_get_user_profile_with_follows_by_id_success(
         client: AsyncClient,
         test_user: User,
         test_user_alice: User,
