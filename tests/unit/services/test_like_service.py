@@ -3,8 +3,8 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from sqlalchemy.exc import SQLAlchemyError  # Для имитации ошибок БД
 
-from src.core.exceptions import NotFoundError, BadRequestError
-from src.models import Tweet, User, Like
+from src.core.exceptions import BadRequestError, NotFoundError
+from src.models import Like, Tweet, User
 from src.services.like_service import LikeService
 from src.repositories import LikeRepository, TweetRepository
 

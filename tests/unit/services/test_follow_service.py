@@ -1,11 +1,11 @@
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import SQLAlchemyError  # Для имитации ошибок БД
 
-from src.core.exceptions import (NotFoundError, BadRequestError,
-                                 PermissionDeniedError, ConflictError)
-from src.models import User, Follow
+from src.core.exceptions import (BadRequestError, ConflictError,
+                                 NotFoundError, PermissionDeniedError)
+from src.models import Follow, User
 from src.repositories import FollowRepository, UserRepository
 from src.services.follow_service import FollowService
 
@@ -54,8 +54,10 @@ async def test_validate_follow_action_success(
         test_alice_obj: User
 ):
     """Тест успешной валидации (не себя, цель существует)."""
+    # Настраиваем мок
     follow_service._mock_user_repo.get.return_value = test_alice_obj
 
+    # Вызываем метод сервиса
     target_user = await follow_service._validate_follow_action(
         db=mock_db_session,
         follower_id=test_user_obj.id,
@@ -72,12 +74,14 @@ async def test_validate_follow_action_self_follow(
         test_user_obj: User
 ):
     """Тест валидации при попытке подписаться/отписаться от себя."""
+    # Проверяем, что выбрасывается PermissionDeniedError
     with pytest.raises(PermissionDeniedError) as exc_info:
         await follow_service._validate_follow_action(
             db=mock_db_session,
             follower_id=test_user_obj.id,
             following_id=test_user_obj.id
         )
+
     assert "Вы не можете подписаться на себя" in str(exc_info.value)
     follow_service._mock_user_repo.get.assert_not_awaited()
 
@@ -89,14 +93,17 @@ async def test_validate_follow_action_target_not_found(
 ):
     """Тест валидации, когда целевой пользователь не найден."""
     target_id = 999
+    # Настраиваем мок
     follow_service._mock_user_repo.get.return_value = None  # Цель не найдена
 
+    # Проверяем, что выбрасывается NotFoundError
     with pytest.raises(NotFoundError) as exc_info:
         await follow_service._validate_follow_action(
             db=mock_db_session,
             follower_id=test_user_obj.id,
             following_id=target_id
         )
+
     assert f"Пользователь с ID {target_id} не найден" in str(exc_info.value)
     follow_service._mock_user_repo.get.assert_awaited_once_with(mock_db_session, obj_id=target_id)
 
