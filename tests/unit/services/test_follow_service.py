@@ -1,7 +1,7 @@
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from sqlalchemy.exc import SQLAlchemyError  # Для имитации ошибок БД
+from sqlalchemy.exc import SQLAlchemyError
 
 from src.core.exceptions import (NotFoundError, BadRequestError,
                                  PermissionDeniedError, ConflictError)

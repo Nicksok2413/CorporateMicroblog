@@ -124,7 +124,7 @@ async def test_unlike_tweet_success(
 ):
     """Тест успешного удаления лайка."""
     tweet_id = test_tweet_obj.id
-    # Настраиваем моки
+    # Настраиваем мок
     # Имитируем, что лайк существует
     like_service._mock_like_repo.get_like.return_value = test_like_obj
     like_service._mock_like_repo.delete_like.return_value = None  # Метод ничего не возвращает
@@ -149,7 +149,7 @@ async def test_unlike_tweet_like_not_found(
 ):
     """Тест удаления несуществующего лайка."""
     tweet_id = test_tweet_obj.id
-    # Настраиваем моки
+    # Настраиваем мок
     # Имитируем, что лайк не существует
     like_service._mock_like_repo.get_like.return_value = None
 
@@ -175,7 +175,7 @@ async def test_unlike_tweet_db_error(
 ):
     """Тест ошибки БД при удалении лайка."""
     tweet_id = test_tweet_obj.id
-    # Настраиваем моки
+    # Настраиваем мок
     like_service._mock_like_repo.get_like.return_value = test_like_obj
     # Имитируем ошибку при вызове delete_like
     like_service._mock_like_repo.delete_like.side_effect = SQLAlchemyError("DB error on delete")
