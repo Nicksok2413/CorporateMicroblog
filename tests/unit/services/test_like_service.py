@@ -12,7 +12,8 @@ from src.repositories import LikeRepository, TweetRepository
 pytestmark = pytest.mark.asyncio
 
 
-# Фикстура для моков репозиториев
+# --- Фикстуры ---
+# Фикстура для мока LikeRepository
 @pytest.fixture
 def mock_like_repo() -> MagicMock:
     repo = MagicMock(spec=LikeRepository)
@@ -22,6 +23,7 @@ def mock_like_repo() -> MagicMock:
     return repo
 
 
+# Фикстура для мока TweetRepository
 @pytest.fixture
 def mock_tweet_repo() -> MagicMock:
     repo = MagicMock(spec=TweetRepository)
@@ -58,12 +60,12 @@ async def test_like_tweet_success(
     # Вызываем метод сервиса
     await like_service.like_tweet(db=mock_db_session, current_user=test_user_obj, tweet_id=test_tweet_obj.id)
 
-    # Проверяем вызовы моков
+    # Проверяем вызовы
     like_service._mock_tweet_repo.get.assert_awaited_once_with(mock_db_session, obj_id=test_tweet_obj.id)
     like_service._mock_like_repo.add_like.assert_awaited_once_with(mock_db_session, user_id=test_user_obj.id,
                                                                    tweet_id=test_tweet_obj.id)
     mock_db_session.commit.assert_awaited_once()  # Должен быть коммит
-    mock_db_session.rollback.assert_not_awaited()
+    mock_db_session.rollback.assert_not_awaited()  # Роллбэка быть не должно
 
 
 async def test_like_tweet_tweet_not_found(
@@ -80,8 +82,9 @@ async def test_like_tweet_tweet_not_found(
     with pytest.raises(NotFoundError):
         await like_service.like_tweet(db=mock_db_session, current_user=test_user_obj, tweet_id=tweet_id)
 
-    # Проверяем, что другие методы не вызывались
+    # Проверяем вызовы
     like_service._mock_tweet_repo.get.assert_awaited_once_with(mock_db_session, obj_id=tweet_id)
+    # Проверяем, что другие методы не вызывались
     like_service._mock_like_repo.add_like.assert_not_awaited()
     mock_db_session.commit.assert_not_awaited()
     mock_db_session.rollback.assert_not_awaited()
@@ -135,7 +138,7 @@ async def test_unlike_tweet_success(
     like_service._mock_like_repo.delete_like.assert_awaited_once_with(mock_db_session, user_id=test_user_obj.id,
                                                                       tweet_id=tweet_id)
     mock_db_session.commit.assert_awaited_once()  # Должен быть коммит
-    mock_db_session.rollback.assert_not_awaited()
+    mock_db_session.rollback.assert_not_awaited()  # Роллбэка быть не должно
 
 
 async def test_unlike_tweet_like_not_found(
@@ -154,9 +157,10 @@ async def test_unlike_tweet_like_not_found(
     with pytest.raises(NotFoundError):
         await like_service.unlike_tweet(db=mock_db_session, current_user=test_user_obj, tweet_id=tweet_id)
 
-    # Проверяем, что другие методы не вызывались
+    # Проверяем вызовы
     like_service._mock_like_repo.get_like.assert_awaited_once_with(mock_db_session, user_id=test_user_obj.id,
                                                                    tweet_id=tweet_id)
+    # Проверяем, что другие методы не вызывались
     like_service._mock_like_repo.delete_like.assert_not_awaited()
     mock_db_session.commit.assert_not_awaited()
     mock_db_session.rollback.assert_not_awaited()
