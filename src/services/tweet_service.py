@@ -91,6 +91,7 @@ class TweetService(BaseService[Tweet, TweetRepository]):
             log.success(f"Твит ID {tweet.id} успешно создан пользователем {current_user.id}")
             return tweet
         except NotFoundError:
+            await db.rollback()
             raise
         except SQLAlchemyError as exc:
             await db.rollback()
@@ -117,27 +118,27 @@ class TweetService(BaseService[Tweet, TweetRepository]):
         """
         log.info(f"Пользователь ID {current_user.id} пытается удалить твит ID {tweet_id}")
 
-        # Получаем твит
-        tweet_to_delete = await self.repo.get_with_attachments(db, tweet_id=tweet_id)
-
-        if not tweet_to_delete:
-            raise NotFoundError(f"Твит с ID {tweet_id} не найден.")
-
-        # Проверяем права доступа
-        if tweet_to_delete.author_id != current_user.id:
-            log.warning(
-                f"Пользователь ID {current_user.id} не имеет прав на удаление твита ID {tweet_id}. "
-                f"(ID автора твита {tweet_to_delete.author_id})."
-            )
-            raise PermissionDeniedError("Вы не можете удалить этот твит.")
-
-        # Собираем пути файлов для физического удаления
-        media_files_to_delete_paths: List[str] = [
-            media.file_path for media in tweet_to_delete.attachments
-        ]
-        log.debug(f"Найдены пути медиа для удаления: {media_files_to_delete_paths}")
-
         try:
+            # Получаем твит
+            tweet_to_delete = await self.repo.get_with_attachments(db, tweet_id=tweet_id)
+
+            if not tweet_to_delete:
+                raise NotFoundError(f"Твит с ID {tweet_id} не найден.")
+
+            # Проверяем права доступа
+            if tweet_to_delete.author_id != current_user.id:
+                log.warning(
+                    f"Пользователь ID {current_user.id} не имеет прав на удаление твита ID {tweet_id}. "
+                    f"(ID автора твита {tweet_to_delete.author_id})."
+                )
+                raise PermissionDeniedError("Вы не можете удалить этот твит.")
+
+            # Собираем пути файлов для физического удаления
+            media_files_to_delete_paths: List[str] = [
+                media.file_path for media in tweet_to_delete.attachments
+            ]
+            log.debug(f"Найдены пути медиа для удаления: {media_files_to_delete_paths}")
+
             # Помечаем твит для удаления
             await self.repo.delete(db, db_obj=tweet_to_delete)
             log.debug(f"Твит ID {tweet_id} помечен для удаления (медиа удалятся каскадно БД).")
