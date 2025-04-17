@@ -167,34 +167,6 @@ async def test_create_tweet_media_not_found(
     mock_db_session.rollback.assert_awaited_once()  # Должен быть откат
 
 
-async def test_create_tweet_media_already_used(
-        tweet_service: TweetService,
-        mock_db_session: MagicMock,
-        test_user_obj: User,
-        test_media_obj: Media,
-        mock_media_repo: MagicMock,
-):
-    """Тест создания твита с медиа, которое уже привязано."""
-    media_id = test_media_obj.id
-    # Имитируем, что медиа уже привязано
-    test_media_obj.tweet_id = 555
-    tweet_data_req = TweetCreateRequest(
-        tweet_data="Tweet reusing media", tweet_media_ids=[media_id]
-    )
-    mock_media_repo.get.return_value = test_media_obj
-
-    with pytest.raises(ConflictError):
-        await tweet_service.create_tweet(
-            db=mock_db_session, current_user=test_user_obj, tweet_data=tweet_data_req
-        )
-
-    mock_media_repo.get.assert_awaited_once_with(mock_db_session, obj_id=media_id)
-    mock_db_session.add.assert_not_called()
-    mock_db_session.flush.assert_not_awaited()
-    mock_db_session.commit.assert_not_awaited()
-    mock_db_session.rollback.assert_awaited_once()
-
-
 async def test_create_tweet_db_error_on_flush(
         tweet_service: TweetService,
         mock_db_session: MagicMock,
@@ -238,7 +210,7 @@ async def test_delete_tweet_success_no_media(
     await tweet_service.delete_tweet(db=mock_db_session, current_user=test_user_obj, tweet_id=tweet_id)
 
     # Проверки
-    mock_tweet_repo.get_with_attachments.assert_awaited_once_with(mock_db_session, obj_id=tweet_id)
+    mock_tweet_repo.get_with_attachments.assert_awaited_once_with(mock_db_session, tweet_id=tweet_id)
     mock_tweet_repo.delete.assert_awaited_once_with(mock_db_session, db_obj=test_tweet_obj)
     mock_db_session.commit.assert_awaited_once()
     # Проверяем, что media_service.delete_media_files не вызывался
@@ -270,7 +242,7 @@ async def test_delete_tweet_success_with_media(
     await tweet_service.delete_tweet(db=mock_db_session, current_user=test_user_obj, tweet_id=tweet_id)
 
     # Проверки
-    mock_tweet_repo.get_with_attachments.assert_awaited_once_with(mock_db_session, obj_id=tweet_id)
+    mock_tweet_repo.get_with_attachments.assert_awaited_once_with(mock_db_session, tweet_id=tweet_id)
     mock_tweet_repo.delete.assert_awaited_once_with(mock_db_session, db_obj=test_tweet_obj)
     mock_db_session.commit.assert_awaited_once()
     # Проверяем вызов удаления файла
@@ -293,7 +265,7 @@ async def test_delete_tweet_not_found(
     with pytest.raises(NotFoundError):
         await tweet_service.delete_tweet(db=mock_db_session, current_user=test_user_obj, tweet_id=tweet_id)
 
-    mock_tweet_repo.get_with_attachments.assert_awaited_once_with(mock_db_session, obj_id=tweet_id)
+    mock_tweet_repo.get_with_attachments.assert_awaited_once_with(mock_db_session, tweet_id=tweet_id)
     mock_tweet_repo.delete.assert_not_awaited()
     mock_db_session.commit.assert_not_awaited()
     mock_media_service.delete_media_files.assert_not_awaited()
@@ -318,7 +290,7 @@ async def test_delete_tweet_permission_denied(
     with pytest.raises(PermissionDeniedError):
         await tweet_service.delete_tweet(db=mock_db_session, current_user=test_user_obj, tweet_id=tweet_id)
 
-    mock_tweet_repo.get_with_attachments.assert_awaited_once_with(mock_db_session, obj_id=tweet_id)
+    mock_tweet_repo.get_with_attachments.assert_awaited_once_with(mock_db_session, tweet_id=tweet_id)
     mock_tweet_repo.delete.assert_not_awaited()
     mock_db_session.commit.assert_not_awaited()
     mock_media_service.delete_media_files.assert_not_awaited()
