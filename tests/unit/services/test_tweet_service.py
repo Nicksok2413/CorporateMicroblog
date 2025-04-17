@@ -97,7 +97,7 @@ async def test_create_tweet_success_no_media(
     mock_tweet_repo.create.assert_not_awaited()
 
     # Проверяем, что repo.add вызывался (через сессию)
-    mock_db_session.add.assert_called_once()  # Проверяем что объект Tweet добавлен в сессию
+    mock_tweet_repo.add.assert_called_once()  # Проверяем что объект Tweet добавлен в сессию
     mock_db_session.flush.assert_awaited_once()  # Должен быть flush
     mock_db_session.commit.assert_awaited_once()  # Должен быть коммит
     mock_db_session.refresh.assert_awaited_once()  # Должен быть refresh
@@ -181,7 +181,8 @@ async def test_create_tweet_media_not_found(
 async def test_create_tweet_db_error_on_flush(
         tweet_service: TweetService,
         mock_db_session: MagicMock,
-        test_user_obj: User
+        test_user_obj: User,
+        mock_tweet_repo: MagicMock,
 ):
     """Тест ошибки БД при flush (например, при получении ID твита)."""
     tweet_data_req = TweetCreateRequest(tweet_data="Simple tweet", tweet_media_ids=[])
@@ -196,7 +197,7 @@ async def test_create_tweet_db_error_on_flush(
         )
 
     # Проверяем вызовы
-    mock_db_session.add.assert_called_once()  # Проверяем что объект Tweet добавлен в сессию
+    mock_tweet_repo.add.assert_called_once()  # Проверяем что объект Tweet добавлен в сессию
     mock_db_session.flush.assert_awaited_once()  # Должен быть flush
     mock_db_session.commit.assert_not_awaited()  # Коммита быть не должно
     mock_db_session.rollback.assert_awaited_once()  # Должен быть роллбэк

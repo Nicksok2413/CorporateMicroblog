@@ -71,9 +71,12 @@ class TweetService(BaseService[Tweet, TweetRepository]):
 
             # Создаем твит (пока без привязки медиа)
             tweet = Tweet(content=tweet_data.tweet_data, author_id=current_user.id)
-            db.add(tweet)
+
+            # Добавляем твит в сессию
+            await self.repo.add(db=db, db_obj=tweet)
+
             # Нужно получить ID твита перед тем, как привязать медиа
-            await db.flush()  # Получаем ID твита от БД
+            await db.flush()
             log.debug(f"Твит создан (ID: {tweet.id}), выполнен flush.")
 
             # Привязываем медиа к твиту, обновляя tweet_id у медиа
@@ -141,7 +144,6 @@ class TweetService(BaseService[Tweet, TweetRepository]):
 
             # Помечаем твит для удаления
             await self.repo.delete(db, db_obj=tweet_to_delete)
-            log.debug(f"Твит ID {tweet_id} помечен для удаления (медиа удалятся каскадно БД).")
 
             # Коммитим удаление твита (и связанных медиа в БД)
             await db.commit()

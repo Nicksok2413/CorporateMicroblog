@@ -1,7 +1,7 @@
 from pathlib import Path
 from tempfile import gettempdir
 
-# Важно импортировать Settings ДО того, как monkeypatch сработает глобально
+# Важно импортировать Settings до того, как monkeypatch сработает глобально
 from src.core.config import Settings
 
 
