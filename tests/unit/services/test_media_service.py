@@ -237,6 +237,59 @@ async def test_save_media_file_io_error(
     mock_db_session.rollback.assert_not_awaited()  # Ошибка до транзакции БД
 
 
+@patch("aiofiles.open", new_callable=MagicMock)
+@patch("src.services.media_service.MediaService._generate_unique_filename")
+@patch("pathlib.Path.exists")
+@patch("pathlib.Path.unlink")
+async def test_save_media_file_read_type_error(
+    mock_unlink: MagicMock,
+    mock_exists: MagicMock,
+    mock_generate_filename: MagicMock,
+    mock_aio_open: AsyncMock,
+    media_service: MediaService,
+    mock_db_session: MagicMock,
+    mock_media_repo: MagicMock,
+):
+    """Тест ошибки TypeError при чтении файла."""
+    original_filename = "photo.jpg"
+    unique_filename = "12345_abc.jpg"
+    content_type = "image/jpeg"
+
+    # Настраиваем моки
+    file_mock = MagicMock()
+    # Имитируем, что read возвращает не байты
+    file_mock.read.side_effect = ["not bytes", b""] # Сначала не байты, потом конец файла
+    mock_generate_filename.return_value = unique_filename
+
+    # Имитируем ошибку при входе в контекст через контекстный менеджер
+    mock_file_ctx = AsyncMock()
+    mock_file_ctx.__aenter__.side_effect = TypeError("Not bytes")  # Ошибка при __aenter__
+    mock_aio_open.return_value = mock_file_ctx
+
+    # Имитируем, что файл мог быть частично создан
+    mock_exists.return_value = True
+
+    # Проверяем, что выбрасывается BadRequestError (т.к. IOError ловится)
+    with pytest.raises(BadRequestError) as exc_info:
+        await media_service.save_media_file(
+            db=mock_db_session, file=file_mock, filename=original_filename, content_type=content_type
+        )
+    # Ожидаем ошибку сохранения файла, т.к. TypeError перехватывается как Exception
+    assert "Ошибка при сохранении файла" in exc_info.value.detail
+
+    # Проверяем вызовы
+    mock_generate_filename.assert_called_once()
+    expected_save_path = settings.MEDIA_ROOT_PATH / unique_filename
+    mock_aio_open.assert_called_once_with(expected_save_path, 'wb')
+    # Проверяем попытку удаления файла
+    mock_exists.assert_called_once()
+    mock_unlink.assert_called_once_with(missing_ok=True)
+    # БД не должна была изменяться
+    mock_media_repo.create.assert_not_awaited()
+    mock_db_session.commit.assert_not_awaited()  # Коммита быть не должно
+    mock_db_session.rollback.assert_not_awaited()  # Ошибка до транзакции БД
+
+
 @pytest.mark.asyncio
 @patch("aiofiles.open", new_callable=MagicMock)
 @patch("src.services.media_service.MediaService._generate_unique_filename")
