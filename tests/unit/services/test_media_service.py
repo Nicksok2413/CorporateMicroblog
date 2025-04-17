@@ -493,13 +493,3 @@ def test_get_media_url_with_slashes(media_service: MediaService, test_media_obj:
 
     # Восстанавливаем настройку
     settings.MEDIA_URL_PREFIX = original_prefix
-
-    # Проверяем пути
-    # expected_path1 = settings.MEDIA_ROOT_PATH / file_paths[0]
-    # expected_path2 = settings.MEDIA_ROOT_PATH / file_paths[1]
-    # # Проверяем, что sync-метод вызывался с правильными Path объектами
-    # # (Замечание: проверка аргументов mock_delete_sync может быть сложной из-за lambda/to_thread,
-    # # проще проверить call_count и логику внутри)
-    # # Как вариант - проверить аргументы mock_to_thread
-    # assert mock_to_thread.call_args_list[0][0][1] == expected_path1
-    # assert mock_to_thread.call_args_list[1][0][1] == expected_path2
