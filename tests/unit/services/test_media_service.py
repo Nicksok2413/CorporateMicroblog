@@ -1,4 +1,3 @@
-import logging
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -12,11 +11,9 @@ from src.repositories import MediaRepository
 from src.schemas.media import MediaCreate
 from src.services.media_service import MediaService
 
-# Помечаем все тесты в этом модуле как асинхронные
-pytestmark = pytest.mark.asyncio
-
 
 # --- Фикстуры ---
+
 # Фикстура для мока MediaRepository
 @pytest.fixture
 def mock_media_repo() -> MagicMock:
@@ -38,6 +35,7 @@ def media_service(mock_media_repo: MagicMock) -> MediaService:
 
 # --- Тесты для _validate_file ---
 
+@pytest.mark.asyncio
 async def test_validate_file_success(media_service: MediaService):
     """Тест успешной валидации разрешенного типа файла."""
     # Не должно вызывать исключений
@@ -46,6 +44,7 @@ async def test_validate_file_success(media_service: MediaService):
     await media_service._validate_file("image.gif", "image/gif")
 
 
+@pytest.mark.asyncio
 async def test_validate_file_failure(media_service: MediaService):
     """Тест валидации запрещенного типа файла."""
     # Проверяем, что выбрасывается MediaValidationError
@@ -88,10 +87,10 @@ def test_generate_unique_filename_uniqueness(media_service: MediaService):
 
 
 # --- Тесты для save_media_file ---
-# Мокируем aiofiles.open и asyncio.to_thread/os.remove
-
 # @patch используем для мокирования встроенных функций/классов
-@patch("aiofiles.open", new_callable=MagicMock)  # Мок асинхронного open
+
+@pytest.mark.asyncio
+@patch("aiofiles.open", new_callable=MagicMock)  # Мокируем aiofiles.open
 @patch("src.services.media_service.MediaService._generate_unique_filename")  # Мок генератора имен
 async def test_save_media_file_success(
         mock_generate_filename: MagicMock,
@@ -158,6 +157,7 @@ async def test_save_media_file_success(
     mock_db_session.rollback.assert_not_awaited()  # Роллбэка быть не должно
 
 
+@pytest.mark.asyncio
 @patch("src.services.media_service.MediaService._generate_unique_filename")
 async def test_save_media_file_validation_error(
         mock_generate_filename: MagicMock,
@@ -186,6 +186,7 @@ async def test_save_media_file_validation_error(
     mock_db_session.commit.assert_not_awaited()
 
 
+@pytest.mark.asyncio
 @patch("aiofiles.open", new_callable=MagicMock)
 @patch("src.services.media_service.MediaService._generate_unique_filename")
 @patch("pathlib.Path.exists")  # Мокируем проверку существования файла
@@ -236,6 +237,7 @@ async def test_save_media_file_io_error(
     mock_db_session.rollback.assert_not_awaited()  # Ошибка до транзакции БД
 
 
+@pytest.mark.asyncio
 @patch("aiofiles.open", new_callable=MagicMock)
 @patch("src.services.media_service.MediaService._generate_unique_filename")
 @patch("pathlib.Path.exists")
@@ -293,10 +295,11 @@ async def test_save_media_file_db_error(
 
 
 # --- Тесты для delete_media_files ---
+# @patch используем для мокирования встроенных функций/классов
 
-# Мокируем asyncio.to_thread и _delete_single_file_sync
-@patch("asyncio.to_thread")
-@patch("src.services.media_service.MediaService._delete_single_file_sync")
+@pytest.mark.asyncio
+@patch("asyncio.to_thread")  # Мокируем asyncio.to_thread
+@patch("src.services.media_service.MediaService._delete_single_file_sync")  # Мокируем _delete_single_file_sync
 @patch("src.services.media_service.log")  # Мокируем объект логгера
 async def test_delete_media_files_success(
         mock_log: MagicMock,  # Мок логгера
@@ -331,6 +334,7 @@ async def test_delete_media_files_success(
     mock_log.error.assert_not_called()
 
 
+@pytest.mark.asyncio
 @patch("asyncio.to_thread")
 @patch("src.services.media_service.MediaService._delete_single_file_sync")
 @patch("src.services.media_service.log")
@@ -374,6 +378,7 @@ async def test_delete_media_files_one_fails(
     mock_log.error.assert_not_called()
 
 
+@pytest.mark.asyncio
 @patch("asyncio.to_thread")
 @patch("src.services.media_service.MediaService._delete_single_file_sync")
 @patch("src.services.media_service.log")
@@ -419,7 +424,7 @@ async def test_delete_media_files_os_error(
 # --- Тест для _delete_single_file_sync ---
 # Этот метод синхронный, тестируем напрямую
 
-@patch("os.remove")
+@patch("os.remove")  # Мокируем os.remove
 def test_delete_single_file_sync_success(mock_os_remove: MagicMock, media_service: MediaService):
     """Тест успешного синхронного удаления."""
     file_path = Path("/fake/path/file.txt")
