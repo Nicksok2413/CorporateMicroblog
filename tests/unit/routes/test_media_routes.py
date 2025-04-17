@@ -1,0 +1,99 @@
+from unittest.mock import MagicMock, AsyncMock
+
+import pytest
+from fastapi import UploadFile
+
+from src.api.routes.media import upload_media_file
+from src.models import Media
+from src.schemas.media import MediaCreateResult
+from src.services import MediaService
+
+# Помечаем все тесты в этом модуле как асинхронные
+pytestmark = pytest.mark.asyncio
+
+# --- Фикстуры для моков зависимостей ---
+
+@pytest.fixture
+def mock_media_service() -> MagicMock:
+    service = MagicMock(spec=MediaService)
+    service.save_media_file = AsyncMock()
+    return service
+
+
+@pytest.fixture
+def mock_upload_file() -> MagicMock:
+    # Создаем мок для UploadFile
+    upload_file = MagicMock(spec=UploadFile)
+    upload_file.filename = "test.jpg"
+    upload_file.content_type = "image/jpeg"
+    # Мокируем файловый объект внутри UploadFile
+    file_obj = MagicMock()
+    upload_file.file = file_obj
+    # Мокируем метод close
+    upload_file.close = AsyncMock()
+    return upload_file
+
+
+# --- Тест для успешного выполнения обработчика роута (upload_media_file) ---
+
+async def test_upload_media_file_handler_success(
+        mock_db_session: MagicMock,
+        mock_current_user: MagicMock,
+        mock_media_service: MagicMock,
+        mock_upload_file: MagicMock,
+):
+    """Юнит-тест для функции обработчика upload_media_file - успешный случай."""
+    # Настраиваем мок сервиса на возврат успешного результата
+    media_id = 123
+    saved_media_mock = MagicMock(spec=Media)
+    saved_media_mock.id = media_id
+    mock_media_service.save_media_file.return_value = saved_media_mock
+
+    # Вызываем сам обработчик роута с моками вместо реальных зависимостей
+    result = await upload_media_file(
+        db=mock_db_session,
+        current_user=mock_current_user,
+        media_service=mock_media_service,
+        file=mock_upload_file,
+    )
+
+    # Проверяем, что save_media_file был вызван с правильными аргументами
+    mock_media_service.save_media_file.assert_awaited_once_with(
+        db=mock_db_session,
+        file=mock_upload_file.file,
+        filename=mock_upload_file.filename,
+        content_type=mock_upload_file.content_type,
+    )
+
+    # Проверяем, что file.close был вызван
+    mock_upload_file.close.assert_awaited_once()
+
+    # *** Проверяем возвращаемый результат - это покроет нужную строку ***
+    assert isinstance(result, MediaCreateResult)
+    assert result.media_id == media_id
+
+
+async def test_upload_media_file_handler_service_exception(
+        mock_db_session: MagicMock,
+        mock_current_user: MagicMock,
+        mock_media_service: MagicMock,
+        mock_upload_file: MagicMock,
+):
+    """Юнит-тест для функции обработчика upload_media_file - ошибка в сервисе."""
+    # Настраиваем мок сервиса на выброс исключения
+    error_message = "Service error"
+    mock_media_service.save_media_file.side_effect = Exception(error_message)
+
+    # Проверяем, что исключение пробрасывается дальше
+    with pytest.raises(Exception, match=error_message):
+        await upload_media_file(
+            db=mock_db_session,
+            current_user=mock_current_user,
+            media_service=mock_media_service,
+            file=mock_upload_file,
+        )
+
+    # Проверяем, что save_media_file был вызван
+    mock_media_service.save_media_file.assert_awaited_once()
+    # Проверяем, что file.close был вызван в блоке finally
+    mock_upload_file.close.assert_awaited_once()

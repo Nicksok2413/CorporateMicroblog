@@ -2,6 +2,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from sqlalchemy import delete, select
+from sqlalchemy.engine.result import ScalarResult
 from sqlalchemy.orm import selectinload
 
 from src.models import Follow
@@ -18,7 +19,63 @@ def follow_repo() -> FollowRepository:
 
 
 # --- Тесты для get_follow ---
-# Покрыт тестами FollowService
+
+async def test_get_follow_found(
+    follow_repo: FollowRepository,
+    mock_db_session: MagicMock,
+    test_follow_obj: Follow # Фикстура из tests/unit/conftest.py
+):
+    """Тест get_follow, когда подписка найдена."""
+    follower_id = 1
+    following_id = 2
+
+    # Настраиваем мок результата execute
+    mock_result = mock_db_session.execute.return_value
+    # Мокируем вложенные вызовы scalars().first()
+    mock_scalars = MagicMock(spec=ScalarResult)
+    mock_scalars.first.return_value = test_follow_obj # Возвращаем объект подписки
+    mock_result.scalars = MagicMock(return_value=mock_scalars)
+
+    # Вызываем метод
+    result = await follow_repo.get_follow(
+        db=mock_db_session, follower_id=follower_id, following_id=following_id
+    )
+
+    # Проверяем результат
+    assert result == test_follow_obj
+    # Проверяем, что execute был вызван
+    mock_db_session.execute.assert_awaited_once()
+    # Проверяем, что scalars() и first() были вызваны
+    mock_result.scalars.assert_called_once()
+    mock_scalars.first.assert_called_once()
+
+async def test_get_follow_not_found(
+    follow_repo: FollowRepository,
+    mock_db_session: MagicMock
+):
+    """Тест get_follow, когда подписка не найдена."""
+    follower_id = 1
+    following_id = 3
+
+    # Настраиваем мок результата execute
+    mock_result = mock_db_session.execute.return_value
+    # Мокируем вложенные вызовы scalars().first() для возврата None
+    mock_scalars = MagicMock(spec=ScalarResult)
+    mock_scalars.first.return_value = None # Подписка не найдена
+    mock_result.scalars = MagicMock(return_value=mock_scalars)
+
+    # Вызываем метод
+    result = await follow_repo.get_follow(
+        db=mock_db_session, follower_id=follower_id, following_id=following_id
+    )
+
+    # Проверяем результат
+    assert result is None
+    # Проверяем вызовы
+    mock_db_session.execute.assert_awaited_once()
+    mock_result.scalars.assert_called_once()
+    mock_scalars.first.assert_called_once()
+
 
 # --- Тесты для add_follow ---
 # Покрыт тестами FollowService

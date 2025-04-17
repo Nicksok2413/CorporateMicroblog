@@ -2,6 +2,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from sqlalchemy import desc, func, select
+from sqlalchemy.engine.result import ScalarResult
 from sqlalchemy.orm import selectinload
 
 from src.models import Like, Tweet
@@ -52,6 +53,29 @@ async def test_tweet_repo_get_with_attachments(tweet_repo, mock_db_session):
     )
 
     assert statement.compare(expected_statement)
+
+
+async def test_get_with_attachments_not_found(
+        tweet_repo: TweetRepository,
+        mock_db_session: MagicMock
+):
+    """Тест get_with_attachments, когда твит не найден."""
+    tweet_id = 999  # Несуществующий ID
+
+    # Настраиваем мок результата execute
+    mock_result = mock_db_session.execute.return_value
+    mock_scalars = MagicMock(spec=ScalarResult)
+    mock_scalars.first.return_value = None  # Твит НЕ найден
+    mock_result.scalars = MagicMock(return_value=mock_scalars)
+
+    # Вызываем метод
+    result = await tweet_repo.get_with_attachments(db=mock_db_session, tweet_id=tweet_id)
+
+    # Проверки
+    assert result is None  # Ожидаем None
+    mock_db_session.execute.assert_awaited_once()
+    mock_result.scalars.assert_called_once()
+    mock_scalars.first.assert_called_once()
 
 
 # --- Тесты для get_feed_for_user ---

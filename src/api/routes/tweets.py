@@ -35,7 +35,7 @@ async def get_tweets_feed(
     """
     log.info(f"Запрос ленты твитов для пользователя ID {current_user.id}")
     feed = await tweet_service.get_tweet_feed(db=db, current_user=current_user)
-    return feed  # pragma: no cover
+    return feed
 
 
 @router.post(

@@ -19,7 +19,7 @@ def mock_db_session() -> MagicMock:
 
 
 # --- Фикстуры для базовых объектов моделей ---
-# Можно использовать реальные объекты или моки в зависимости от теста
+
 @pytest.fixture
 def test_user_obj() -> User:
     return User(id=1, name="Test User", api_key="testkey1")
@@ -42,8 +42,6 @@ def test_tweet_obj() -> Tweet:
     # Имитируем пустые связи, если тест не мокирует их загрузку
     tweet.attachments = []
     tweet.likes = []
-    # Можно добавить мок автора, если нужно
-    # tweet.author = MagicMock(spec=User)
     return tweet
 
 
@@ -61,3 +59,10 @@ def test_like_obj() -> Like:
 @pytest.fixture
 def test_follow_obj() -> Follow:
     return Follow(follower_id=1, following_id=2)
+
+
+@pytest.fixture
+def mock_current_user() -> MagicMock:
+    user = MagicMock(spec=User)
+    user.id = 1
+    return user
