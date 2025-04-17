@@ -1,9 +1,9 @@
 """Сервис для управления лайками."""
 
-from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.core.exceptions import BadRequestError, ConflictError, NotFoundError
+from src.core.exceptions import BadRequestError, NotFoundError
 from src.core.logging import log
 from src.models.user import User
 from src.repositories import LikeRepository, TweetRepository
@@ -48,10 +48,6 @@ class LikeService:
             await self.repo.add_like(db, user_id=current_user.id, tweet_id=tweet_id)
             await db.commit()
             log.success(f"Лайк от пользователя ID {current_user.id} на твит ID {tweet_id} успешно поставлен.")
-        except IntegrityError as exc:
-            await db.rollback()
-            log.warning(f"Конфликт целостности при лайке твита ID {tweet_id} пользователем ID {current_user.id}: {exc}")
-            raise ConflictError("Не удалось поставить лайк (возможно, уже существует).") from exc
         except SQLAlchemyError as exc:
             await db.rollback()
             log.error(f"Ошибка БД при создании лайка ({current_user.id} -> {tweet_id}): {exc}", exc_info=True)

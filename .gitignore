@@ -50,7 +50,7 @@ logs/
 media/
 
 # === Alembic alembic (исключаем всё, кроме самих миграций) ===
-alembic/
-!alembic/versions/
-!alembic/env.py
-!alembic/script.py.mako
+#alembic/
+#!alembic/versions/
+#!alembic/env.py
+#!alembic/script.py.mako

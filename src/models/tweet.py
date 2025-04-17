@@ -5,7 +5,7 @@ from typing import List, TYPE_CHECKING
 from sqlalchemy import ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.models import Base, tweet_media_association_table
+from src.models import Base
 
 if TYPE_CHECKING:
     from .like import Like
@@ -39,5 +39,7 @@ class Tweet(Base):
         back_populates="tweet", cascade="all, delete-orphan"
     )
     attachments: Mapped[List["Media"]] = relationship(
-        secondary=tweet_media_association_table, back_populates="tweets"
+        back_populates="tweet",
+        cascade="all, delete-orphan",
+        lazy="selectin" # Используем selectinload по умолчанию для этой связи
     )

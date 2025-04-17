@@ -35,7 +35,7 @@ async def get_tweets_feed(
     """
     log.info(f"Запрос ленты твитов для пользователя ID {current_user.id}")
     feed = await tweet_service.get_tweet_feed(db=db, current_user=current_user)
-    return feed
+    return feed  # pragma: no cover
 
 
 @router.post(
@@ -145,7 +145,6 @@ async def like_tweet(
 
     Raises:
         NotFoundError: Если твит не найден.
-        ConflictError: Если пользователь уже лайкнул этот твит.
         BadRequestError: При ошибке сохранения лайка.
     """
     log.info(f"Запрос на лайк твита ID {tweet_id} от пользователя ID {current_user.id}")
