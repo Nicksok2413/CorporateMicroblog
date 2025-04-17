@@ -125,29 +125,3 @@ async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
     """
     async with db.session() as session:
         yield session
-
-
-# Инициализация БД (в основном для тестов или dev окружения)
-async def init_db():
-    """
-    Инициализирует структуру базы данных (создает таблицы).
-
-    Note:
-        Используется в основном для тестов и первоначальной настройки.
-        В production для управления схемой БД следует использовать Alembic.
-    """
-    if not db.engine:
-        # Обычно connect вызывается через lifespan, но для прямого вызова добавим
-        await db.connect()
-        log.warning("Вызван init_db() без активного движка, выполнено подключение.")
-
-    if settings.TESTING and settings.DATABASE_URL.startswith("sqlite"):
-        log.info("Используется SQLite, создание таблиц...")
-        async with db.engine.begin() as conn:
-            await conn.run_sync(Base.metadata.drop_all)
-            await conn.run_sync(Base.metadata.create_all)
-        log.success("Таблицы для тестовой БД (SQLite) созданы.")
-    elif not settings.PRODUCTION:
-        log.warning("init_db() не рекомендуется использовать вне тестового режима с SQLite. Используйте Alembic.")
-    else:
-        log.error("Попытка вызова init_db() в production режиме! Используйте Alembic.")
