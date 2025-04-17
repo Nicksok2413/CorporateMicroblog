@@ -51,7 +51,6 @@ class Settings(BaseSettings):
             # Чтобы одна и та же БД использовалась в рамках сессии pytest,
             # нужно добавить "?cache=shared" и, возможно, "&uri=true"
             return "sqlite+aiosqlite:///:memory:?cache=shared&uri=true"
-            # return "sqlite+aiosqlite:///:memory"
         else:
             return (
                 f"postgresql+psycopg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"

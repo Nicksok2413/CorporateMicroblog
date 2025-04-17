@@ -13,6 +13,7 @@ pytestmark = pytest.mark.asyncio
 
 
 # --- Фикстуры ---
+
 # Фикстура для мока LikeRepository
 @pytest.fixture
 def mock_like_repo() -> MagicMock:
