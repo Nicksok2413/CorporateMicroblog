@@ -35,11 +35,15 @@ async def test_validate_file_failure(media_service: MediaService):
     # Проверяем, что выбрасывается MediaValidationError
     with pytest.raises(MediaValidationError) as exc_info:
         await media_service._validate_file("document.pdf", "application/pdf")
+
+    # Проверяем сообщение об ошибке
     assert "Недопустимый тип файла 'application/pdf'." in exc_info.value.detail
 
     # Проверяем, что выбрасывается MediaValidationError
     with pytest.raises(MediaValidationError) as exc_info:
         await media_service._validate_file("archive.zip", "application/zip")
+
+    # Проверяем сообщение об ошибке
     assert "Недопустимый тип файла 'application/zip'." in exc_info.value.detail
 
 
@@ -163,6 +167,7 @@ async def test_save_media_file_validation_error(
             db=mock_db_session, file=file_mock, filename=original_filename, content_type=content_type
         )
 
+    # Проверяем сообщение об ошибке
     assert f"Недопустимый тип файла '{content_type}'." in exc_info.value.detail
 
     # Проверяем, что другие методы не вызывались
@@ -176,7 +181,7 @@ async def test_save_media_file_validation_error(
 @patch("src.services.media_service.MediaService._generate_unique_filename")
 @patch("pathlib.Path.exists")  # Мокируем проверку существования файла
 @patch("pathlib.Path.unlink")  # Мокируем удаление файла
-async def test_save_media_file_io_error(
+async def test_save_media_file_io_error_unlink_fails(
         mock_unlink: MagicMock,
         mock_exists: MagicMock,
         mock_generate_filename: MagicMock,
@@ -185,7 +190,7 @@ async def test_save_media_file_io_error(
         mock_db_session: MagicMock,
         mock_media_repo: MagicMock,
 ):
-    """Тест ошибки при записи файла."""
+    """Тест ошибки при записи файла и ошибки при удалении частично записанного файла."""
     original_filename = "photo.jpg"
     unique_filename = "12345_abc.jpg"
     content_type = "image/jpeg"
@@ -194,19 +199,23 @@ async def test_save_media_file_io_error(
     file_mock = MagicMock()
     mock_generate_filename.return_value = unique_filename
 
-    # Имитируем ошибку при входе в контекст через контекстный менеджер
+    # Имитируем ошибку при входе в контекст
     mock_file_ctx = AsyncMock()
     mock_file_ctx.__aenter__.side_effect = IOError("Disk full")  # Ошибка при __aenter__
     mock_aio_open.return_value = mock_file_ctx
 
-    # Имитируем, что файл мог быть частично создан
+    # Имитируем, что файл существует
     mock_exists.return_value = True
+    # Имитируем ошибку OSError при вызове unlink
+    mock_unlink.side_effect = OSError("Permission denied on unlink")
 
-    # Проверяем, что выбрасывается BadRequestError
+    # Проверяем, что выбрасывается BadRequestError (из-за IOError)
     with pytest.raises(BadRequestError) as exc_info:
         await media_service.save_media_file(
             db=mock_db_session, file=file_mock, filename=original_filename, content_type=content_type
         )
+
+    # Проверяем сообщение об ошибке
     assert "Ошибка при сохранении файла" in exc_info.value.detail
 
     # Проверяем вызовы
@@ -222,18 +231,19 @@ async def test_save_media_file_io_error(
     mock_db_session.rollback.assert_not_awaited()  # Ошибка до транзакции БД
 
 
+@pytest.mark.asyncio
 @patch("aiofiles.open", new_callable=MagicMock)
 @patch("src.services.media_service.MediaService._generate_unique_filename")
 @patch("pathlib.Path.exists")
 @patch("pathlib.Path.unlink")
 async def test_save_media_file_read_type_error(
-    mock_unlink: MagicMock,
-    mock_exists: MagicMock,
-    mock_generate_filename: MagicMock,
-    mock_aio_open: AsyncMock,
-    media_service: MediaService,
-    mock_db_session: MagicMock,
-    mock_media_repo: MagicMock,
+        mock_unlink: MagicMock,
+        mock_exists: MagicMock,
+        mock_generate_filename: MagicMock,
+        mock_aio_open: AsyncMock,
+        media_service: MediaService,
+        mock_db_session: MagicMock,
+        mock_media_repo: MagicMock,
 ):
     """Тест ошибки TypeError при чтении файла."""
     original_filename = "photo.jpg"
@@ -243,7 +253,7 @@ async def test_save_media_file_read_type_error(
     # Настраиваем моки
     file_mock = MagicMock()
     # Имитируем, что read возвращает не байты
-    file_mock.read.side_effect = ["not bytes", b""] # Сначала не байты, потом конец файла
+    file_mock.read.side_effect = ["not bytes", b""]  # Сначала не байты, потом конец файла
     mock_generate_filename.return_value = unique_filename
 
     # Имитируем ошибку при входе в контекст через контекстный менеджер
@@ -259,6 +269,8 @@ async def test_save_media_file_read_type_error(
         await media_service.save_media_file(
             db=mock_db_session, file=file_mock, filename=original_filename, content_type=content_type
         )
+
+    # Проверяем сообщение об ошибке
     # Ожидаем ошибку сохранения файла, т.к. TypeError перехватывается как Exception
     assert "Ошибка при сохранении файла" in exc_info.value.detail
 
@@ -280,7 +292,7 @@ async def test_save_media_file_read_type_error(
 @patch("src.services.media_service.MediaService._generate_unique_filename")
 @patch("pathlib.Path.exists")
 @patch("pathlib.Path.unlink")
-async def test_save_media_file_db_error(
+async def test_save_media_file_db_error_unlink_fails(
         mock_unlink: MagicMock,
         mock_exists: MagicMock,
         mock_generate_filename: MagicMock,
@@ -312,13 +324,16 @@ async def test_save_media_file_db_error(
 
     # Имитируем, что файл был создан
     mock_exists.return_value = True
+    # Имитируем ошибку OSError при вызове unlink
+    mock_unlink.side_effect = OSError("Permission denied on unlink")
 
-    # Проверяем, что выбрасывается BadRequestError
+    # Проверяем, что выбрасывается BadRequestError (из-за SQLAlchemyError)
     with pytest.raises(BadRequestError) as exc_info:
         await media_service.save_media_file(
             db=mock_db_session, file=file_mock, filename=original_filename, content_type=content_type
         )
 
+    # Проверяем сообщение об ошибке
     assert "Ошибка при сохранении информации о медиафайле" in exc_info.value.detail
 
     # Проверяем вызовы
@@ -330,6 +345,103 @@ async def test_save_media_file_db_error(
     # Проверяем попытку удаления файла после ошибки БД
     mock_exists.assert_called_once()
     mock_unlink.assert_called_once_with(missing_ok=True)
+
+
+@pytest.mark.asyncio
+# Мокируем что-то неожиданное, например, внутри _validate_file
+@patch(
+    "src.services.media_service.MediaService._validate_file",
+    side_effect=ValueError("Unexpected validation issue")
+)
+@patch("pathlib.Path.exists")
+@patch("pathlib.Path.unlink")
+async def test_save_media_file_unexpected_error(
+        mock_unlink: MagicMock,
+        mock_exists: MagicMock,
+        mock_validate: MagicMock,
+        media_service: MediaService,
+        mock_db_session: MagicMock,
+):
+    """Тест непредвиденной ошибки на раннем этапе (до создания файла)."""
+    original_filename = "photo.jpg"
+    content_type = "image/jpeg"
+    file_mock = MagicMock()
+
+    # Имитируем, что файла не существует (чтобы не вызывать unlink)
+    mock_exists.return_value = False
+
+    # Проверяем, что выбрасывается BadRequestError (из блока except Exception)
+    with pytest.raises(BadRequestError) as exc_info:
+        await media_service.save_media_file(
+            db=mock_db_session, file=file_mock, filename=original_filename, content_type=content_type
+        )
+
+    # Проверяем сообщение об ошибке
+    assert "Общая ошибка при сохранении медиа" in exc_info.value.detail
+
+    # Проверяем вызов _validate_file
+    mock_validate.assert_awaited_once()
+
+    mock_db_session.rollback.assert_awaited_once()  # Должен быть роллбэк
+
+    # Проверяем, что unlink не вызывался
+    mock_exists.assert_not_called()
+    mock_unlink.assert_not_called()
+
+
+@pytest.mark.asyncio
+@patch("aiofiles.open", new_callable=MagicMock)
+@patch("src.services.media_service.MediaService._generate_unique_filename")
+@patch("pathlib.Path.exists")
+@patch("pathlib.Path.unlink")
+async def test_save_media_file_unexpected_error_after_save_unlink_fails(
+        mock_unlink: MagicMock,
+        mock_exists: MagicMock,
+        mock_generate_filename: MagicMock,
+        mock_aio_open: AsyncMock,
+        media_service: MediaService,
+        mock_db_session: MagicMock,
+        mock_media_repo: MagicMock,
+):
+    """Тест непредвиденной ошибки после сохранения файла И ошибки при его удалении."""
+    original_filename = "photo.jpg"
+    unique_filename = "12345_abc.jpg"
+    content_type = "image/jpeg"
+    file_content = b"file data"
+    file_mock = MagicMock()
+    file_mock.read.side_effect = [file_content, b""]
+    mock_generate_filename.return_value = unique_filename
+
+    # Успешное сохранение файла
+    mock_file_ctx = AsyncMock()
+    mock_file_handle = AsyncMock()
+    mock_file_handle.write = AsyncMock()
+    mock_file_ctx.__aenter__.return_value = mock_file_handle
+    mock_aio_open.return_value = mock_file_ctx
+
+    # Имитируем непредвиденную ошибку при вызове repo.create
+    mock_media_repo.create.side_effect = ValueError("Something totally unexpected happened in repo")
+
+    # Имитируем, что файл существует
+    mock_exists.return_value = True
+    # Имитируем ошибку OSError при вызове unlink
+    mock_unlink.side_effect = OSError("Permission denied on unlink")
+
+    # Проверяем, что выбрасывается BadRequestError (из блока except Exception)
+    with pytest.raises(BadRequestError) as exc_info:
+        await media_service.save_media_file(
+            db=mock_db_session, file=file_mock, filename=original_filename, content_type=content_type
+        )
+
+    # Проверяем сообщение об ошибке
+    assert "Общая ошибка при сохранении медиа" in exc_info.value.detail
+
+    # Проверяем вызовы
+    mock_aio_open.assert_called_once()  # Файл сохранили
+    mock_media_repo.create.assert_awaited_once()  # Пытались создать запись в БД
+    mock_db_session.rollback.assert_awaited_once()  # Должен быть роллбэк
+    mock_exists.assert_called_once()  # Проверили существование
+    mock_unlink.assert_called_once_with(missing_ok=True)  # Пытались удалить
 
 
 # --- Тесты для delete_media_files ---
@@ -457,6 +569,19 @@ async def test_delete_media_files_os_error(
     # Проверяем, что log.error был вызван с правильными аргументами
     mock_log.error.assert_called_once_with(f"Ошибка при удалении файла '{file_paths[0]}': {os_error}")
     mock_log.info.assert_any_call("Завершено удаление файлов: 0 успешно из 1.")
+
+
+@pytest.mark.asyncio
+@patch("asyncio.to_thread")  # Мокируем to_thread
+async def test_delete_media_files_empty_list(
+        mock_to_thread: MagicMock,
+        media_service: MediaService,
+):
+    """Тест вызова delete_media_files с пустым списком путей."""
+    await media_service.delete_media_files([])  # Передаем пустой список
+
+    # Проверяем, что to_thread (и, следовательно, удаление) не вызывался
+    mock_to_thread.assert_not_called()
 
 
 # --- Тест для _delete_single_file_sync ---

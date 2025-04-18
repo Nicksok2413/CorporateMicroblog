@@ -82,19 +82,35 @@ async def test_create_tweet_success_with_media(
         test_user_obj: User,
         test_media_obj: Media,
         mock_media_repo: MagicMock,
+        mock_tweet_repo: MagicMock,
 ):
     """Тест успешного создания твита с одним медиа."""
     media_id = test_media_obj.id
+    test_media_obj.tweet_id = None
     request_data = TweetCreateRequest(
         tweet_data="Tweet with media", tweet_media_ids=[media_id]
     )
-
-    # Убедимся, что у мока медиа tweet_id is None
-    test_media_obj.tweet_id = None
-
-    # Настраиваем моки
-    # media_repo.get находит медиа, и оно не привязано (tweet_id is None)
     mock_media_repo.get.return_value = test_media_obj
+
+    # Настройка мока tweet_repo.add
+    # Сохраняем переданный объект твита для дальнейшего использования
+    tweet_object_holder = {}
+
+    async def mock_repo_add(db, db_obj):
+        tweet_object_holder['tweet'] = db_obj
+        # Имитируем добавление в мок сессии для flush
+        mock_db_session.add(db_obj)
+
+    mock_tweet_repo.add.side_effect = mock_repo_add
+
+    # Мок для flush: устанавливаем ID у объекта tweet
+    async def mock_flush(*args, **kwargs):
+        if 'tweet' in tweet_object_holder:
+            tweet_object_holder['tweet'].id = 123  # Пример ID
+
+    mock_db_session.flush.side_effect = mock_flush
+    mock_db_session.refresh.return_value = None
+    mock_db_session.commit.return_value = None
 
     # Вызываем метод сервиса
     created_tweet = await tweet_service.create_tweet(
@@ -104,14 +120,12 @@ async def test_create_tweet_success_with_media(
     # Проверки
     assert created_tweet is not None
     assert isinstance(created_tweet, Tweet)
-
-    # Проверяем вызов media_repo.get
+    assert created_tweet.id == 123
     mock_media_repo.get.assert_awaited_once_with(mock_db_session, obj_id=media_id)
-
-    # Проверяем, что tweet_id у медиа объекта был обновлен
     assert test_media_obj.tweet_id == created_tweet.id
 
     # Проверяем вызовы
+    mock_tweet_repo.add.assert_awaited_once()  # Был добавлен твит
     mock_db_session.flush.assert_awaited_once()  # Должен быть flush
     mock_db_session.commit.assert_awaited_once()  # Должен быть коммит
     mock_db_session.refresh.assert_awaited_once()  # Должен быть refresh
@@ -170,6 +184,55 @@ async def test_create_tweet_db_error_on_flush(
     mock_db_session.flush.assert_awaited_once()  # Должен быть flush
     mock_db_session.commit.assert_not_awaited()  # Коммита быть не должно
     mock_db_session.rollback.assert_awaited_once()  # Должен быть роллбэк
+
+
+async def test_create_tweet_unexpected_error_on_refresh(
+        tweet_service: TweetService,
+        mock_db_session: MagicMock,
+        test_user_obj: User,
+        mock_tweet_repo: MagicMock,
+):
+    """Тест непредвиденной ошибки при вызове db.refresh."""
+    request_data = TweetCreateRequest(tweet_data="Simple tweet", tweet_media_ids=[])
+
+    # Настройка моков
+    # Имитируем добавление объекта через репозиторий
+    tweet_object_holder = {}
+
+    async def mock_repo_add(db, db_obj):
+        tweet_object_holder['tweet'] = db_obj
+
+    mock_tweet_repo.add.side_effect = mock_repo_add
+
+    # Имитируем успешный flush, устанавливающий ID
+    async def mock_flush(*args, **kwargs):
+        if 'tweet' in tweet_object_holder:
+            tweet_object_holder['tweet'].id = 123
+
+    mock_db_session.flush.side_effect = mock_flush
+
+    # Успешный коммит
+    mock_db_session.commit.return_value = None
+
+    # Ошибка на refresh
+    unexpected_error = ValueError("Something went wrong during refresh")
+    mock_db_session.refresh.side_effect = unexpected_error
+
+    # Проверяем, что выбрасывается BadRequestError (из блока except Exception)
+    with pytest.raises(BadRequestError) as exc_info:
+        await tweet_service.create_tweet(
+            db=mock_db_session, current_user=test_user_obj, tweet_data=request_data
+        )
+
+    # Проверяем сообщение об ошибке
+    assert "Произошла непредвиденная ошибка" in exc_info.value.detail
+
+    # Проверяем вызовы
+    mock_tweet_repo.add.assert_awaited_once()
+    mock_db_session.flush.assert_awaited_once()
+    mock_db_session.commit.assert_awaited_once()  # Commit вызывается до refresh
+    mock_db_session.refresh.assert_awaited_once()  # Refresh вызывался и вызвал ошибку
+    mock_db_session.rollback.assert_not_awaited() # Роллбэк не должен вызываться, т.к. ошибка после commit
 
 
 # --- Тесты для delete_tweet ---
@@ -346,6 +409,7 @@ async def test_delete_tweet_file_delete_error(
     with pytest.raises(BadRequestError) as exc_info:
         await tweet_service.delete_tweet(db=mock_db_session, current_user=test_user_obj, tweet_id=tweet_id)
 
+    # Проверяем сообщение об ошибке
     assert "ошибка при удалении его медиафайлов" in exc_info.value.detail
 
     # Проверяем вызовы

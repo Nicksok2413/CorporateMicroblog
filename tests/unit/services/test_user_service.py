@@ -162,6 +162,7 @@ async def test_get_user_profile_not_found(
     with pytest.raises(NotFoundError) as exc_info:
         await user_service.get_user_profile(db=mock_db_session, user_id=user_id)
 
+    # Проверяем сообщение об ошибке
     assert f"User с ID {user_id} не найден" in str(exc_info.value)
 
     # Проверяем вызовы

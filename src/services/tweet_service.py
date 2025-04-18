@@ -60,6 +60,7 @@ class TweetService(BaseService[Tweet, TweetRepository]):
         tweet: Optional[Tweet] = None
 
         try:
+            # Получаем объекты Media по ID и проверяем их доступность
             if tweet_data.tweet_media_ids:
                 log.debug(f"Прикрепление медиа ID: {tweet_data.tweet_media_ids}")
                 for media_id in tweet_data.tweet_media_ids:
@@ -89,10 +90,11 @@ class TweetService(BaseService[Tweet, TweetRepository]):
 
             # Коммитим все изменения
             await db.commit()
-            # Обновляем объект твита, чтобы подгрузить связи (если нужно)
+            # Обновляем объект твита для загрузки связей
             await db.refresh(tweet, attribute_names=['attachments'])
             log.success(f"Твит ID {tweet.id} успешно создан пользователем {current_user.id}")
             return tweet
+
         except NotFoundError:
             await db.rollback()
             raise
@@ -101,7 +103,6 @@ class TweetService(BaseService[Tweet, TweetRepository]):
             log.error(f"Ошибка при создании твита пользователем {current_user.id}: {exc}", exc_info=True)
             raise BadRequestError("Не удалось создать твит.") from exc
         except Exception as exc:
-            await db.rollback()
             log.exception(f"Непредвиденная ошибка при создании твита {current_user.id}: {exc}")
             raise BadRequestError("Произошла непредвиденная ошибка.") from exc
 

@@ -109,16 +109,16 @@ class MediaService(BaseService[Media, MediaRepository]):
             MediaValidationError: При ошибке валидации файла.
             BadRequestError: При ошибке сохранения файла или записи в БД.
         """
-        await self._validate_file(filename, content_type)
-
-        unique_filename = self._generate_unique_filename(filename)
-
-        save_path = settings.MEDIA_ROOT_PATH / unique_filename
-
-        log.info(f"Сохранение медиафайла '{filename}' как '{unique_filename}' в '{save_path}'")
         media: Optional[Media] = None
+        save_path: Optional[Path] = None
 
         try:
+            await self._validate_file(filename, content_type)
+
+            unique_filename = self._generate_unique_filename(filename)
+            save_path = settings.MEDIA_ROOT_PATH / unique_filename
+            log.info(f"Сохранение медиафайла '{filename}' как '{unique_filename}' в '{save_path}'")
+
             # Этап 1: Сохранение файла
             try:
                 async with aiofiles.open(save_path, 'wb') as out_file:
@@ -129,7 +129,7 @@ class MediaService(BaseService[Media, MediaRepository]):
             except (IOError, TypeError) as io_exc:
                 log.error(f"Ошибка при сохранении файла '{unique_filename}': {io_exc}", exc_info=True)
                 # Пытаемся удалить частично записанный файл
-                if save_path.exists():
+                if save_path and save_path.exists():
                     try:
                         save_path.unlink(missing_ok=True)
                     except OSError:
@@ -149,7 +149,7 @@ class MediaService(BaseService[Media, MediaRepository]):
                 await db.rollback()
                 log.error(f"Ошибка БД при создании записи Media для '{unique_filename}': {db_exc}", exc_info=True)
                 # Если запись в БД не удалась, удаляем сохраненный файл
-                if save_path.exists():
+                if save_path and save_path.exists():
                     try:
                         save_path.unlink(missing_ok=True)
                     except OSError as unlink_err:
@@ -158,12 +158,13 @@ class MediaService(BaseService[Media, MediaRepository]):
 
         except (MediaValidationError, BadRequestError):
             # Пробрасываем наши ожидаемые ошибки дальше
+            # Откат не нужен здесь, так как ошибки произошли до commit или откат был сделан выше
             raise
         except Exception as outer_exc:
             log.exception(f"Непредвиденная внешняя ошибка при сохранении медиа {filename}: {outer_exc}")
             await db.rollback()  # Гарантируем откат, если транзакция была начата
             # Попытка удалить файл, если он существует
-            if save_path.exists():
+            if save_path and save_path.exists():
                 try:
                     save_path.unlink(missing_ok=True)
                 except OSError:

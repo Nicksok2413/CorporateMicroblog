@@ -88,7 +88,10 @@ async def test_validate_follow_action_target_not_found(
             following_id=target_id
         )
 
+    # Проверяем сообщение об ошибке
     assert f"Пользователь с ID {target_id} не найден" in str(exc_info.value)
+
+    # Проверяем вызов
     mock_user_repo.get.assert_awaited_once_with(mock_db_session, obj_id=target_id)
 
 
