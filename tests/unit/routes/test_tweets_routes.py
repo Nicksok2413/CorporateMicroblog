@@ -4,7 +4,7 @@ import pytest
 
 from src.api.routes.tweets import (create_tweet, delete_tweet,
                                    get_tweets_feed, like_tweet, unlike_tweet)
-from src.models import Tweet
+from src.models import Tweet, User
 from src.schemas.tweet import (TweetActionResult, TweetCreateRequest,
                                TweetCreateResult, TweetFeedResult)
 from src.services import LikeService, TweetService
@@ -36,7 +36,7 @@ def mock_like_service() -> MagicMock:
 
 async def test_get_tweets_feed_handler(
         mock_db_session: MagicMock,
-        mock_current_user: MagicMock,
+        test_user_obj: User,
         mock_tweet_service: MagicMock,
 ):
     """Юнит-тест для обработчика get_tweets_feed."""
@@ -47,13 +47,13 @@ async def test_get_tweets_feed_handler(
     # Вызываем обработчик
     result = await get_tweets_feed(
         db=mock_db_session,
-        current_user=mock_current_user,
+        current_user=test_user_obj,
         tweet_service=mock_tweet_service,
     )
 
     # Проверяем вызов сервиса
     mock_tweet_service.get_tweet_feed.assert_awaited_once_with(
-        db=mock_db_session, current_user=mock_current_user
+        db=mock_db_session, current_user=test_user_obj
     )
     # Проверяем результат
     assert result == expected_feed
@@ -63,7 +63,7 @@ async def test_get_tweets_feed_handler(
 
 async def test_create_tweet_handler(
         mock_db_session: MagicMock,
-        mock_current_user: MagicMock,
+        test_user_obj: User,
         mock_tweet_service: MagicMock,
 ):
     """Юнит-тест для обработчика create_tweet."""
@@ -78,14 +78,14 @@ async def test_create_tweet_handler(
     # Вызываем обработчик
     result = await create_tweet(
         db=mock_db_session,
-        current_user=mock_current_user,
+        current_user=test_user_obj,
         tweet_service=mock_tweet_service,
         tweet_in=tweet_in_data,
     )
 
     # Проверяем вызов сервиса
     mock_tweet_service.create_tweet.assert_awaited_once_with(
-        db=mock_db_session, current_user=mock_current_user, tweet_data=tweet_in_data
+        db=mock_db_session, current_user=test_user_obj, tweet_data=tweet_in_data
     )
     # Проверяем результат
     assert isinstance(result, TweetCreateResult)
@@ -96,7 +96,7 @@ async def test_create_tweet_handler(
 
 async def test_delete_tweet_handler(
         mock_db_session: MagicMock,
-        mock_current_user: MagicMock,
+        test_user_obj: User,
         mock_tweet_service: MagicMock,
 ):
     """Юнит-тест для обработчика delete_tweet."""
@@ -107,14 +107,14 @@ async def test_delete_tweet_handler(
     # Вызываем обработчик
     result = await delete_tweet(
         db=mock_db_session,
-        current_user=mock_current_user,
+        current_user=test_user_obj,
         tweet_service=mock_tweet_service,
         tweet_id=tweet_id_to_delete,  # Передаем Path параметр напрямую
     )
 
     # Проверяем вызов сервиса
     mock_tweet_service.delete_tweet.assert_awaited_once_with(
-        db=mock_db_session, current_user=mock_current_user, tweet_id=tweet_id_to_delete
+        db=mock_db_session, current_user=test_user_obj, tweet_id=tweet_id_to_delete
     )
     # Проверяем результат
     assert isinstance(result, TweetActionResult)
@@ -125,7 +125,7 @@ async def test_delete_tweet_handler(
 
 async def test_like_tweet_handler(
         mock_db_session: MagicMock,
-        mock_current_user: MagicMock,
+        test_user_obj: User,
         mock_like_service: MagicMock,
 ):
     """Юнит-тест для обработчика like_tweet."""
@@ -136,14 +136,14 @@ async def test_like_tweet_handler(
     # Вызываем обработчик
     result = await like_tweet(
         db=mock_db_session,
-        current_user=mock_current_user,
+        current_user=test_user_obj,
         like_service=mock_like_service,
         tweet_id=tweet_id_to_like,
     )
 
     # Проверяем вызов сервиса
     mock_like_service.like_tweet.assert_awaited_once_with(
-        db=mock_db_session, current_user=mock_current_user, tweet_id=tweet_id_to_like
+        db=mock_db_session, current_user=test_user_obj, tweet_id=tweet_id_to_like
     )
     # Проверяем результат
     assert isinstance(result, TweetActionResult)
@@ -154,7 +154,7 @@ async def test_like_tweet_handler(
 
 async def test_unlike_tweet_handler(
         mock_db_session: MagicMock,
-        mock_current_user: MagicMock,
+        test_user_obj: User,
         mock_like_service: MagicMock,
 ):
     """Юнит-тест для обработчика unlike_tweet."""
@@ -165,14 +165,14 @@ async def test_unlike_tweet_handler(
     # Вызываем обработчик
     result = await unlike_tweet(
         db=mock_db_session,
-        current_user=mock_current_user,
+        current_user=test_user_obj,
         like_service=mock_like_service,
         tweet_id=tweet_id_to_unlike,
     )
 
     # Проверяем вызов сервиса
     mock_like_service.unlike_tweet.assert_awaited_once_with(
-        db=mock_db_session, current_user=mock_current_user, tweet_id=tweet_id_to_unlike
+        db=mock_db_session, current_user=test_user_obj, tweet_id=tweet_id_to_unlike
     )
     # Проверяем результат
     assert isinstance(result, TweetActionResult)

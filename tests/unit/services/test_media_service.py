@@ -8,28 +8,16 @@ from src.core.config import settings
 from src.core.exceptions import BadRequestError, MediaValidationError
 from src.models import Media
 from src.repositories import MediaRepository
-from src.schemas.media import MediaCreate
+from src.schemas.media import MediaCreate, MediaCreateResult
 from src.services.media_service import MediaService
 
 
 # --- Фикстуры ---
 
-# Фикстура для мока MediaRepository
-@pytest.fixture
-def mock_media_repo() -> MagicMock:
-    repo = MagicMock(spec=MediaRepository)
-    repo.create = AsyncMock()
-    repo.delete = AsyncMock()
-    repo.model = Media
-    return repo
-
-
 # Фикстура для создания экземпляра сервиса
 @pytest.fixture
 def media_service(mock_media_repo: MagicMock) -> MediaService:
     service = MediaService(repo=mock_media_repo)
-    # Сохраняем мок для доступа в тестах
-    service._mock_media_repo = mock_media_repo
     return service
 
 

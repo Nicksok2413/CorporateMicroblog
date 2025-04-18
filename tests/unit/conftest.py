@@ -1,9 +1,11 @@
-from unittest.mock import MagicMock, AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.models import User, Tweet, Media, Like, Follow
+from src.models import Follow, Like, Media, Tweet, User
+from src.repositories import MediaRepository
+from src.services import MediaService
 
 
 # --- Мок сессии БД ---
@@ -61,8 +63,24 @@ def test_follow_obj() -> Follow:
     return Follow(follower_id=1, following_id=2)
 
 
+# --- Фикстуры для моков зависимостей ---
+
+
+# Фикстура для мока MediaRepository
 @pytest.fixture
-def mock_current_user() -> MagicMock:
-    user = MagicMock(spec=User)
-    user.id = 1
-    return user
+def mock_media_repo() -> MagicMock:
+    repo = MagicMock(spec=MediaRepository)
+    repo.create = AsyncMock()
+    repo.delete = AsyncMock()
+    repo.model = Media
+    return repo
+
+
+# Фикстура для мока MediaService
+@pytest.fixture
+def mock_media_service() -> MagicMock:
+    service = MagicMock(spec=MediaService)
+    service.save_media_file = AsyncMock()
+    service.delete_media_files = AsyncMock()
+    service.get_media_url = MagicMock(side_effect=lambda m: f"/media/{m.file_path}")  # Простой мок URL
+    return service

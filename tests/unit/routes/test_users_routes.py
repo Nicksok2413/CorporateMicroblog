@@ -4,6 +4,7 @@ import pytest
 
 from src.api.routes.users import (follow_user, get_my_profile,
                                   get_user_profile_by_id, unfollow_user)
+from src.models.user import User
 from src.schemas.base import ResultTrue
 from src.schemas.user import UserProfile, UserProfileResult
 from src.services import FollowService, UserService
@@ -33,24 +34,24 @@ def mock_follow_service() -> MagicMock:
 
 async def test_get_my_profile_handler(
         mock_db_session: MagicMock,
-        mock_current_user: MagicMock,
+        test_user_obj: User,
         mock_user_service: MagicMock,
 ):
     """Юнит-тест для обработчика get_my_profile."""
     # Настраиваем мок сервиса
-    expected_profile_data = UserProfile(id=mock_current_user.id, name="Test User", followers=[], following=[])
+    expected_profile_data = UserProfile(id=test_user_obj.id, name="Test User", followers=[], following=[])
     mock_user_service.get_user_profile.return_value = expected_profile_data
 
     # Вызываем обработчик
     result = await get_my_profile(
         db=mock_db_session,
-        current_user=mock_current_user,
+        current_user=test_user_obj,
         user_service=mock_user_service,
     )
 
     # Проверяем вызов сервиса
     mock_user_service.get_user_profile.assert_awaited_once_with(
-        db=mock_db_session, user_id=mock_current_user.id
+        db=mock_db_session, user_id=test_user_obj.id
     )
     # Проверяем результат
     assert isinstance(result, UserProfileResult)
@@ -89,7 +90,7 @@ async def test_get_user_profile_by_id_handler(
 
 async def test_follow_user_handler(
         mock_db_session: MagicMock,
-        mock_current_user: MagicMock,
+        test_user_obj: User,
         mock_follow_service: MagicMock,
 ):
     """Юнит-тест для обработчика follow_user."""
@@ -100,14 +101,14 @@ async def test_follow_user_handler(
     # Вызываем обработчик
     result = await follow_user(
         db=mock_db_session,
-        current_user=mock_current_user,
+        current_user=test_user_obj,
         follow_service=mock_follow_service,
         user_id=user_id_to_follow,
     )
 
     # Проверяем вызов сервиса
     mock_follow_service.follow_user.assert_awaited_once_with(
-        db=mock_db_session, current_user=mock_current_user, user_to_follow_id=user_id_to_follow
+        db=mock_db_session, current_user=test_user_obj, user_to_follow_id=user_id_to_follow
     )
     # Проверяем результат
     assert isinstance(result, ResultTrue)
@@ -118,7 +119,7 @@ async def test_follow_user_handler(
 
 async def test_unfollow_user_handler(
         mock_db_session: MagicMock,
-        mock_current_user: MagicMock,
+        test_user_obj: User,
         mock_follow_service: MagicMock,
 ):
     """Юнит-тест для обработчика unfollow_user."""
@@ -129,14 +130,14 @@ async def test_unfollow_user_handler(
     # Вызываем обработчик
     result = await unfollow_user(
         db=mock_db_session,
-        current_user=mock_current_user,
+        current_user=test_user_obj,
         follow_service=mock_follow_service,
         user_id=user_id_to_unfollow,
     )
 
     # Проверяем вызов сервиса
     mock_follow_service.unfollow_user.assert_awaited_once_with(
-        db=mock_db_session, current_user=mock_current_user, user_to_unfollow_id=user_id_to_unfollow
+        db=mock_db_session, current_user=test_user_obj, user_to_unfollow_id=user_id_to_unfollow
     )
     # Проверяем результат
     assert isinstance(result, ResultTrue)

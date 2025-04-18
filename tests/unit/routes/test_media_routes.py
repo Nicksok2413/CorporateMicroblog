@@ -1,35 +1,26 @@
-from unittest.mock import MagicMock, AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from fastapi import UploadFile
 
 from src.api.routes.media import upload_media_file
-from src.models import Media
+from src.models import Media, User
 from src.schemas.media import MediaCreateResult
-from src.services import MediaService
 
 # Помечаем все тесты в этом модуле как асинхронные
 pytestmark = pytest.mark.asyncio
 
-# --- Фикстуры для моков зависимостей ---
 
-@pytest.fixture
-def mock_media_service() -> MagicMock:
-    service = MagicMock(spec=MediaService)
-    service.save_media_file = AsyncMock()
-    return service
+# --- Фикстуры ---
 
-
+# Фикстура для мока UploadFile
 @pytest.fixture
 def mock_upload_file() -> MagicMock:
-    # Создаем мок для UploadFile
     upload_file = MagicMock(spec=UploadFile)
     upload_file.filename = "test.jpg"
     upload_file.content_type = "image/jpeg"
-    # Мокируем файловый объект внутри UploadFile
-    file_obj = MagicMock()
+    file_obj = MagicMock()  # Мокируем файловый объект внутри UploadFile
     upload_file.file = file_obj
-    # Мокируем метод close
     upload_file.close = AsyncMock()
     return upload_file
 
@@ -38,7 +29,7 @@ def mock_upload_file() -> MagicMock:
 
 async def test_upload_media_file_handler_success(
         mock_db_session: MagicMock,
-        mock_current_user: MagicMock,
+        test_user_obj: User,
         mock_media_service: MagicMock,
         mock_upload_file: MagicMock,
 ):
@@ -52,7 +43,7 @@ async def test_upload_media_file_handler_success(
     # Вызываем сам обработчик роута с моками вместо реальных зависимостей
     result = await upload_media_file(
         db=mock_db_session,
-        current_user=mock_current_user,
+        current_user=test_user_obj,
         media_service=mock_media_service,
         file=mock_upload_file,
     )
@@ -68,14 +59,14 @@ async def test_upload_media_file_handler_success(
     # Проверяем, что file.close был вызван
     mock_upload_file.close.assert_awaited_once()
 
-    # *** Проверяем возвращаемый результат - это покроет нужную строку ***
+    # Проверяем возвращаемый результат - это покроет нужную строку
     assert isinstance(result, MediaCreateResult)
     assert result.media_id == media_id
 
 
 async def test_upload_media_file_handler_service_exception(
         mock_db_session: MagicMock,
-        mock_current_user: MagicMock,
+        test_user_obj: User,
         mock_media_service: MagicMock,
         mock_upload_file: MagicMock,
 ):
@@ -88,7 +79,7 @@ async def test_upload_media_file_handler_service_exception(
     with pytest.raises(Exception, match=error_message):
         await upload_media_file(
             db=mock_db_session,
-            current_user=mock_current_user,
+            current_user=test_user_obj,
             media_service=mock_media_service,
             file=mock_upload_file,
         )

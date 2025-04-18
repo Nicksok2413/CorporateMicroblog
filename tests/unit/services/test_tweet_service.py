@@ -45,15 +45,6 @@ def mock_media_repo() -> MagicMock:
     return repo
 
 
-# Фикстура для мока MediaService
-@pytest.fixture
-def mock_media_service() -> MagicMock:
-    service = MagicMock(spec=MediaService)
-    service.get_media_url = MagicMock(side_effect=lambda m: f"/media/{m.file_path}")  # Простой мок URL
-    service.delete_media_files = AsyncMock()
-    return service
-
-
 # Фикстура для создания экземпляра сервиса
 @pytest.fixture
 def tweet_service(
