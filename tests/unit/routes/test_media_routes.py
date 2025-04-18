@@ -59,7 +59,7 @@ async def test_upload_media_file_handler_success(
     # Проверяем, что file.close был вызван
     mock_upload_file.close.assert_awaited_once()
 
-    # Проверяем возвращаемый результат - это покроет нужную строку
+    # Проверяем возвращаемый результат
     assert isinstance(result, MediaCreateResult)
     assert result.media_id == media_id
 

@@ -7,8 +7,7 @@ from sqlalchemy.exc import SQLAlchemyError  # Для имитации ошибо
 from src.core.config import settings
 from src.core.exceptions import BadRequestError, MediaValidationError
 from src.models import Media
-from src.repositories import MediaRepository
-from src.schemas.media import MediaCreate, MediaCreateResult
+from src.schemas.media import MediaCreate
 from src.services.media_service import MediaService
 
 
