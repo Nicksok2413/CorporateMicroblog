@@ -1,49 +1,18 @@
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 
 import pytest
 from sqlalchemy.exc import SQLAlchemyError  # Для имитации ошибок БД
 
 from src.core.exceptions import BadRequestError, NotFoundError, PermissionDeniedError
 from src.models import Like, Media, Tweet, User
-from src.repositories import FollowRepository, MediaRepository, TweetRepository
 from src.schemas.tweet import LikeInfo, TweetAuthor, TweetCreateRequest, TweetFeedResult, TweetInFeed
-from src.services import MediaService, TweetService
+from src.services.tweet_service import TweetService
 
 # Помечаем все тесты в этом модуле как асинхронные
 pytestmark = pytest.mark.asyncio
 
 
 # --- Фикстуры ---
-
-# Фикстура для мока TweetRepository
-@pytest.fixture
-def mock_tweet_repo() -> MagicMock:
-    repo = MagicMock(spec=TweetRepository)
-    repo.create = AsyncMock()
-    repo.get_with_attachments = AsyncMock()
-    repo.get = AsyncMock()
-    repo.delete = AsyncMock()
-    repo.get_feed_for_user = AsyncMock()
-    repo.model = Tweet
-    return repo
-
-
-# Фикстура для мока FollowRepository
-@pytest.fixture
-def mock_follow_repo() -> MagicMock:
-    repo = MagicMock(spec=FollowRepository)
-    repo.get_following_ids = AsyncMock()
-    return repo
-
-
-# Фикстура для мока MediaRepository
-@pytest.fixture
-def mock_media_repo() -> MagicMock:
-    repo = MagicMock(spec=MediaRepository)
-    repo.get = AsyncMock()
-    repo.delete = AsyncMock()
-    return repo
-
 
 # Фикстура для создания экземпляра сервиса
 @pytest.fixture
@@ -443,11 +412,11 @@ async def test_get_tweet_feed_success(
 
     # Проверка вызовов
     mock_follow_repo.get_following_ids.assert_awaited_once_with(mock_db_session,
-                                                                               follower_id=test_user_obj.id)
+                                                                follower_id=test_user_obj.id)
     # Проверяем, что ID текущего пользователя был добавлен к списку ID для запроса
     expected_author_ids = list(set([test_alice_obj.id] + [test_user_obj.id]))
     mock_tweet_repo.get_feed_for_user.assert_awaited_once_with(mock_db_session,
-                                                                              author_ids=expected_author_ids)
+                                                               author_ids=expected_author_ids)
     mock_media_service.get_media_url.assert_called_once_with(test_media_obj)
 
 
@@ -474,10 +443,10 @@ async def test_get_tweet_feed_empty(
 
     # Проверяем вызовы
     mock_follow_repo.get_following_ids.assert_awaited_once_with(mock_db_session,
-                                                                               follower_id=test_user_obj.id)
+                                                                follower_id=test_user_obj.id)
     # get_feed_for_user вызывается с ID только текущего пользователя
     expected_author_ids = [test_user_obj.id]  # Только ID текущего пользователя
     mock_tweet_repo.get_feed_for_user.assert_awaited_once_with(mock_db_session,
-                                                                              author_ids=expected_author_ids)
+                                                               author_ids=expected_author_ids)
     # Нет твитов - нет вызовов
     mock_media_service.get_media_url.assert_not_called()

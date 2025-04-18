@@ -4,8 +4,9 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models import Follow, Like, Media, Tweet, User
-from src.repositories import MediaRepository
-from src.services import MediaService
+from src.repositories import (FollowRepository, MediaRepository,
+                              TweetRepository, UserRepository)
+from src.services import LikeService, MediaService, TweetService
 
 
 # --- Мок сессии БД ---
@@ -65,6 +66,15 @@ def test_follow_obj() -> Follow:
 
 # --- Фикстуры для моков зависимостей ---
 
+# Фикстура для мока FollowRepository
+@pytest.fixture
+def mock_follow_repo() -> MagicMock:
+    repo = MagicMock(spec=FollowRepository)
+    repo.get_following_with_users = AsyncMock()
+    repo.get_followers_with_users = AsyncMock()
+    repo.get_following_ids = AsyncMock()
+    return repo
+
 
 # Фикстура для мока MediaRepository
 @pytest.fixture
@@ -73,6 +83,29 @@ def mock_media_repo() -> MagicMock:
     repo.create = AsyncMock()
     repo.delete = AsyncMock()
     repo.model = Media
+    return repo
+
+
+# Фикстура для мока TweetRepository
+@pytest.fixture
+def mock_tweet_repo() -> MagicMock:
+    repo = MagicMock(spec=TweetRepository)
+    repo.create = AsyncMock()
+    repo.get_with_attachments = AsyncMock()
+    repo.get = AsyncMock()
+    repo.delete = AsyncMock()
+    repo.get_feed_for_user = AsyncMock()
+    repo.model = Tweet
+    return repo
+
+
+# Фикстура для мока UserRepository
+@pytest.fixture
+def mock_user_repo() -> MagicMock:
+    repo = MagicMock(spec=UserRepository)
+    repo.get_by_api_key = AsyncMock()
+    repo.get = AsyncMock()
+    repo.model = User
     return repo
 
 
