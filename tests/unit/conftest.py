@@ -4,9 +4,19 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models import Follow, Like, Media, Tweet, User
-from src.repositories import (FollowRepository, MediaRepository,
-                              TweetRepository, UserRepository)
-from src.services import LikeService, MediaService, TweetService
+from src.repositories import (
+    FollowRepository,
+    MediaRepository,
+    TweetRepository,
+    UserRepository
+)
+from src.services import (
+    FollowService,
+    LikeService,
+    MediaService,
+    TweetService,
+    UserService
+)
 
 
 # --- Мок сессии БД ---
@@ -111,6 +121,15 @@ def mock_user_repo() -> MagicMock:
 
 # --- Фикстуры для моков сервисов ---
 
+# Фикстура для мока FollowService
+@pytest.fixture
+def mock_follow_service() -> MagicMock:
+    service = MagicMock(spec=FollowService)
+    service.follow_user = AsyncMock()
+    service.unfollow_user = AsyncMock()
+    return service
+
+
 # Фикстура для мока LikeService
 @pytest.fixture
 def mock_like_service() -> MagicMock:
@@ -137,4 +156,12 @@ def mock_tweet_service() -> MagicMock:
     service.get_tweet_feed = AsyncMock()
     service.create_tweet = AsyncMock()
     service.delete_tweet = AsyncMock()
+    return service
+
+
+# Фикстура для мока UserService
+@pytest.fixture
+def mock_user_service() -> MagicMock:
+    service = MagicMock(spec=UserService)
+    service.get_user_profile = AsyncMock()
     return service

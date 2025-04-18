@@ -25,7 +25,7 @@ def mock_upload_file() -> MagicMock:
     return upload_file
 
 
-# --- Тест для успешного выполнения обработчика роута (upload_media_file) ---
+# --- Тест для обработчика роута upload_media_file ---
 
 async def test_upload_media_file_handler_success(
         mock_db_session: MagicMock,

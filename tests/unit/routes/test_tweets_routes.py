@@ -2,17 +2,26 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from src.api.routes.tweets import (create_tweet, delete_tweet,
-                                   get_tweets_feed, like_tweet, unlike_tweet)
+from src.api.routes.tweets import (
+    create_tweet,
+    delete_tweet,
+    get_tweets_feed,
+    like_tweet,
+    unlike_tweet
+)
 from src.models import Tweet, User
-from src.schemas.tweet import (TweetActionResult, TweetCreateRequest,
-                               TweetCreateResult, TweetFeedResult)
+from src.schemas.tweet import (
+    TweetActionResult,
+    TweetCreateRequest,
+    TweetCreateResult,
+    TweetFeedResult
+)
 
 # Помечаем все тесты в этом модуле как асинхронные
 pytestmark = pytest.mark.asyncio
 
 
-# --- Тест для get_tweets_feed ---
+# --- Тест для обработчика роута get_tweets_feed ---
 
 async def test_get_tweets_feed_handler(
         mock_db_session: MagicMock,
@@ -39,7 +48,7 @@ async def test_get_tweets_feed_handler(
     assert result == expected_feed
 
 
-# --- Тест для create_tweet ---
+# --- Тест для обработчика роута create_tweet ---
 
 async def test_create_tweet_handler(
         mock_db_session: MagicMock,
@@ -72,7 +81,7 @@ async def test_create_tweet_handler(
     assert result.tweet_id == tweet_id
 
 
-# --- Тест для delete_tweet ---
+# --- Тест для обработчика роута delete_tweet ---
 
 async def test_delete_tweet_handler(
         mock_db_session: MagicMock,
@@ -101,7 +110,7 @@ async def test_delete_tweet_handler(
     assert result.result is True
 
 
-# --- Тест для like_tweet ---
+# --- Тест для обработчика роута like_tweet ---
 
 async def test_like_tweet_handler(
         mock_db_session: MagicMock,
@@ -130,7 +139,7 @@ async def test_like_tweet_handler(
     assert result.result is True
 
 
-# --- Тест для unlike_tweet ---
+# --- Тест для обработчика роута unlike_tweet ---
 
 async def test_unlike_tweet_handler(
         mock_db_session: MagicMock,

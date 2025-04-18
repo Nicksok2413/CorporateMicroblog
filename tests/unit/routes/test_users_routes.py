@@ -1,36 +1,22 @@
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 
 import pytest
 
-from src.api.routes.users import (follow_user, get_my_profile,
-                                  get_user_profile_by_id, unfollow_user)
+from src.api.routes.users import (
+    follow_user,
+    get_my_profile,
+    get_user_profile_by_id,
+    unfollow_user
+)
 from src.models.user import User
 from src.schemas.base import ResultTrue
 from src.schemas.user import UserProfile, UserProfileResult
-from src.services import FollowService, UserService
 
 # Помечаем все тесты в этом модуле как асинхронные
 pytestmark = pytest.mark.asyncio
 
 
-# --- Фикстуры для моков зависимостей ---
-
-@pytest.fixture
-def mock_user_service() -> MagicMock:
-    service = MagicMock(spec=UserService)
-    service.get_user_profile = AsyncMock()
-    return service
-
-
-@pytest.fixture
-def mock_follow_service() -> MagicMock:
-    service = MagicMock(spec=FollowService)
-    service.follow_user = AsyncMock()
-    service.unfollow_user = AsyncMock()
-    return service
-
-
-# --- Тест для get_my_profile ---
+# --- Тест для обработчика роута get_my_profile ---
 
 async def test_get_my_profile_handler(
         mock_db_session: MagicMock,
@@ -53,12 +39,13 @@ async def test_get_my_profile_handler(
     mock_user_service.get_user_profile.assert_awaited_once_with(
         db=mock_db_session, user_id=test_user_obj.id
     )
+
     # Проверяем результат
     assert isinstance(result, UserProfileResult)
     assert result.user == expected_profile_data
 
 
-# --- Тест для get_user_profile_by_id ---
+# --- Тест для обработчика роута get_user_profile_by_id ---
 
 async def test_get_user_profile_by_id_handler(
         mock_db_session: MagicMock,
@@ -81,12 +68,13 @@ async def test_get_user_profile_by_id_handler(
     mock_user_service.get_user_profile.assert_awaited_once_with(
         db=mock_db_session, user_id=user_id_to_get
     )
+
     # Проверяем результат
     assert isinstance(result, UserProfileResult)
     assert result.user == expected_profile_data
 
 
-# --- Тест для follow_user ---
+# --- Тест для обработчика роута follow_user ---
 
 async def test_follow_user_handler(
         mock_db_session: MagicMock,
@@ -110,12 +98,13 @@ async def test_follow_user_handler(
     mock_follow_service.follow_user.assert_awaited_once_with(
         db=mock_db_session, current_user=test_user_obj, user_to_follow_id=user_id_to_follow
     )
+
     # Проверяем результат
     assert isinstance(result, ResultTrue)
     assert result.result is True
 
 
-# --- Тест для unfollow_user ---
+# --- Тест для обработчика роута unfollow_user ---
 
 async def test_unfollow_user_handler(
         mock_db_session: MagicMock,
@@ -139,6 +128,7 @@ async def test_unfollow_user_handler(
     mock_follow_service.unfollow_user.assert_awaited_once_with(
         db=mock_db_session, current_user=test_user_obj, user_to_unfollow_id=user_id_to_unfollow
     )
+
     # Проверяем результат
     assert isinstance(result, ResultTrue)
     assert result.result is True
