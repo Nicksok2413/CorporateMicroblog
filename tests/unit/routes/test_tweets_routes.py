@@ -1,4 +1,4 @@
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -7,29 +7,9 @@ from src.api.routes.tweets import (create_tweet, delete_tweet,
 from src.models import Tweet, User
 from src.schemas.tweet import (TweetActionResult, TweetCreateRequest,
                                TweetCreateResult, TweetFeedResult)
-from src.services import LikeService, TweetService
 
 # Помечаем все тесты в этом модуле как асинхронные
 pytestmark = pytest.mark.asyncio
-
-
-# --- Фикстуры для моков зависимостей ---
-
-@pytest.fixture
-def mock_tweet_service() -> MagicMock:
-    service = MagicMock(spec=TweetService)
-    service.get_tweet_feed = AsyncMock()
-    service.create_tweet = AsyncMock()
-    service.delete_tweet = AsyncMock()
-    return service
-
-
-@pytest.fixture
-def mock_like_service() -> MagicMock:
-    service = MagicMock(spec=LikeService)
-    service.like_tweet = AsyncMock()
-    service.unlike_tweet = AsyncMock()
-    return service
 
 
 # --- Тест для get_tweets_feed ---

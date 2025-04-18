@@ -64,7 +64,7 @@ def test_follow_obj() -> Follow:
     return Follow(follower_id=1, following_id=2)
 
 
-# --- Фикстуры для моков зависимостей ---
+# --- Фикстуры для моков репозиториев ---
 
 # Фикстура для мока FollowRepository
 @pytest.fixture
@@ -109,6 +109,17 @@ def mock_user_repo() -> MagicMock:
     return repo
 
 
+# --- Фикстуры для моков сервисов ---
+
+# Фикстура для мока LikeService
+@pytest.fixture
+def mock_like_service() -> MagicMock:
+    service = MagicMock(spec=LikeService)
+    service.like_tweet = AsyncMock()
+    service.unlike_tweet = AsyncMock()
+    return service
+
+
 # Фикстура для мока MediaService
 @pytest.fixture
 def mock_media_service() -> MagicMock:
@@ -116,4 +127,14 @@ def mock_media_service() -> MagicMock:
     service.save_media_file = AsyncMock()
     service.delete_media_files = AsyncMock()
     service.get_media_url = MagicMock(side_effect=lambda m: f"/media/{m.file_path}")  # Простой мок URL
+    return service
+
+
+# Фикстура для мока TweetService
+@pytest.fixture
+def mock_tweet_service() -> MagicMock:
+    service = MagicMock(spec=TweetService)
+    service.get_tweet_feed = AsyncMock()
+    service.create_tweet = AsyncMock()
+    service.delete_tweet = AsyncMock()
     return service
