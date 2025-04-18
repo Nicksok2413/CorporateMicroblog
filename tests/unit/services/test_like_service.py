@@ -1,4 +1,4 @@
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 
 import pytest
 from sqlalchemy.exc import SQLAlchemyError  # Для имитации ошибок БД
@@ -6,31 +6,12 @@ from sqlalchemy.exc import SQLAlchemyError  # Для имитации ошибо
 from src.core.exceptions import BadRequestError, NotFoundError
 from src.models import Like, Tweet, User
 from src.services.like_service import LikeService
-from src.repositories import LikeRepository, TweetRepository
 
 # Помечаем все тесты в этом модуле как асинхронные
 pytestmark = pytest.mark.asyncio
 
 
 # --- Фикстуры ---
-
-# Фикстура для мока LikeRepository
-@pytest.fixture
-def mock_like_repo() -> MagicMock:
-    repo = MagicMock(spec=LikeRepository)
-    repo.get_like = AsyncMock()
-    repo.add_like = AsyncMock()
-    repo.delete_like = AsyncMock()
-    return repo
-
-
-# Фикстура для мока TweetRepository
-@pytest.fixture
-def mock_tweet_repo() -> MagicMock:
-    repo = MagicMock(spec=TweetRepository)
-    repo.get = AsyncMock()
-    return repo
-
 
 # Фикстура для создания экземпляра сервиса
 @pytest.fixture

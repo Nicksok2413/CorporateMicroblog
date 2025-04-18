@@ -6,16 +6,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.models import Follow, Like, Media, Tweet, User
 from src.repositories import (
     FollowRepository,
+    LikeRepository,
     MediaRepository,
     TweetRepository,
-    UserRepository
+    UserRepository,
 )
 from src.services import (
     FollowService,
     LikeService,
     MediaService,
     TweetService,
-    UserService
+    UserService,
 )
 
 
@@ -80,9 +81,22 @@ def test_follow_obj() -> Follow:
 @pytest.fixture
 def mock_follow_repo() -> MagicMock:
     repo = MagicMock(spec=FollowRepository)
+    repo.get_follow = AsyncMock()
+    repo.add_follow = AsyncMock()
+    repo.delete_follow = AsyncMock()
     repo.get_following_with_users = AsyncMock()
     repo.get_followers_with_users = AsyncMock()
     repo.get_following_ids = AsyncMock()
+    return repo
+
+
+# Фикстура для мока LikeRepository
+@pytest.fixture
+def mock_like_repo() -> MagicMock:
+    repo = MagicMock(spec=LikeRepository)
+    repo.get_like = AsyncMock()
+    repo.add_like = AsyncMock()
+    repo.delete_like = AsyncMock()
     return repo
 
 

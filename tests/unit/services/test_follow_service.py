@@ -1,12 +1,16 @@
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 
 import pytest
-from sqlalchemy.exc import IntegrityError, SQLAlchemyError  # Для имитации ошибок БД
+# Для имитации ошибок БД
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
-from src.core.exceptions import (BadRequestError, ConflictError,
-                                 NotFoundError, PermissionDeniedError)
+from src.core.exceptions import (
+    BadRequestError,
+    ConflictError,
+    NotFoundError,
+    PermissionDeniedError,
+)
 from src.models import Follow, User
-from src.repositories import FollowRepository, UserRepository
 from src.services.follow_service import FollowService
 
 # Помечаем все тесты в этом модуле как асинхронные
@@ -14,24 +18,6 @@ pytestmark = pytest.mark.asyncio
 
 
 # --- Фикстуры ---
-
-# Фикстура для мока FollowRepository
-@pytest.fixture
-def mock_follow_repo() -> MagicMock:
-    repo = MagicMock(spec=FollowRepository)
-    repo.get_follow = AsyncMock()
-    repo.add_follow = AsyncMock()
-    repo.delete_follow = AsyncMock()
-    return repo
-
-
-# Фикстура для мока UserRepository
-@pytest.fixture
-def mock_user_repo() -> MagicMock:
-    repo = MagicMock(spec=UserRepository)
-    repo.get = AsyncMock()
-    return repo
-
 
 # Фикстура для создания экземпляра сервиса
 @pytest.fixture

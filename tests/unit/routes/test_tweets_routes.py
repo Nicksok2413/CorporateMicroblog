@@ -7,14 +7,14 @@ from src.api.routes.tweets import (
     delete_tweet,
     get_tweets_feed,
     like_tweet,
-    unlike_tweet
+    unlike_tweet,
 )
 from src.models import Tweet, User
 from src.schemas.tweet import (
     TweetActionResult,
     TweetCreateRequest,
     TweetCreateResult,
-    TweetFeedResult
+    TweetFeedResult,
 )
 
 # Помечаем все тесты в этом модуле как асинхронные

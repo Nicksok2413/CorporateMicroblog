@@ -3,9 +3,19 @@ from unittest.mock import MagicMock
 import pytest
 from sqlalchemy.exc import SQLAlchemyError  # Для имитации ошибок БД
 
-from src.core.exceptions import BadRequestError, NotFoundError, PermissionDeniedError
+from src.core.exceptions import (
+    BadRequestError,
+    NotFoundError,
+    PermissionDeniedError,
+)
 from src.models import Like, Media, Tweet, User
-from src.schemas.tweet import LikeInfo, TweetAuthor, TweetCreateRequest, TweetFeedResult, TweetInFeed
+from src.schemas.tweet import (
+    LikeInfo,
+    TweetAuthor,
+    TweetCreateRequest,
+    TweetFeedResult,
+    TweetInFeed,
+)
 from src.services.tweet_service import TweetService
 
 # Помечаем все тесты в этом модуле как асинхронные

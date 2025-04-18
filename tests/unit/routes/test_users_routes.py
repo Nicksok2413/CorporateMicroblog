@@ -6,7 +6,7 @@ from src.api.routes.users import (
     follow_user,
     get_my_profile,
     get_user_profile_by_id,
-    unfollow_user
+    unfollow_user,
 )
 from src.models.user import User
 from src.schemas.base import ResultTrue
