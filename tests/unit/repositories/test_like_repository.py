@@ -11,10 +11,9 @@ from src.repositories import LikeRepository
 pytestmark = pytest.mark.asyncio
 
 
-# --- Фикстуры ---
+# Фикстура для создания экземпляра репозитория
 @pytest.fixture
 def like_repo() -> LikeRepository:
-    """Экземпляр репозитория."""
     return LikeRepository()
 
 
@@ -23,7 +22,7 @@ def like_repo() -> LikeRepository:
 async def test_get_like_found(
         like_repo: LikeRepository,
         mock_db_session: MagicMock,
-        test_like_obj: Like
+        test_like_obj: Like,
 ):
     """Тест get_like, когда лайк найден."""
     user_id = 1
@@ -52,7 +51,7 @@ async def test_get_like_found(
 
 async def test_get_like_not_found(
         like_repo: LikeRepository,
-        mock_db_session: MagicMock
+        mock_db_session: MagicMock,
 ):
     """Тест get_like, когда лайк не найден."""
     user_id = 1
@@ -82,7 +81,7 @@ async def test_get_like_not_found(
 
 async def test_add_like(
         like_repo: LikeRepository,
-        mock_db_session: MagicMock
+        mock_db_session: MagicMock,
 ):
     """Тест успешного вызова add_like."""
     user_id = 1
@@ -106,7 +105,7 @@ async def test_add_like(
 
 async def test_delete_like(
         like_repo: LikeRepository,
-        mock_db_session: MagicMock
+        mock_db_session: MagicMock,
 ):
     """Тест успешного вызова delete_like."""
     user_id = 1

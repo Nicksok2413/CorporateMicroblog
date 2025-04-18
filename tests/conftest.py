@@ -8,7 +8,12 @@ import pytest
 import pytest_asyncio
 from fastapi import status
 from httpx import AsyncClient, ASGITransport
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 from sqlalchemy.pool import NullPool
 
 # Убедимся, что настройки загружены с TESTING=True до импорта приложения

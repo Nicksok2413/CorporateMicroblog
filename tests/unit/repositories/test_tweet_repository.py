@@ -12,7 +12,7 @@ from src.repositories import TweetRepository
 pytestmark = pytest.mark.asyncio
 
 
-# Фикстура для репозитория
+# Фикстура для создания экземпляра репозитория
 @pytest.fixture
 def tweet_repo() -> TweetRepository:
     return TweetRepository(Tweet)
@@ -20,7 +20,10 @@ def tweet_repo() -> TweetRepository:
 
 # --- Тесты для get_with_attachments ---
 
-async def test_tweet_repo_get_with_attachments(tweet_repo, mock_db_session):
+async def test_tweet_repo_get_with_attachments(
+        tweet_repo: TweetRepository,
+        mock_db_session: MagicMock,
+):
     """Тест получения твита с загрузкой медиа."""
     tweet_id = 1
     expected_tweet_obj = Tweet(id=tweet_id)
@@ -57,7 +60,7 @@ async def test_tweet_repo_get_with_attachments(tweet_repo, mock_db_session):
 
 async def test_get_with_attachments_not_found(
         tweet_repo: TweetRepository,
-        mock_db_session: MagicMock
+        mock_db_session: MagicMock,
 ):
     """Тест get_with_attachments, когда твит не найден."""
     tweet_id = 999  # Несуществующий ID
@@ -80,7 +83,10 @@ async def test_get_with_attachments_not_found(
 
 # --- Тесты для get_feed_for_user ---
 
-async def test_tweet_repo_get_feed_for_user(tweet_repo, mock_db_session):
+async def test_tweet_repo_get_feed_for_user(
+        tweet_repo: TweetRepository,
+        mock_db_session: MagicMock,
+):
     """Тест получения ленты твитов."""
     author_ids = [1, 2]
     mock_tweets = [Tweet(id=10), Tweet(id=11)]
@@ -123,8 +129,13 @@ async def test_tweet_repo_get_feed_for_user(tweet_repo, mock_db_session):
     assert statement.compare(expected_statement)
 
 
-async def test_tweet_repo_get_feed_for_user_empty_authors(tweet_repo, mock_db_session):
+async def test_tweet_repo_get_feed_for_user_empty_authors(
+        tweet_repo: TweetRepository,
+        mock_db_session: MagicMock,
+):
     """Тест получения ленты с пустым списком авторов."""
+    # Запускаем метод
     result = await tweet_repo.get_feed_for_user(mock_db_session, author_ids=[])
+
     assert result == []
     mock_db_session.execute.assert_not_awaited()  # Не должно быть запроса к БД

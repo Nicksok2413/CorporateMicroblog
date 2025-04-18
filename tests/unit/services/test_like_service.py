@@ -11,8 +11,6 @@ from src.services.like_service import LikeService
 pytestmark = pytest.mark.asyncio
 
 
-# --- Фикстуры ---
-
 # Фикстура для создания экземпляра сервиса
 @pytest.fixture
 def like_service(

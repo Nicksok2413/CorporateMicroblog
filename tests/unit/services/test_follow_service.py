@@ -1,8 +1,7 @@
 from unittest.mock import MagicMock
 
 import pytest
-# Для имитации ошибок БД
-from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError  # Для имитации ошибок БД
 
 from src.core.exceptions import (
     BadRequestError,
@@ -16,8 +15,6 @@ from src.services.follow_service import FollowService
 # Помечаем все тесты в этом модуле как асинхронные
 pytestmark = pytest.mark.asyncio
 
-
-# --- Фикстуры ---
 
 # Фикстура для создания экземпляра сервиса
 @pytest.fixture

@@ -22,8 +22,6 @@ from src.services.tweet_service import TweetService
 pytestmark = pytest.mark.asyncio
 
 
-# --- Фикстуры ---
-
 # Фикстура для создания экземпляра сервиса
 @pytest.fixture
 def tweet_service(

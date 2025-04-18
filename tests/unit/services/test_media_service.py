@@ -11,8 +11,6 @@ from src.schemas.media import MediaCreate
 from src.services.media_service import MediaService
 
 
-# --- Фикстуры ---
-
 # Фикстура для создания экземпляра сервиса
 @pytest.fixture
 def media_service(mock_media_repo: MagicMock) -> MediaService:

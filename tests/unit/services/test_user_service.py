@@ -11,8 +11,6 @@ from src.services.user_service import UserService
 pytestmark = pytest.mark.asyncio
 
 
-# --- Фикстуры ---
-
 # Фикстура для создания экземпляра сервиса
 @pytest.fixture
 def user_service(
