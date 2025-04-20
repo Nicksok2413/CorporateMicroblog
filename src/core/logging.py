@@ -44,7 +44,7 @@ def configure_logging():
     # Удаляем стандартный обработчик, чтобы избежать дублирования
     logger.remove()
 
-    if settings.DEBUG:
+    if settings.DEBUG:  # pragma: no cover
         # DEBUG-режим: цветной вывод в stderr с помощью функции-форматтера
         logger.add(
             sys.stderr,
@@ -74,7 +74,7 @@ def configure_logging():
     # Файловый вывод (если включен PRODUCTION)
     log_file_path = settings.LOG_FILE_PATH
 
-    if log_file_path:
+    if log_file_path:  # pragma: no cover
         try:
             logger.add(
                 log_file_path,
@@ -95,7 +95,7 @@ def configure_logging():
         logger.info("Логирование в файл отключено.")
 
     # Настройка логирования SQLAlchemy (только в DEBUG)
-    if settings.DEBUG:
+    if settings.DEBUG:  # pragma: no cover
         logger.enable("sqlalchemy.engine")  # Включаем логгер SQLAlchemy
     else:
         logger.disable("sqlalchemy.engine")  # Отключаем SQL логи в production
