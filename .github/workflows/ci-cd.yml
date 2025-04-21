@@ -37,8 +37,15 @@ jobs:
       - name: Run tests with Pytest
         run: pytest --cov=src --cov-report term-missing -vv
         env:
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpassword
+          POSTGRES_DB: testdb
+          POSTGRES_PORT: 5432
           TESTING: True # Гарантирует использование SQLite и временных папок для тестов
-
+          DEBUG: False
+          LOG_LEVEL: DEBUG
+          API_KEY_HEADER: api-key
+          
   build_and_push:
     name: Build & Push Docker Image
     runs-on: ubuntu-latest
