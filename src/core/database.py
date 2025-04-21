@@ -8,7 +8,6 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
 from src.core.config import settings
 from src.core.logging import log
-from src.models.base import Base
 
 
 class Database:

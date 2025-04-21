@@ -11,3 +11,12 @@ from .like import LikeRepository
 from .media import MediaRepository
 from .tweet import TweetRepository
 from .user import UserRepository
+
+# Экспортируем репозитории
+__all__ = [
+    "FollowRepository",
+    "LikeRepository",
+    "MediaRepository",
+    "TweetRepository",
+    "UserRepository",
+]

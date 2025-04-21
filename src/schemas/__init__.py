@@ -19,3 +19,26 @@ from .tweet import (
     TweetInFeed,
 )
 from .user import BaseUser, UserProfile, UserProfileResult
+
+# Экспортируем схемы
+__all__ = [
+    # Base
+    "ResultFalseWithError",
+    "ResultTrue",
+    "TunedModel",
+    # Media
+    "MediaCreate",
+    "MediaCreateResult",
+    # Tweet
+    "LikeInfo",
+    "TweetActionResult",
+    "TweetAuthor",
+    "TweetCreateRequest",
+    "TweetCreateResult",
+    "TweetFeedResult",
+    "TweetInFeed",
+    # User
+    "BaseUser",
+    "UserProfile",
+    "UserProfileResult",
+]

@@ -2,6 +2,7 @@
 
 from typing import Optional
 
+from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -9,7 +10,7 @@ from src.models.user import User
 from src.repositories.base import BaseRepository
 
 
-class UserRepository(BaseRepository[User, None]):
+class UserRepository(BaseRepository[User, BaseModel]):  # Используем BaseModel как тип-заглушку
     """
     Репозиторий для выполнения CRUD операций с моделью User.
 

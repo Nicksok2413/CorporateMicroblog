@@ -226,7 +226,7 @@ async def test_database_session_exception_and_rollback(
     test_exception = ValueError("Something went wrong")
 
     with pytest.raises(ValueError, match="Something went wrong"):
-        async with db.session() as session:
+        async with db.session():
             # Имитируем ошибку внутри блока
             raise test_exception
 

@@ -22,7 +22,7 @@ INDEX_HTML_PATH = os.path.join(STATIC_FILES_DIR, "index.html")
 
 # Определяем lifespan для управления подключением к БД
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI):  # pragma: no cover
     """
     Контекстный менеджер для управления жизненным циклом приложения.
     Выполняет подключение к БД при старте и отключение при завершении.
@@ -56,11 +56,10 @@ def create_app() -> FastAPI:
 
     # Настраиваем CORS (Cross-Origin Resource Sharing)
     # Позволяет фронтенду с другого домена обращаться к API
-    if settings.DEBUG or not settings.PRODUCTION:
-        allow_origins = ["*"]  # Разрешаем все для разработки/тестирования
-        log.warning("CORS настроен разрешать все источники (*). Не используйте в production!")
+    if not settings.PRODUCTION:  # type: ignore[truthy-function]
+        allow_origins: list[str] = ["*"]  # Разрешаем все для разработки/тестирования
+        log.warning("CORS настроен разрешать все источники (*). Не использовать в PRODUCTION!")
     else:
-        # TODO: Заменить на реальные разрешенные домены в production
         allow_origins = []  # По умолчанию запретить все, если не задано
         log.info(f"CORS настроен для PRODUCTION. Разрешенные источники: {allow_origins}")
 
@@ -77,24 +76,23 @@ def create_app() -> FastAPI:
     log.info("Обработчики исключений настроены.")
 
     # Подключаем API роутер
-    log.info(f"Подключение API роутера...")
+    log.info("Подключение API роутера...")
     app.include_router(api_router, prefix="/api")
 
     # Монтируем статические файлы для медиа
-    if settings.MEDIA_ROOT_PATH and settings.MEDIA_URL_PREFIX:
-        media_dir = settings.MEDIA_ROOT_PATH
-        media_url = settings.MEDIA_URL_PREFIX
-        log.info(f"Монтирование статики: URL '{media_url}', Директория '{media_dir}'")
-        app.mount(media_url, StaticFiles(directory=media_dir), name="media")
-    else:
-        log.warning("Путь или URL-префикс для медиа не настроены.")
+    log.info(f"Монтирование статики: URL '{settings.MEDIA_URL_PREFIX}', Директория '{settings.MEDIA_ROOT_PATH}'")
+    app.mount(
+        settings.MEDIA_URL_PREFIX,
+        StaticFiles(directory=settings.MEDIA_ROOT_PATH),  # type: ignore[arg-type]
+        name="media",
+    )
 
     # Монтируем статику фронтенда
     log.info(f"Монтирование статики фронтенда из '{STATIC_FILES_DIR}' по пути '/'")
     app.mount(
         "/",
         StaticFiles(directory=STATIC_FILES_DIR, html=True),
-        name="static_frontend"
+        name="static_frontend",
     )
 
     # Catch-all: Обработчик для корневого пути (и всех остальных, не пойманных ранее),

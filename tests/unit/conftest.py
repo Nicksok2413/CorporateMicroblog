@@ -20,7 +20,7 @@ from src.services import (
 )
 
 
-# --- Мок сессии БД ---
+# Мок сессии БД
 @pytest.fixture
 def mock_db_session() -> MagicMock:
     """Фикстура для мока сессии SQLAlchemy."""
@@ -34,21 +34,25 @@ def mock_db_session() -> MagicMock:
 
 # --- Фикстуры для базовых объектов моделей ---
 
+# Фикстура пользователя `Test User`
 @pytest.fixture
 def test_user_obj() -> User:
     return User(id=1, name="Test User", api_key="testkey1")
 
 
+# Фикстура пользователя `Test Alice`
 @pytest.fixture
 def test_alice_obj() -> User:
     return User(id=2, name="Test Alice", api_key="testkey2")
 
 
+# Фикстура пользователя `Test Bob`
 @pytest.fixture
 def test_bob_obj() -> User:
     return User(id=3, name="Test Bob", api_key="testkey3")
 
 
+# Фикстура твита
 @pytest.fixture
 def test_tweet_obj() -> Tweet:
     # Создаем с минимально необходимыми полями для тестов
@@ -59,17 +63,20 @@ def test_tweet_obj() -> Tweet:
     return tweet
 
 
+# Фикстура медиа
 @pytest.fixture
 def test_media_obj() -> Media:
     # tweet_id=None по умолчанию, пока не привязан
     return Media(id=201, file_path="test/path/image.jpg", tweet_id=None)
 
 
+# Фикстура лайка
 @pytest.fixture
 def test_like_obj() -> Like:
     return Like(user_id=1, tweet_id=101)
 
 
+# Фикстура подписки
 @pytest.fixture
 def test_follow_obj() -> Follow:
     return Follow(follower_id=1, following_id=2)
@@ -159,7 +166,7 @@ def mock_media_service() -> MagicMock:
     service = MagicMock(spec=MediaService)
     service.save_media_file = AsyncMock()
     service.delete_media_files = AsyncMock()
-    service.get_media_url = MagicMock(side_effect=lambda m: f"/media/{m.file_path}")  # Простой мок URL
+    service.get_media_url = MagicMock(side_effect=lambda m: f"/media/{m.file_path}")
     return service
 
 

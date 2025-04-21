@@ -115,12 +115,14 @@ class MediaService(BaseService[Media, MediaRepository]):
         try:
             await self._validate_file(filename, content_type)
 
-            unique_filename = self._generate_unique_filename(filename)
-            save_path = settings.MEDIA_ROOT_PATH / unique_filename
+            unique_filename: str = self._generate_unique_filename(filename)
+            save_path = settings.MEDIA_ROOT_PATH / unique_filename  # type: ignore[operator]
             log.info(f"Сохранение медиафайла '{filename}' как '{unique_filename}' в '{save_path}'")
 
             # Этап 1: Сохранение файла
             try:
+                assert isinstance(save_path, Path), f"save_path должен быть Path, но получен {type(save_path)}"
+
                 async with aiofiles.open(save_path, 'wb') as out_file:
                     while content := file.read(1024 * 1024):  # Читаем по 1MB
                         await out_file.write(content)
@@ -187,7 +189,7 @@ class MediaService(BaseService[Media, MediaRepository]):
         delete_tasks = []
 
         for file_path_str in file_paths:
-            full_path = settings.MEDIA_ROOT_PATH / file_path_str.lstrip('/')
+            full_path = settings.MEDIA_ROOT_PATH / file_path_str.lstrip('/')  # type: ignore[operator]
             # Запускаем синхронное удаление в отдельном потоке
             delete_tasks.append(asyncio.to_thread(self._delete_single_file_sync, full_path))
 

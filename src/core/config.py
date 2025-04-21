@@ -1,6 +1,5 @@
 """Конфигурация приложения."""
 
-from functools import cached_property
 from pathlib import Path
 from tempfile import gettempdir
 
@@ -33,23 +32,20 @@ class Settings(BaseSettings):
     API_KEY_HEADER: str = Field("api-key", description="HTTP-заголовок с API-ключом")
 
     # --- Вычисляемые поля ---
+
     # Продакшен режим
     @computed_field
-    @cached_property
     def PRODUCTION(self) -> bool:
         # Считаем продакшеном, если не DEBUG и не TESTING
         return not self.DEBUG and not self.TESTING
 
     # Формируем URL БД
     @computed_field(repr=False)
-    @cached_property
     def DATABASE_URL(self) -> str:
         """URL для БД основной или тестовой."""
         if self.TESTING:
             # Используем SQLite in-memory для тестов
-            # Важно: ":memory:" создает новую БД для каждого *соединения*
-            # Чтобы одна и та же БД использовалась в рамках сессии pytest,
-            # нужно добавить "?cache=shared" и, возможно, "&uri=true"
+            # Чтобы одна и та же БД использовалась в рамках сессии pytest добавляем "?cache=shared" и "&uri=true"
             return "sqlite+aiosqlite:///:memory:?cache=shared&uri=true"
         else:
             return (
@@ -59,7 +55,6 @@ class Settings(BaseSettings):
 
     # Путь к папке для хранения загруженных медиафайлов
     @computed_field
-    @cached_property
     def MEDIA_ROOT_PATH(self) -> Path:
         if self.TESTING:
             # Используем временную директорию системы, если TESTING=True
@@ -72,7 +67,6 @@ class Settings(BaseSettings):
 
     # Путь к папке для хранения лог-файлов
     @computed_field
-    @cached_property
     def LOG_ROOT_PATH(self) -> Path:
         # Используем временную директорию системы, если TESTING=True
         if self.TESTING:
@@ -85,11 +79,10 @@ class Settings(BaseSettings):
 
     # Путь внутри контейнера к файлу лога
     @computed_field
-    @cached_property
     def LOG_FILE_PATH(self) -> Path | None:
         # Пишем в файл только в production режиме
         # Файл будет находиться в volume, смонтированном в LOG_ROOT_PATH
-        return self.LOG_ROOT_PATH / "app.log" if self.PRODUCTION else None
+        return self.LOG_ROOT_PATH / "app.log" if self.PRODUCTION else None  # type: ignore[operator, truthy-function]
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -100,4 +93,4 @@ class Settings(BaseSettings):
 
 
 # Кэшированный экземпляр настроек
-settings = Settings()
+settings = Settings()  # type: ignore[call-arg]

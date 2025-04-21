@@ -18,12 +18,11 @@ from sqlalchemy.pool import NullPool
 
 # Убедимся, что настройки загружены с TESTING=True до импорта приложения
 from src.core.config import settings
+from src.core.database import get_db_session
+from src.main import app
+from src.models import Base, Media, User
 
 assert settings.TESTING, "Тесты должны запускаться с TESTING=True"
-
-from src.core.database import Base, get_db_session
-from src.main import app
-from src.models import Media, User
 
 
 # --- Фикстура для автоматической очистки временных папок ---
@@ -136,7 +135,7 @@ async def client(override_get_db: AsyncSession) -> AsyncGenerator[AsyncClient, N
 @pytest_asyncio.fixture(scope="function")
 async def test_user(db_session: AsyncSession) -> User:
     """Создает тестового пользователя с уникальным api_key в БД и возвращает его объект."""
-    user = User(name=f"Test User", api_key=f"test_key_{uuid4().hex[:6]}")  # Делаем api_key уникальным
+    user = User(name="Test User", api_key=f"test_key_{uuid4().hex[:6]}")  # Делаем api_key уникальным
     db_session.add(user)
     await db_session.commit()
     await db_session.refresh(user)
