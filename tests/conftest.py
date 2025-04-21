@@ -7,8 +7,13 @@ from uuid import uuid4
 import pytest
 import pytest_asyncio
 from fastapi import status
-from httpx import AsyncClient, ASGITransport
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
+from httpx import ASGITransport, AsyncClient
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 from sqlalchemy.pool import NullPool
 
 # Убедимся, что настройки загружены с TESTING=True до импорта приложения
@@ -18,7 +23,7 @@ assert settings.TESTING, "Тесты должны запускаться с TEST
 
 from src.core.database import Base, get_db_session
 from src.main import app
-from src.models import Media, Tweet, User
+from src.models import Media, User
 
 
 # --- Фикстура для автоматической очистки временных папок ---
@@ -168,17 +173,6 @@ def authenticated_client(client: AsyncClient, test_user: User) -> AsyncClient:
     return client
 
 
-# Фикстура твита для тестов
-@pytest_asyncio.fixture(scope="function")
-async def tweet_for_tests(db_session: AsyncSession, test_user: User) -> Tweet:
-    """Фикстура, создающая твит для тестов."""
-    tweet = Tweet(author_id=test_user.id, content="Tweet for tests")
-    db_session.add(tweet)
-    await db_session.commit()
-    await db_session.refresh(tweet)
-    return tweet
-
-
 # Фикстура фабрики загрузки медиафайлов
 @pytest.fixture(scope="function")
 def create_uploaded_media_list(
@@ -240,44 +234,3 @@ def create_uploaded_media_list(
 
     # Фикстура возвращает саму функцию _factory
     return _factory
-
-# # Фикстура для загрузки медиа
-# @pytest_asyncio.fixture(scope="function")
-# async def uploaded_media(
-#         authenticated_client: AsyncClient,
-#         db_session: AsyncSession
-# ) -> Media:
-#     """
-#     Загружает тестовый медиафайл через API /medias,
-#     проверяет запись в БД и возвращает объект Media.
-#     Доступна для всех тестов.
-#     """
-#     # Создаем "файл" в памяти
-#     file_content = b"this is a test image content"
-#     filename = "test_upload.png"
-#     content_type = "image/png"
-#
-#     files = {"file": (filename, file_content, content_type)}
-#
-#     # Используем API для загрузки
-#     response = await authenticated_client.post("/api/medias", files=files)
-#
-#     # Проверяем успешность загрузки
-#     assert response.status_code == status.HTTP_201_CREATED
-#     json_response = response.json()
-#     assert json_response["result"] is True
-#     assert "media_id" in json_response
-#     media_id = json_response["media_id"]
-#
-#     # Получаем объект Media из БД
-#     media: Media | None = await db_session.get(Media, media_id)
-#     assert media is not None
-#
-#     # Проверяем, что файл физически создался
-#     assert media.file_path.endswith(filename.split('.')[-1])  # Проверяем расширение
-#
-#     # Проверяем что tweet_id пока NULL
-#     assert media.tweet_id is None  # Медиа еще не привязано
-#
-#     # Возвращаем созданный и проверенный объект Media
-#     return media

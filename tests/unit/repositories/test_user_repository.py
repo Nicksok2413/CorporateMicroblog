@@ -1,0 +1,66 @@
+from unittest.mock import MagicMock
+
+import pytest
+from sqlalchemy.engine.result import ScalarResult
+
+from src.models.user import User
+from src.repositories.user import UserRepository
+
+# Помечаем все тесты в этом модуле как асинхронные
+pytestmark = pytest.mark.asyncio
+
+
+# Фикстура для создания экземпляра репозитория
+@pytest.fixture
+def user_repo() -> UserRepository:
+    return UserRepository(User)
+
+
+# --- Тест для get_by_api_key ---
+
+async def test_get_by_api_key_found(
+        user_repo: UserRepository,
+        mock_db_session: MagicMock,
+        test_user_obj: User,
+):
+    """Тест get_by_api_key, когда ключ найден."""
+    api_key = "found_key"
+    test_user_obj.api_key = api_key
+
+    # Настраиваем мок результата execute
+    mock_result = mock_db_session.execute.return_value
+    mock_scalars = MagicMock(spec=ScalarResult)
+    mock_scalars.first.return_value = test_user_obj
+    mock_result.scalars = MagicMock(return_value=mock_scalars)
+
+    # Вызываем метод
+    result = await user_repo.get_by_api_key(db=mock_db_session, api_key=api_key)
+
+    # Проверки
+    assert result == test_user_obj
+    mock_db_session.execute.assert_awaited_once()
+    mock_result.scalars.assert_called_once()
+    mock_scalars.first.assert_called_once()
+
+
+async def test_get_by_api_key_not_found(
+        user_repo: UserRepository,
+        mock_db_session: MagicMock,
+):
+    """Тест get_by_api_key, когда ключ не найден."""
+    api_key = "not_found_key"
+
+    # Настраиваем мок результата execute
+    mock_result = mock_db_session.execute.return_value
+    mock_scalars = MagicMock(spec=ScalarResult)
+    mock_scalars.first.return_value = None  # Пользователь не найден
+    mock_result.scalars = MagicMock(return_value=mock_scalars)
+
+    # Вызываем метод
+    result = await user_repo.get_by_api_key(db=mock_db_session, api_key=api_key)
+
+    # Проверки
+    assert result is None
+    mock_db_session.execute.assert_awaited_once()
+    mock_result.scalars.assert_called_once()
+    mock_scalars.first.assert_called_once()

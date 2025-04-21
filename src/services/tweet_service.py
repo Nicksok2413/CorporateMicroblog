@@ -60,6 +60,7 @@ class TweetService(BaseService[Tweet, TweetRepository]):
         tweet: Optional[Tweet] = None
 
         try:
+            # Получаем объекты Media по ID и проверяем их доступность
             if tweet_data.tweet_media_ids:
                 log.debug(f"Прикрепление медиа ID: {tweet_data.tweet_media_ids}")
                 for media_id in tweet_data.tweet_media_ids:
@@ -71,9 +72,12 @@ class TweetService(BaseService[Tweet, TweetRepository]):
 
             # Создаем твит (пока без привязки медиа)
             tweet = Tweet(content=tweet_data.tweet_data, author_id=current_user.id)
-            db.add(tweet)
+
+            # Добавляем твит в сессию
+            await self.repo.add(db=db, db_obj=tweet)
+
             # Нужно получить ID твита перед тем, как привязать медиа
-            await db.flush()  # Получаем ID твита от БД
+            await db.flush()
             log.debug(f"Твит создан (ID: {tweet.id}), выполнен flush.")
 
             # Привязываем медиа к твиту, обновляя tweet_id у медиа
@@ -86,10 +90,11 @@ class TweetService(BaseService[Tweet, TweetRepository]):
 
             # Коммитим все изменения
             await db.commit()
-            # Обновляем объект твита, чтобы подгрузить связи (если нужно)
+            # Обновляем объект твита для загрузки связей
             await db.refresh(tweet, attribute_names=['attachments'])
             log.success(f"Твит ID {tweet.id} успешно создан пользователем {current_user.id}")
             return tweet
+
         except NotFoundError:
             await db.rollback()
             raise
@@ -98,7 +103,6 @@ class TweetService(BaseService[Tweet, TweetRepository]):
             log.error(f"Ошибка при создании твита пользователем {current_user.id}: {exc}", exc_info=True)
             raise BadRequestError("Не удалось создать твит.") from exc
         except Exception as exc:
-            await db.rollback()
             log.exception(f"Непредвиденная ошибка при создании твита {current_user.id}: {exc}")
             raise BadRequestError("Произошла непредвиденная ошибка.") from exc
 
@@ -141,7 +145,6 @@ class TweetService(BaseService[Tweet, TweetRepository]):
 
             # Помечаем твит для удаления
             await self.repo.delete(db, db_obj=tweet_to_delete)
-            log.debug(f"Твит ID {tweet_id} помечен для удаления (медиа удалятся каскадно БД).")
 
             # Коммитим удаление твита (и связанных медиа в БД)
             await db.commit()

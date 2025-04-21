@@ -1,35 +1,14 @@
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 
 import pytest
 
 from src.core.exceptions import NotFoundError
 from src.models import Follow, User
-from src.repositories import FollowRepository, UserRepository
 from src.schemas.user import BaseUser, UserProfile
 from src.services.user_service import UserService
 
 # Помечаем все тесты в этом модуле как асинхронные
 pytestmark = pytest.mark.asyncio
-
-
-# --- Фикстуры ---
-# Фикстура для мока UserRepository
-@pytest.fixture
-def mock_user_repo() -> MagicMock:
-    repo = MagicMock(spec=UserRepository)
-    repo.get_by_api_key = AsyncMock()
-    repo.get = AsyncMock()
-    repo.model = User
-    return repo
-
-
-# Фикстура для мока FollowRepository
-@pytest.fixture
-def mock_follow_repo() -> MagicMock:
-    repo = MagicMock(spec=FollowRepository)
-    repo.get_following_with_users = AsyncMock()
-    repo.get_followers_with_users = AsyncMock()
-    return repo
 
 
 # Фикстура для создания экземпляра сервиса
@@ -130,9 +109,9 @@ async def test_get_user_profile_success(
     # Проверяем вызовы моков
     mock_user_repo.get.assert_awaited_once_with(mock_db_session, obj_id=user_id)
     mock_follow_repo.get_following_with_users.assert_awaited_once_with(mock_db_session,
-                                                                                     follower_id=user_id)
+                                                                       follower_id=user_id)
     mock_follow_repo.get_followers_with_users.assert_awaited_once_with(mock_db_session,
-                                                                                     following_id=user_id)
+                                                                       following_id=user_id)
 
 
 async def test_get_user_profile_success_no_follows(
@@ -163,9 +142,9 @@ async def test_get_user_profile_success_no_follows(
     # Проверяем вызовы моков
     mock_user_repo.get.assert_awaited_once_with(mock_db_session, obj_id=user_id)
     mock_follow_repo.get_following_with_users.assert_awaited_once_with(mock_db_session,
-                                                                                     follower_id=user_id)
+                                                                       follower_id=user_id)
     mock_follow_repo.get_followers_with_users.assert_awaited_once_with(mock_db_session,
-                                                                                     following_id=user_id)
+                                                                       following_id=user_id)
 
 
 async def test_get_user_profile_not_found(
@@ -183,6 +162,7 @@ async def test_get_user_profile_not_found(
     with pytest.raises(NotFoundError) as exc_info:
         await user_service.get_user_profile(db=mock_db_session, user_id=user_id)
 
+    # Проверяем сообщение об ошибке
     assert f"User с ID {user_id} не найден" in str(exc_info.value)
 
     # Проверяем вызовы

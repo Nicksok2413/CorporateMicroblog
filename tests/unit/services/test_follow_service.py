@@ -1,35 +1,19 @@
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 
 import pytest
-from sqlalchemy.exc import SQLAlchemyError  # Для имитации ошибок БД
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError  # Для имитации ошибок БД
 
-from src.core.exceptions import (BadRequestError, ConflictError,
-                                 NotFoundError, PermissionDeniedError)
+from src.core.exceptions import (
+    BadRequestError,
+    ConflictError,
+    NotFoundError,
+    PermissionDeniedError,
+)
 from src.models import Follow, User
-from src.repositories import FollowRepository, UserRepository
 from src.services.follow_service import FollowService
 
 # Помечаем все тесты в этом модуле как асинхронные
 pytestmark = pytest.mark.asyncio
-
-
-# --- Фикстуры ---
-# Фикстура для мока FollowRepository
-@pytest.fixture
-def mock_follow_repo() -> MagicMock:
-    repo = MagicMock(spec=FollowRepository)
-    repo.get_follow = AsyncMock()
-    repo.add_follow = AsyncMock()
-    repo.delete_follow = AsyncMock()
-    return repo
-
-
-# Фикстура для мока UserRepository
-@pytest.fixture
-def mock_user_repo() -> MagicMock:
-    repo = MagicMock(spec=UserRepository)
-    repo.get = AsyncMock()
-    return repo
 
 
 # Фикстура для создания экземпляра сервиса
@@ -104,7 +88,10 @@ async def test_validate_follow_action_target_not_found(
             following_id=target_id
         )
 
+    # Проверяем сообщение об ошибке
     assert f"Пользователь с ID {target_id} не найден" in str(exc_info.value)
+
+    # Проверяем вызов
     mock_user_repo.get.assert_awaited_once_with(mock_db_session, obj_id=target_id)
 
 
@@ -132,9 +119,9 @@ async def test_follow_user_success(
     # Проверяем вызовы
     mock_user_repo.get.assert_awaited_once_with(mock_db_session, obj_id=test_alice_obj.id)
     mock_follow_repo.get_follow.assert_awaited_once_with(mock_db_session, follower_id=test_user_obj.id,
-                                                                         following_id=test_alice_obj.id)
+                                                         following_id=test_alice_obj.id)
     mock_follow_repo.add_follow.assert_awaited_once_with(mock_db_session, follower_id=test_user_obj.id,
-                                                                         following_id=test_alice_obj.id)
+                                                         following_id=test_alice_obj.id)
     mock_db_session.commit.assert_awaited_once()  # Должен быть коммит
     mock_db_session.rollback.assert_not_awaited()  # Роллбэка быть не должно
 
@@ -218,6 +205,35 @@ async def test_follow_user_db_error(
     mock_db_session.rollback.assert_awaited_once()  # Должен быть роллбэк
 
 
+async def test_follow_user_db_integrity_error(
+        follow_service: FollowService,
+        mock_db_session: MagicMock,
+        test_user_obj: User,
+        test_alice_obj: User,
+        mock_user_repo: MagicMock,
+        mock_follow_repo: MagicMock,
+):
+    """Тест ошибки IntegrityError при добавлении подписки."""
+    # Настраиваем моки
+    mock_user_repo.get.return_value = test_alice_obj
+    mock_follow_repo.get_follow.return_value = None
+    # Имитируем ошибку IntegrityError (например, гонка или проблема с constraint)
+    mock_follow_repo.add_follow.side_effect = IntegrityError("Constraint violation", params=(), orig=None)
+
+    # Проверяем, что выбрасывается ConflictError (сервис обрабатывает IntegrityError как конфликт)
+    with pytest.raises(ConflictError):
+        await follow_service.follow_user(
+            db=mock_db_session, current_user=test_user_obj, user_to_follow_id=test_alice_obj.id
+        )
+
+    # Проверяем вызовы
+    mock_user_repo.get.assert_awaited_once()
+    mock_follow_repo.get_follow.assert_awaited_once()
+    mock_follow_repo.add_follow.assert_awaited_once()
+    mock_db_session.commit.assert_not_awaited()  # Коммита быть не должно
+    mock_db_session.rollback.assert_awaited_once()  # Должен быть роллбэк
+
+
 # --- Тесты для unfollow_user ---
 
 async def test_unfollow_user_success(
@@ -245,8 +261,8 @@ async def test_unfollow_user_success(
     mock_user_repo.get.assert_awaited_once()
     mock_follow_repo.get_follow.assert_awaited_once()
     mock_follow_repo.delete_follow.assert_awaited_once_with(mock_db_session,
-                                                                            follower_id=test_user_obj.id,
-                                                                            following_id=test_alice_obj.id)
+                                                            follower_id=test_user_obj.id,
+                                                            following_id=test_alice_obj.id)
     mock_db_session.commit.assert_awaited_once()  # Должен быть коммит
     mock_db_session.rollback.assert_not_awaited()  # Роллбэка быть не должно
 
