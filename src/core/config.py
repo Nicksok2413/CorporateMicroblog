@@ -47,9 +47,7 @@ class Settings(BaseSettings):
         """URL для БД основной или тестовой."""
         if self.TESTING:
             # Используем SQLite in-memory для тестов
-            # Важно: ":memory:" создает новую БД для каждого *соединения*
-            # Чтобы одна и та же БД использовалась в рамках сессии pytest,
-            # нужно добавить "?cache=shared" и, возможно, "&uri=true"
+            # Чтобы одна и та же БД использовалась в рамках сессии pytest добавляем "?cache=shared" и "&uri=true"
             return "sqlite+aiosqlite:///:memory:?cache=shared&uri=true"
         else:
             return (
