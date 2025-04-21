@@ -13,6 +13,7 @@ pytestmark = pytest.mark.asyncio
 
 # --- Тесты для /api/users/me ---
 
+
 async def test_get_my_profile_unauthorized(client: AsyncClient):
     """Тест получения профиля /me без api-key."""
     response = await client.get("/api/users/me")
@@ -33,7 +34,9 @@ async def test_get_my_profile_invalid_key(client: AsyncClient):
     assert "Недействительный API ключ" in json_response["error_message"]
 
 
-async def test_get_my_profile_success(authenticated_client: AsyncClient, test_user: User):
+async def test_get_my_profile_success(
+    authenticated_client: AsyncClient, test_user: User
+):
     """Тест успешного получения своего профиля /me."""
     response = await authenticated_client.get("/api/users/me")
 
@@ -52,7 +55,10 @@ async def test_get_my_profile_success(authenticated_client: AsyncClient, test_us
 
 # --- Тесты для /api/users/{user_id} ---
 
-async def test_get_user_profile_by_id_success(authenticated_client: AsyncClient, test_user_alice: User):
+
+async def test_get_user_profile_by_id_success(
+    authenticated_client: AsyncClient, test_user_alice: User
+):
     """Тест успешного получения своего профиля /me."""
     response = await authenticated_client.get(f"/api/users/{test_user_alice.id}")
 
@@ -79,10 +85,10 @@ async def test_get_user_profile_by_id_not_found(client: AsyncClient):
 
 
 async def test_get_user_profile_with_follows_by_id_success(
-        client: AsyncClient,
-        test_user: User,
-        test_user_alice: User,
-        db_session: AsyncSession,
+    client: AsyncClient,
+    test_user: User,
+    test_user_alice: User,
+    db_session: AsyncSession,
 ):
     """Тест успешного получения профиля пользователя по ID с подписчиками/подписками."""
     # Создаем подписки: alice -> test_user, test_user -> alice
@@ -114,6 +120,7 @@ async def test_get_user_profile_with_follows_by_id_success(
 
 # --- Тесты для POST /api/users/{user_id}/follow ---
 
+
 async def test_follow_user_unauthorized(client: AsyncClient, test_user_alice: User):
     """Тест подписки без авторизации."""
     response = await client.post(f"/api/users/{test_user_alice.id}/follow")
@@ -123,7 +130,9 @@ async def test_follow_user_unauthorized(client: AsyncClient, test_user_alice: Us
 async def test_follow_user_invalid_key(client: AsyncClient, test_user_alice: User):
     """Тест подписки с неверным ключом."""
     headers = {settings.API_KEY_HEADER: "invalid-key"}
-    response = await client.post(f"/api/users/{test_user_alice.id}/follow", headers=headers)
+    response = await client.post(
+        f"/api/users/{test_user_alice.id}/follow", headers=headers
+    )
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
@@ -146,13 +155,15 @@ async def test_follow_user_not_found(authenticated_client: AsyncClient):
 
 
 async def test_follow_user_success(
-        authenticated_client: AsyncClient,
-        test_user: User,
-        test_user_alice: User,
-        db_session: AsyncSession,
+    authenticated_client: AsyncClient,
+    test_user: User,
+    test_user_alice: User,
+    db_session: AsyncSession,
 ):
     """Тест успешной подписки."""
-    response = await authenticated_client.post(f"/api/users/{test_user_alice.id}/follow")
+    response = await authenticated_client.post(
+        f"/api/users/{test_user_alice.id}/follow"
+    )
     assert response.status_code == status.HTTP_201_CREATED
     json_response = response.json()
     assert json_response["result"] is True
@@ -161,7 +172,7 @@ async def test_follow_user_success(
     follow_rel = await db_session.execute(
         select(Follow).where(
             Follow.follower_id == test_user.id,
-            Follow.following_id == test_user_alice.id
+            Follow.following_id == test_user_alice.id,
         )
     )
     assert follow_rel.scalar_one_or_none() is not None
@@ -179,10 +190,10 @@ async def test_follow_user_success(
 
 
 async def test_follow_user_already_followed(
-        authenticated_client: AsyncClient,
-        test_user: User,
-        test_user_alice: User,
-        db_session: AsyncSession
+    authenticated_client: AsyncClient,
+    test_user: User,
+    test_user_alice: User,
+    db_session: AsyncSession,
 ):
     """Тест попытки повторной подписки."""
     # Сначала подписываемся
@@ -191,7 +202,9 @@ async def test_follow_user_already_followed(
     await db_session.commit()
 
     # Пытаемся подписаться снова через API
-    response = await authenticated_client.post(f"/api/users/{test_user_alice.id}/follow")
+    response = await authenticated_client.post(
+        f"/api/users/{test_user_alice.id}/follow"
+    )
     assert response.status_code == status.HTTP_409_CONFLICT
     json_response = response.json()
     assert json_response["result"] is False
@@ -200,6 +213,7 @@ async def test_follow_user_already_followed(
 
 
 # --- Тесты для DELETE /api/users/{user_id}/follow ---
+
 
 async def test_unfollow_user_unauthorized(client: AsyncClient, test_user_alice: User):
     """Тест отписки без авторизации."""
@@ -210,17 +224,23 @@ async def test_unfollow_user_unauthorized(client: AsyncClient, test_user_alice: 
 async def test_unfollow_user_invalid_key(client: AsyncClient, test_user_alice: User):
     """Тест отписки с неверным ключом."""
     headers = {settings.API_KEY_HEADER: "invalid-key"}
-    response = await client.delete(f"/api/users/{test_user_alice.id}/follow", headers=headers)
+    response = await client.delete(
+        f"/api/users/{test_user_alice.id}/follow", headers=headers
+    )
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
 async def test_unfollow_user_self(authenticated_client: AsyncClient, test_user: User):
     """Тест попытки отписаться от себя."""
     response = await authenticated_client.delete(f"/api/users/{test_user.id}/follow")
-    assert response.status_code == status.HTTP_403_FORBIDDEN  # Ошибка валидации в сервисе
+    assert (
+        response.status_code == status.HTTP_403_FORBIDDEN
+    )  # Ошибка валидации в сервисе
     json_response = response.json()
     assert json_response["error_type"] == "permission_denied"
-    assert "Вы не можете подписаться на себя" in json_response["error_message"]  # Сообщение из _validate_follow_action
+    assert (
+        "Вы не можете подписаться на себя" in json_response["error_message"]
+    )  # Сообщение из _validate_follow_action
 
 
 async def test_unfollow_user_not_found_target(authenticated_client: AsyncClient):
@@ -233,10 +253,12 @@ async def test_unfollow_user_not_found_target(authenticated_client: AsyncClient)
 
 
 async def test_unfollow_user_not_following(
-        authenticated_client: AsyncClient, test_user_alice: User
+    authenticated_client: AsyncClient, test_user_alice: User
 ):
     """Тест попытки отписаться от пользователя, на которого не подписан."""
-    response = await authenticated_client.delete(f"/api/users/{test_user_alice.id}/follow")
+    response = await authenticated_client.delete(
+        f"/api/users/{test_user_alice.id}/follow"
+    )
     assert response.status_code == status.HTTP_404_NOT_FOUND
     json_response = response.json()
     assert json_response["result"] is False
@@ -245,10 +267,10 @@ async def test_unfollow_user_not_following(
 
 
 async def test_unfollow_user_success(
-        authenticated_client: AsyncClient,
-        test_user: User,
-        test_user_alice: User,
-        db_session: AsyncSession
+    authenticated_client: AsyncClient,
+    test_user: User,
+    test_user_alice: User,
+    db_session: AsyncSession,
 ):
     """Тест успешной отписки."""
     # Сначала создаем подписку
@@ -257,7 +279,9 @@ async def test_unfollow_user_success(
     await db_session.commit()
 
     # Отписываемся через API
-    response = await authenticated_client.delete(f"/api/users/{test_user_alice.id}/follow")
+    response = await authenticated_client.delete(
+        f"/api/users/{test_user_alice.id}/follow"
+    )
     assert response.status_code == status.HTTP_200_OK
     json_response = response.json()
     assert json_response["result"] is True
@@ -266,7 +290,7 @@ async def test_unfollow_user_success(
     follow_rel = await db_session.execute(
         select(Follow).where(
             Follow.follower_id == test_user.id,
-            Follow.following_id == test_user_alice.id
+            Follow.following_id == test_user_alice.id,
         )
     )
     assert follow_rel.scalar_one_or_none() is None

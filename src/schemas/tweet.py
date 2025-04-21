@@ -17,8 +17,13 @@ class TweetCreateRequest(BaseModel):
         tweet_data (str): Текст твита.
         tweet_media_ids (Optional[List[int]]): Список ID медиафайлов для прикрепления.
     """
-    tweet_data: str = Field(..., min_length=1, max_length=280, description="Текст твита (1-280 символов)")
-    tweet_media_ids: Optional[List[int]] = Field(None, description="Список ID медиафайлов для прикрепления")
+
+    tweet_data: str = Field(
+        ..., min_length=1, max_length=280, description="Текст твита (1-280 символов)"
+    )
+    tweet_media_ids: Optional[List[int]] = Field(
+        None, description="Список ID медиафайлов для прикрепления"
+    )
 
 
 # --- Внутренние схемы (для передачи между слоями) ---
@@ -32,11 +37,13 @@ class TweetCreateInternal(BaseModel):
         content (str): Текст твита.
         author_id (int): ID автора твита.
     """
+
     content: str
     author_id: int
 
 
 # --- Выходные данные API ---
+
 
 class TweetCreateResult(ResultTrue):
     """
@@ -46,6 +53,7 @@ class TweetCreateResult(ResultTrue):
         result (bool): Всегда True.
         tweet_id (int): ID созданного твита.
     """
+
     tweet_id: int
 
 
@@ -56,6 +64,7 @@ class TweetActionResult(ResultTrue):
     Fields:
         result (bool): Всегда True.
     """
+
     pass
 
 
@@ -68,7 +77,8 @@ class LikeInfo(BaseUser):
         user_id (int): ID пользователя (в JSON).
         name (str): Имя пользователя.
     """
-    id: int = Field(..., serialization_alias='user_id')
+
+    id: int = Field(..., serialization_alias="user_id")
 
 
 class TweetAuthor(BaseUser):
@@ -80,6 +90,7 @@ class TweetAuthor(BaseUser):
         id (int): ID автора.
         name (str): Имя автора.
     """
+
     pass
 
 
@@ -95,6 +106,7 @@ class TweetInFeed(TunedModel):
         author (TweetAuthor): Информация об авторе твита.
         likes (List[LikeInfo]): Список пользователей, лайкнувших твит.
     """
+
     id: int
     content: str
     attachments: List[str] = Field(default_factory=list)
@@ -111,4 +123,5 @@ class TweetFeedResult(ResultTrue):
         result (bool): Всегда True.
         tweets (List[TweetInFeed]): Список твитов в ленте.
     """
+
     tweets: List[TweetInFeed] = Field(default_factory=list)

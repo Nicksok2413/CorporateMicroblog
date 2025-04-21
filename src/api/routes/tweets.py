@@ -4,8 +4,12 @@ from fastapi import APIRouter, Path, status
 
 from src.api.dependencies import CurrentUser, DBSession, LikeSvc, TweetSvc
 from src.core.logging import log
-from src.schemas.tweet import (TweetActionResult, TweetCreateRequest,
-                               TweetCreateResult, TweetFeedResult)
+from src.schemas.tweet import (
+    TweetActionResult,
+    TweetCreateRequest,
+    TweetCreateResult,
+    TweetFeedResult,
+)
 
 router = APIRouter(prefix="/tweets", tags=["Tweets"])
 
@@ -18,9 +22,9 @@ router = APIRouter(prefix="/tweets", tags=["Tweets"])
     description="Возвращает ленту твитов от пользователей, на которых подписан текущий пользователь, и его собственные твиты, отсортированные по популярности.",
 )
 async def get_tweets_feed(
-        db: DBSession,
-        current_user: CurrentUser,
-        tweet_service: TweetSvc,
+    db: DBSession,
+    current_user: CurrentUser,
+    tweet_service: TweetSvc,
 ) -> TweetFeedResult:
     """
     Возвращает ленту твитов для текущего пользователя.
@@ -46,10 +50,10 @@ async def get_tweets_feed(
     description="Позволяет аутентифицированному пользователю опубликовать новый твит, опционально прикрепив медиа.",
 )
 async def create_tweet(
-        db: DBSession,
-        current_user: CurrentUser,
-        tweet_service: TweetSvc,
-        tweet_in: TweetCreateRequest,
+    db: DBSession,
+    current_user: CurrentUser,
+    tweet_service: TweetSvc,
+    tweet_in: TweetCreateRequest,
 ) -> TweetCreateResult:
     """
     Создает новый твит для текущего пользователя.
@@ -83,13 +87,13 @@ async def create_tweet(
     responses={
         status.HTTP_404_NOT_FOUND: {"description": "Твит не найден"},
         status.HTTP_403_FORBIDDEN: {"description": "Недостаточно прав для удаления"},
-    }
+    },
 )
 async def delete_tweet(
-        db: DBSession,
-        current_user: CurrentUser,
-        tweet_service: TweetSvc,
-        tweet_id: int = Path(..., description="ID твита для удаления", gt=0),
+    db: DBSession,
+    current_user: CurrentUser,
+    tweet_service: TweetSvc,
+    tweet_id: int = Path(..., description="ID твита для удаления", gt=0),
 ) -> TweetActionResult:
     """
     Удаляет твит по его ID.
@@ -110,8 +114,12 @@ async def delete_tweet(
         PermissionDeniedError: Если пользователь не автор твита.
         BadRequestError: При ошибке удаления из БД.
     """
-    log.info(f"Запрос на удаление твита ID {tweet_id} от пользователя ID {current_user.id}")
-    await tweet_service.delete_tweet(db=db, current_user=current_user, tweet_id=tweet_id)
+    log.info(
+        f"Запрос на удаление твита ID {tweet_id} от пользователя ID {current_user.id}"
+    )
+    await tweet_service.delete_tweet(
+        db=db, current_user=current_user, tweet_id=tweet_id
+    )
     return TweetActionResult()
 
 
@@ -123,13 +131,13 @@ async def delete_tweet(
     responses={
         status.HTTP_404_NOT_FOUND: {"description": "Твит не найден"},
         status.HTTP_409_CONFLICT: {"description": "Твит уже лайкнут"},
-    }
+    },
 )
 async def like_tweet(
-        db: DBSession,
-        current_user: CurrentUser,
-        like_service: LikeSvc,
-        tweet_id: int = Path(..., description="ID твита для лайка", gt=0),
+    db: DBSession,
+    current_user: CurrentUser,
+    like_service: LikeSvc,
+    tweet_id: int = Path(..., description="ID твита для лайка", gt=0),
 ) -> TweetActionResult:
     """
     Ставит лайк на указанный твит от имени текущего пользователя.
@@ -159,13 +167,13 @@ async def like_tweet(
     summary="Убрать лайк с твита",
     responses={
         status.HTTP_404_NOT_FOUND: {"description": "Лайк не найден"},
-    }
+    },
 )
 async def unlike_tweet(
-        db: DBSession,
-        current_user: CurrentUser,
-        like_service: LikeSvc,
-        tweet_id: int = Path(..., gt=0, description="ID твита для снятия лайка"),
+    db: DBSession,
+    current_user: CurrentUser,
+    like_service: LikeSvc,
+    tweet_id: int = Path(..., gt=0, description="ID твита для снятия лайка"),
 ) -> TweetActionResult:
     """
     Убирает лайк с указанного твита от имени текущего пользователя.
@@ -183,6 +191,8 @@ async def unlike_tweet(
         NotFoundError: Если лайк для удаления не найден.
         BadRequestError: При ошибке удаления лайка.
     """
-    log.info(f"Запрос на снятие лайка с твита ID {tweet_id} от пользователя ID {current_user.id}")
+    log.info(
+        f"Запрос на снятие лайка с твита ID {tweet_id} от пользователя ID {current_user.id}"
+    )
     await like_service.unlike_tweet(db=db, current_user=current_user, tweet_id=tweet_id)
     return TweetActionResult()

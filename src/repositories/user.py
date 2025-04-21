@@ -10,7 +10,9 @@ from src.models.user import User
 from src.repositories.base import BaseRepository
 
 
-class UserRepository(BaseRepository[User, BaseModel]):  # Используем BaseModel как тип-заглушку
+class UserRepository(
+    BaseRepository[User, BaseModel]
+):  # Используем BaseModel как тип-заглушку
     """
     Репозиторий для выполнения CRUD операций с моделью User.
 
@@ -28,5 +30,7 @@ class UserRepository(BaseRepository[User, BaseModel]):  # Используем B
         Returns:
             Optional[User]: Найденный пользователь или None.
         """
-        result = await db.execute(select(self.model).where(self.model.api_key == api_key))
+        result = await db.execute(
+            select(self.model).where(self.model.api_key == api_key)
+        )
         return result.scalars().first()

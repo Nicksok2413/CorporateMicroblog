@@ -20,7 +20,7 @@ config = context.config
 
 # Добавляем корневую директорию проекта в sys.path, чтобы можно было импортировать из 'src'
 # Предполагаем, что env.py находится в alembic/, а src/ рядом с alembic/
-project_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+project_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, project_dir)
 
 # Interpret the config file for Python logging.
@@ -81,7 +81,7 @@ def run_migrations_online() -> None:
     db_url = get_database_url()
 
     connectable_config = config.get_section(config.config_ini_section, {})
-    connectable_config['sqlalchemy.url'] = db_url
+    connectable_config["sqlalchemy.url"] = db_url
 
     connectable = engine_from_config(
         connectable_config,
@@ -90,9 +90,7 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
-        )
+        context.configure(connection=connection, target_metadata=target_metadata)
 
         with context.begin_transaction():
             context.run_migrations()

@@ -30,7 +30,6 @@ async def test_generic_exception_handler(authenticated_client: AsyncClient):
     # Переопределяем зависимость get_user_service, чтобы она возвращала наш мок
     app.dependency_overrides[get_user_service] = lambda: mock_service_instance
 
-
     # Ожидаем, что вызов клиента выбросит именно RuntimeError
     with pytest.raises(RuntimeError, match=error_message):
         try:

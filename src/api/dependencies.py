@@ -10,10 +10,18 @@ from src.core.exceptions import AuthenticationRequiredError, PermissionDeniedErr
 from src.core.logging import log
 from src.models import Media, Tweet, User
 from src.repositories import (
-    FollowRepository, LikeRepository, MediaRepository, TweetRepository, UserRepository
+    FollowRepository,
+    LikeRepository,
+    MediaRepository,
+    TweetRepository,
+    UserRepository,
 )
 from src.services import (
-    FollowService, LikeService, MediaService, TweetService, UserService
+    FollowService,
+    LikeService,
+    MediaService,
+    TweetService,
+    UserService,
 )
 
 # --- Типизация для инъекции зависимостей ---
@@ -23,6 +31,7 @@ DBSession = Annotated[AsyncSession, Depends(get_db_session)]
 
 
 # --- Фабрики Репозиториев ---
+
 
 def get_follow_repository() -> FollowRepository:
     # FollowRepository не зависит от модели в конструкторе
@@ -56,6 +65,7 @@ UserRepo = Annotated[UserRepository, Depends(get_user_repository)]
 
 # --- Фабрики Сервисов ---
 
+
 # FollowService зависит от FollowRepo и UserRepo
 def get_follow_service(repo: FollowRepo, user_repo: UserRepo) -> FollowService:
     return FollowService(repo=repo, user_repo=user_repo)
@@ -73,16 +83,18 @@ def get_media_service(repo: MediaRepo) -> MediaService:
 
 # TweetService зависит от многих репозиториев и MediaService
 def get_tweet_service(
-        repo: TweetRepo,
-        follow_repo: FollowRepo,
-        media_repo: MediaRepo,
-        media_svc: Annotated[MediaService, Depends(get_media_service)]  # Зависит от другого сервиса
+    repo: TweetRepo,
+    follow_repo: FollowRepo,
+    media_repo: MediaRepo,
+    media_svc: Annotated[
+        MediaService, Depends(get_media_service)
+    ],  # Зависит от другого сервиса
 ) -> TweetService:
     return TweetService(
         repo=repo,
         follow_repo=follow_repo,
         media_repo=media_repo,
-        media_service=media_svc
+        media_service=media_svc,
     )
 
 
@@ -101,10 +113,13 @@ UserSvc = Annotated[UserService, Depends(get_user_service)]
 
 # --- Зависимость для получения текущего пользователя ---
 
+
 async def get_current_user(
-        db: DBSession,
-        user_repo: UserRepo,
-        api_key: Annotated[str | None, Header(description="Ключ API для аутентификации пользователя.")] = None
+    db: DBSession,
+    user_repo: UserRepo,
+    api_key: Annotated[
+        str | None, Header(description="Ключ API для аутентификации пользователя.")
+    ] = None,
 ) -> User:
     """
     Зависимость для получения текущего пользователя на основе API ключа.
@@ -127,7 +142,7 @@ async def get_current_user(
         log.warning("Запрос без API ключа.")
         raise AuthenticationRequiredError(
             detail="Отсутствует заголовок api-key.",
-            extra={"headers": {"WWW-Authenticate": "Header"}}
+            extra={"headers": {"WWW-Authenticate": "Header"}},
         )
 
     log.debug(f"Попытка аутентификации по API ключу: {api_key[:4]}...{api_key[-4:]}")

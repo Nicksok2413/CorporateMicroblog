@@ -84,12 +84,16 @@ async def db_engine() -> AsyncGenerator[AsyncEngine, None]:
 @pytest.fixture(scope="session")
 def db_session_factory(db_engine: AsyncEngine) -> async_sessionmaker[AsyncSession]:
     """Возвращает фабрику сессий SQLAlchemy."""
-    return async_sessionmaker(bind=db_engine, class_=AsyncSession, expire_on_commit=False)
+    return async_sessionmaker(
+        bind=db_engine, class_=AsyncSession, expire_on_commit=False
+    )
 
 
 # Создаем новую сессию для каждой тестовой функции (используем транзакции для изоляции тестов)
 @pytest_asyncio.fixture(scope="function")
-async def db_session(db_session_factory: async_sessionmaker[AsyncSession]) -> AsyncGenerator[AsyncSession, None]:
+async def db_session(
+    db_session_factory: async_sessionmaker[AsyncSession],
+) -> AsyncGenerator[AsyncSession, None]:
     """Создает сеанс SQLAlchemy с транзакцией, которая откатывается после теста."""
     async with db_session_factory() as session:
         await session.begin()
@@ -101,9 +105,12 @@ async def db_session(db_session_factory: async_sessionmaker[AsyncSession]) -> As
 
 # --- Настройка Тестового Клиента FastAPI ---
 
+
 # Фикстура для переопределения зависимости get_db_session
 @pytest_asyncio.fixture(scope="function")
-async def override_get_db(db_session: AsyncSession) -> AsyncGenerator[AsyncSession, None]:
+async def override_get_db(
+    db_session: AsyncSession,
+) -> AsyncGenerator[AsyncSession, None]:
     """Переопределенная зависимость для получения тестовой сессии БД."""
     yield db_session
 
@@ -131,11 +138,14 @@ async def client(override_get_db: AsyncSession) -> AsyncGenerator[AsyncClient, N
 
 # --- Вспомогательные фикстуры ---
 
+
 # Фикстура пользователя `Test User`
 @pytest_asyncio.fixture(scope="function")
 async def test_user(db_session: AsyncSession) -> User:
     """Создает тестового пользователя с уникальным api_key в БД и возвращает его объект."""
-    user = User(name="Test User", api_key=f"test_key_{uuid4().hex[:6]}")  # Делаем api_key уникальным
+    user = User(
+        name="Test User", api_key=f"test_key_{uuid4().hex[:6]}"
+    )  # Делаем api_key уникальным
     db_session.add(user)
     await db_session.commit()
     await db_session.refresh(user)
@@ -175,8 +185,7 @@ def authenticated_client(client: AsyncClient, test_user: User) -> AsyncClient:
 # Фикстура фабрики загрузки медиафайлов
 @pytest.fixture(scope="function")
 def create_uploaded_media_list(
-        authenticated_client: AsyncClient,
-        db_session: AsyncSession
+    authenticated_client: AsyncClient, db_session: AsyncSession
 ) -> Callable[[int], Awaitable[List[Media]]]:
     """
     Фабрика для создания и загрузки указанного количества медиафайлов.
@@ -221,7 +230,7 @@ def create_uploaded_media_list(
 
             # Проверяем, что файл физически создался
             assert (settings.MEDIA_ROOT_PATH / media.file_path).exists()
-            assert media.file_path.endswith(filename.split('.')[-1])
+            assert media.file_path.endswith(filename.split(".")[-1])
 
             # Проверяем что tweet_id пока NULL
             assert media.tweet_id is None  # Медиа еще не привязано

@@ -15,7 +15,9 @@ from src.schemas.tweet import TweetCreateInternal
 class TweetRepository(BaseRepository[Tweet, TweetCreateInternal]):
     """Репозиторий для выполнения CRUD операций с моделью Tweet."""
 
-    async def get_with_attachments(self, db: AsyncSession, *, tweet_id: int) -> Optional[Tweet]:
+    async def get_with_attachments(
+        self, db: AsyncSession, *, tweet_id: int
+    ) -> Optional[Tweet]:
         """
         Получает твит по ID с загрузкой связанных медиафайлов.
 
@@ -31,9 +33,7 @@ class TweetRepository(BaseRepository[Tweet, TweetCreateInternal]):
         statement = (
             select(self.model)
             .where(self.model.id == tweet_id)
-            .options(
-                selectinload(self.model.attachments)
-            )
+            .options(selectinload(self.model.attachments))
         )
 
         result = await db.execute(statement)
@@ -47,10 +47,10 @@ class TweetRepository(BaseRepository[Tweet, TweetCreateInternal]):
         return instance
 
     async def get_feed_for_user(
-            self,
-            db: AsyncSession,
-            *,
-            author_ids: List[int],
+        self,
+        db: AsyncSession,
+        *,
+        author_ids: List[int],
     ) -> Sequence[Tweet]:
         """
         Получает ленту твитов для пользователя от указанных авторов.
@@ -86,14 +86,16 @@ class TweetRepository(BaseRepository[Tweet, TweetCreateInternal]):
             # Используем selectinload для эффективной загрузки связей
             .options(
                 selectinload(Tweet.author),
-                selectinload(Tweet.likes).selectinload(Like.user),  # Загружаем лайки и пользователей
-                selectinload(Tweet.attachments)  # Загружаем медиа
+                selectinload(Tweet.likes).selectinload(
+                    Like.user
+                ),  # Загружаем лайки и пользователей
+                selectinload(Tweet.attachments),  # Загружаем медиа
             )
             # Сортировка: по убыванию лайков, NULL значения (0 лайков) в конце
             .order_by(
                 desc(like_count_subquery.c.like_count).nulls_last(),
                 # Вторичная сортировка: по ID твита по убыванию (новые выше)
-                desc(Tweet.id)
+                desc(Tweet.id),
             )
         )
 

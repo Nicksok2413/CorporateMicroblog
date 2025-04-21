@@ -12,6 +12,7 @@ pytestmark = pytest.mark.asyncio
 
 # --- Тесты для POST /api/medias ---
 
+
 async def test_upload_media_unauthorized(client: AsyncClient):
     """Тест загрузки медиа без авторизации."""
     files = {"file": ("test.jpg", b"content", "image/jpeg")}
@@ -28,7 +29,7 @@ async def test_upload_media_invalid_key(client: AsyncClient):
 
 
 async def test_upload_media_success(
-        authenticated_client: AsyncClient, db_session: AsyncSession
+    authenticated_client: AsyncClient, db_session: AsyncSession
 ):
     """Тест успешной загрузки медиафайла."""
     filename = "test_image.png"
@@ -52,7 +53,7 @@ async def test_upload_media_success(
     assert media_in_db.tweet_id is None  # Должен быть не привязан
     assert media_in_db.file_path is not None
     assert media_in_db.file_path.endswith(".png")  # Проверяем расширение
-    assert media_in_db.file_path.endswith(filename.split('.')[-1])
+    assert media_in_db.file_path.endswith(filename.split(".")[-1])
 
     # Проверяем, что файл создан во временной директории
     media_full_path = settings.MEDIA_ROOT_PATH / media_in_db.file_path

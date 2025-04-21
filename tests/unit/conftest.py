@@ -34,6 +34,7 @@ def mock_db_session() -> MagicMock:
 
 # --- Фикстуры для базовых объектов моделей ---
 
+
 # Фикстура пользователя `Test User`
 @pytest.fixture
 def test_user_obj() -> User:
@@ -83,6 +84,7 @@ def test_follow_obj() -> Follow:
 
 
 # --- Фикстуры для моков репозиториев ---
+
 
 # Фикстура для мока FollowRepository
 @pytest.fixture
@@ -141,6 +143,7 @@ def mock_user_repo() -> MagicMock:
 
 
 # --- Фикстуры для моков сервисов ---
+
 
 # Фикстура для мока FollowService
 @pytest.fixture

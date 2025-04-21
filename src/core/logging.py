@@ -26,7 +26,9 @@ def development_formatter(record):
     )
     # Добавляем информацию об исключении, если есть
     if record["exception"]:
-        log_format += "\n<red>{exception}</red>"  # Loguru автоматически форматирует exception
+        log_format += (
+            "\n<red>{exception}</red>"  # Loguru автоматически форматирует exception
+        )
 
     return log_format
 
@@ -54,7 +56,7 @@ def configure_logging():
             filter=lambda record: record["name"] != "uvicorn.access",
             colorize=True,  # Цветной вывод
             backtrace=True,  # Подробный трейсбек
-            diagnose=True  # Диагностика переменных
+            diagnose=True,  # Диагностика переменных
         )
         logger.info("Логирование настроено для DEBUG-режима.")
     else:
@@ -67,7 +69,7 @@ def configure_logging():
             colorize=True,  # Цветной вывод TODO: Remove
             filter=lambda record: record["name"] != "uvicorn.access",
             backtrace=False,  # Можно оставить True для детальности в JSON
-            diagnose=False  # Диагностику в JSON не включаем
+            diagnose=False,  # Диагностику в JSON не включаем
         )
         logger.info("Логирование настроено на JSON вывод в stderr.")
 
@@ -86,11 +88,14 @@ def configure_logging():
                 enqueue=True,  # Асинхронная запись для производительности
                 # Не фильтруем uvicorn.access для файла, т.к. там он может быть полезен
                 backtrace=True,  # Пишем трейсбеки в файл
-                diagnose=False  # Диагностику в файл не пишем
+                diagnose=False,  # Диагностику в файл не пишем
             )
             logger.info(f"Логирование в файл включено: {log_file_path}")
         except Exception as exc:
-            logger.error(f"Ошибка настройки логирования в файл '{log_file_path}': {exc}", exc_info=True)
+            logger.error(
+                f"Ошибка настройки логирования в файл '{log_file_path}': {exc}",
+                exc_info=True,
+            )
     else:
         logger.info("Логирование в файл отключено.")
 

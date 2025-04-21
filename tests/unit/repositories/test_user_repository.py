@@ -18,10 +18,11 @@ def user_repo() -> UserRepository:
 
 # --- Тест для get_by_api_key ---
 
+
 async def test_get_by_api_key_found(
-        user_repo: UserRepository,
-        mock_db_session: MagicMock,
-        test_user_obj: User,
+    user_repo: UserRepository,
+    mock_db_session: MagicMock,
+    test_user_obj: User,
 ):
     """Тест get_by_api_key, когда ключ найден."""
     api_key = "found_key"
@@ -44,8 +45,8 @@ async def test_get_by_api_key_found(
 
 
 async def test_get_by_api_key_not_found(
-        user_repo: UserRepository,
-        mock_db_session: MagicMock,
+    user_repo: UserRepository,
+    mock_db_session: MagicMock,
 ):
     """Тест get_by_api_key, когда ключ не найден."""
     api_key = "not_found_key"

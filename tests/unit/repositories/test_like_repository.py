@@ -19,10 +19,11 @@ def like_repo() -> LikeRepository:
 
 # --- Тест для get_like ---
 
+
 async def test_get_like_found(
-        like_repo: LikeRepository,
-        mock_db_session: MagicMock,
-        test_like_obj: Like,
+    like_repo: LikeRepository,
+    mock_db_session: MagicMock,
+    test_like_obj: Like,
 ):
     """Тест get_like, когда лайк найден."""
     user_id = 1
@@ -50,8 +51,8 @@ async def test_get_like_found(
 
 
 async def test_get_like_not_found(
-        like_repo: LikeRepository,
-        mock_db_session: MagicMock,
+    like_repo: LikeRepository,
+    mock_db_session: MagicMock,
 ):
     """Тест get_like, когда лайк не найден."""
     user_id = 1
@@ -79,9 +80,10 @@ async def test_get_like_not_found(
 
 # --- Тест для add_like ---
 
+
 async def test_add_like(
-        like_repo: LikeRepository,
-        mock_db_session: MagicMock,
+    like_repo: LikeRepository,
+    mock_db_session: MagicMock,
 ):
     """Тест успешного вызова add_like."""
     user_id = 1
@@ -103,18 +105,17 @@ async def test_add_like(
 
 # --- Тест для delete_like ---
 
+
 async def test_delete_like(
-        like_repo: LikeRepository,
-        mock_db_session: MagicMock,
+    like_repo: LikeRepository,
+    mock_db_session: MagicMock,
 ):
     """Тест успешного вызова delete_like."""
     user_id = 1
     tweet_id = 104
 
     # Вызываем метод
-    await like_repo.delete_like(
-        db=mock_db_session, user_id=user_id, tweet_id=tweet_id
-    )
+    await like_repo.delete_like(db=mock_db_session, user_id=user_id, tweet_id=tweet_id)
 
     # Проверяем, что execute был вызван
     mock_db_session.execute.assert_awaited_once()

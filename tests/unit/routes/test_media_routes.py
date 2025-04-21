@@ -13,6 +13,7 @@ pytestmark = pytest.mark.asyncio
 
 # --- Фикстуры ---
 
+
 # Фикстура для мока UploadFile
 @pytest.fixture
 def mock_upload_file() -> MagicMock:
@@ -27,11 +28,12 @@ def mock_upload_file() -> MagicMock:
 
 # --- Тест для обработчика роута upload_media_file ---
 
+
 async def test_upload_media_file_handler_success(
-        mock_db_session: MagicMock,
-        test_user_obj: User,
-        mock_media_service: MagicMock,
-        mock_upload_file: MagicMock,
+    mock_db_session: MagicMock,
+    test_user_obj: User,
+    mock_media_service: MagicMock,
+    mock_upload_file: MagicMock,
 ):
     """Юнит-тест для функции обработчика upload_media_file - успешный случай."""
     # Настраиваем мок сервиса на возврат успешного результата
@@ -65,10 +67,10 @@ async def test_upload_media_file_handler_success(
 
 
 async def test_upload_media_file_handler_service_exception(
-        mock_db_session: MagicMock,
-        test_user_obj: User,
-        mock_media_service: MagicMock,
-        mock_upload_file: MagicMock,
+    mock_db_session: MagicMock,
+    test_user_obj: User,
+    mock_media_service: MagicMock,
+    mock_upload_file: MagicMock,
 ):
     """Юнит-тест для функции обработчика upload_media_file - ошибка в сервисе."""
     # Настраиваем мок сервиса на выброс исключения
