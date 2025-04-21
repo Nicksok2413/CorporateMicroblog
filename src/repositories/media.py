@@ -10,4 +10,5 @@ class MediaRepository(BaseRepository[Media, MediaCreate]):
     Репозиторий для выполнения CRUD операций с моделью Media.
     В нашем случае базовых CRUD достаточно.
     """
+
     pass

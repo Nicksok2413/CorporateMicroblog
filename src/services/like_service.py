@@ -21,7 +21,9 @@ class LikeService:
         self.repo = repo
         self.tweet_repo = tweet_repo
 
-    async def like_tweet(self, db: AsyncSession, current_user: User, *, tweet_id: int) -> None:
+    async def like_tweet(
+        self, db: AsyncSession, current_user: User, *, tweet_id: int
+    ) -> None:
         """
         Ставит лайк на твит от имени текущего пользователя.
 
@@ -47,13 +49,20 @@ class LikeService:
         try:
             await self.repo.add_like(db, user_id=current_user.id, tweet_id=tweet_id)
             await db.commit()
-            log.success(f"Лайк от пользователя ID {current_user.id} на твит ID {tweet_id} успешно поставлен.")
+            log.success(
+                f"Лайк от пользователя ID {current_user.id} на твит ID {tweet_id} успешно поставлен."
+            )
         except SQLAlchemyError as exc:
             await db.rollback()
-            log.error(f"Ошибка БД при создании лайка ({current_user.id} -> {tweet_id}): {exc}", exc_info=True)
+            log.error(
+                f"Ошибка БД при создании лайка ({current_user.id} -> {tweet_id}): {exc}",
+                exc_info=True,
+            )
             raise BadRequestError("Не удалось поставить лайк.") from exc
 
-    async def unlike_tweet(self, db: AsyncSession, current_user: User, *, tweet_id: int) -> None:
+    async def unlike_tweet(
+        self, db: AsyncSession, current_user: User, *, tweet_id: int
+    ) -> None:
         """
         Убирает лайк с твита от имени текущего пользователя.
 
@@ -66,20 +75,31 @@ class LikeService:
             NotFoundError: Если лайк для удаления не найден (твит не лайкнут этим пользователем).
             BadRequestError: При ошибке удаления лайка.
         """
-        log.info(f"Пользователь ID {current_user.id} убирает лайк с твита ID {tweet_id}")
+        log.info(
+            f"Пользователь ID {current_user.id} убирает лайк с твита ID {tweet_id}"
+        )
 
         # Проверяем, существует ли лайк
-        existing_like = await self.repo.get_like(db, user_id=current_user.id, tweet_id=tweet_id)
+        existing_like = await self.repo.get_like(
+            db, user_id=current_user.id, tweet_id=tweet_id
+        )
 
         if not existing_like:
-            log.warning(f"Лайк от пользователя ID {current_user.id} на твит ID {tweet_id} не найден для удаления.")
+            log.warning(
+                f"Лайк от пользователя ID {current_user.id} на твит ID {tweet_id} не найден для удаления."
+            )
             raise NotFoundError("Лайк не найден или уже удален.")
 
         try:
             await self.repo.delete_like(db, user_id=current_user.id, tweet_id=tweet_id)
             await db.commit()
-            log.success(f"Лайк от пользователя ID {current_user.id} на твит ID {tweet_id} успешно удален.")
+            log.success(
+                f"Лайк от пользователя ID {current_user.id} на твит ID {tweet_id} успешно удален."
+            )
         except SQLAlchemyError as exc:
             await db.rollback()
-            log.error(f"Ошибка БД при удалении лайка ({current_user.id} -> {tweet_id}): {exc}", exc_info=True)
+            log.error(
+                f"Ошибка БД при удалении лайка ({current_user.id} -> {tweet_id}): {exc}",
+                exc_info=True,
+            )
             raise BadRequestError("Не удалось убрать лайк.") from exc

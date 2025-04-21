@@ -9,6 +9,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     """Основные настройки приложения."""
+
     # --- Статические настройки ---
     # Название приложения
     PROJECT_NAME: str = "Microblog Service"
@@ -22,7 +23,9 @@ class Settings(BaseSettings):
     POSTGRES_USER: str = Field(..., description="Имя пользователя PostgreSQL")
     POSTGRES_PASSWORD: str = Field(..., description="Пароль PostgreSQL")
     POSTGRES_DB: str = Field(..., description="Имя базы данных")
-    POSTGRES_HOST: str = Field("db", description="Хост PostgreSQL (имя сервиса в Docker)")
+    POSTGRES_HOST: str = Field(
+        "db", description="Хост PostgreSQL (имя сервиса в Docker)"
+    )
     POSTGRES_PORT: int = Field(5432, description="Порт PostgreSQL")
     # Настройки режимов приложения
     DEBUG: bool = Field(default=False, description="Режим отладки")

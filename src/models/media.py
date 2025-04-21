@@ -21,6 +21,7 @@ class Media(Base):
         tweet_id: Внешний ключ на твит, к которому прикреплен файл
         tweet: Связь с объектом Tweet
     """
+
     __tablename__ = "media"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
@@ -30,7 +31,7 @@ class Media(Base):
     tweet_id: Mapped[int | None] = mapped_column(
         ForeignKey("tweets.id", ondelete="CASCADE"),  # Удаление твита удалит медиа
         nullable=True,  # Медиа может существовать без твита (сразу после загрузки)
-        index=True  # Индекс по tweet_id для быстрого поиска медиа для твита
+        index=True,  # Индекс по tweet_id для быстрого поиска медиа для твита
     )
 
     # Связи

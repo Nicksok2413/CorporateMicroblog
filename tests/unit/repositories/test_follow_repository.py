@@ -20,10 +20,11 @@ def follow_repo() -> FollowRepository:
 
 # --- Тесты для get_follow ---
 
+
 async def test_get_follow_found(
-        follow_repo: FollowRepository,
-        mock_db_session: MagicMock,
-        test_follow_obj: Follow,
+    follow_repo: FollowRepository,
+    mock_db_session: MagicMock,
+    test_follow_obj: Follow,
 ):
     """Тест get_follow, когда подписка найдена."""
     follower_id = 1
@@ -51,8 +52,8 @@ async def test_get_follow_found(
 
 
 async def test_get_follow_not_found(
-        follow_repo: FollowRepository,
-        mock_db_session: MagicMock,
+    follow_repo: FollowRepository,
+    mock_db_session: MagicMock,
 ):
     """Тест get_follow, когда подписка не найдена."""
     follower_id = 1
@@ -83,9 +84,10 @@ async def test_get_follow_not_found(
 
 # --- Тесты для delete_follow ---
 
+
 async def test_follow_repo_delete_follow(
-        follow_repo: FollowRepository,
-        mock_db_session: MagicMock,
+    follow_repo: FollowRepository,
+    mock_db_session: MagicMock,
 ):
     """Тест прямого удаления подписки."""
     follower_id = 1
@@ -95,22 +97,24 @@ async def test_follow_repo_delete_follow(
     mock_db_session.execute = AsyncMock()
 
     # Запускаем метод
-    await follow_repo.delete_follow(mock_db_session, follower_id=follower_id, following_id=following_id)
+    await follow_repo.delete_follow(
+        mock_db_session, follower_id=follower_id, following_id=following_id
+    )
 
     # Проверяем, что execute был вызван с правильным delete стейтментом
     assert mock_db_session.execute.await_args[0][0].compare(
         delete(Follow).where(
-            Follow.follower_id == follower_id,
-            Follow.following_id == following_id
+            Follow.follower_id == follower_id, Follow.following_id == following_id
         )
     )
 
 
 # --- Тесты для get_following_ids ---
 
+
 async def test_follow_repo_get_following_ids(
-        follow_repo: FollowRepository,
-        mock_db_session: MagicMock,
+    follow_repo: FollowRepository,
+    mock_db_session: MagicMock,
 ):
     """Тест получения списка ID подписок."""
     follower_id = 1
@@ -134,9 +138,10 @@ async def test_follow_repo_get_following_ids(
 
 # --- Тесты для get_following_with_users ---
 
+
 async def test_follow_repo_get_following_with_users(
-        follow_repo: FollowRepository,
-        mock_db_session: MagicMock,
+    follow_repo: FollowRepository,
+    mock_db_session: MagicMock,
 ):
     """Тест получения подписок с загрузкой пользователей."""
     follower_id = 1
@@ -148,7 +153,9 @@ async def test_follow_repo_get_following_with_users(
     mock_db_session.execute = AsyncMock(return_value=mock_result)
 
     # Запускаем метод
-    follows = await follow_repo.get_following_with_users(mock_db_session, follower_id=follower_id)
+    follows = await follow_repo.get_following_with_users(
+        mock_db_session, follower_id=follower_id
+    )
 
     assert follows == mock_follows
 
@@ -166,9 +173,10 @@ async def test_follow_repo_get_following_with_users(
 
 # --- Тесты для get_followers_with_users ---
 
+
 async def test_follow_repo_get_followers_with_users(
-        follow_repo: FollowRepository,
-        mock_db_session: MagicMock,
+    follow_repo: FollowRepository,
+    mock_db_session: MagicMock,
 ):
     """Тест получения подписчиков с загрузкой пользователей."""
     following_id = 2
@@ -179,7 +187,9 @@ async def test_follow_repo_get_followers_with_users(
     mock_result.scalars.return_value.all.return_value = mock_follows
     mock_db_session.execute = AsyncMock(return_value=mock_result)
 
-    followers = await follow_repo.get_followers_with_users(mock_db_session, following_id=following_id)
+    followers = await follow_repo.get_followers_with_users(
+        mock_db_session, following_id=following_id
+    )
 
     assert followers == mock_follows
 

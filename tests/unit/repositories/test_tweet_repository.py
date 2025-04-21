@@ -20,9 +20,10 @@ def tweet_repo() -> TweetRepository:
 
 # --- Тесты для get_with_attachments ---
 
+
 async def test_tweet_repo_get_with_attachments(
-        tweet_repo: TweetRepository,
-        mock_db_session: MagicMock,
+    tweet_repo: TweetRepository,
+    mock_db_session: MagicMock,
 ):
     """Тест получения твита с загрузкой медиа."""
     tweet_id = 1
@@ -34,7 +35,9 @@ async def test_tweet_repo_get_with_attachments(
     mock_db_session.execute = AsyncMock(return_value=mock_result)
 
     # Запускаем метод
-    actual_tweet = await tweet_repo.get_with_attachments(mock_db_session, tweet_id=tweet_id)
+    actual_tweet = await tweet_repo.get_with_attachments(
+        mock_db_session, tweet_id=tweet_id
+    )
 
     # Сравниваем actual_tweet с expected_tweet_obj
     assert actual_tweet == expected_tweet_obj
@@ -50,17 +53,15 @@ async def test_tweet_repo_get_with_attachments(
     expected_statement = (
         select(Tweet)
         .where(Tweet.id == tweet_id)
-        .options(
-            selectinload(Tweet.attachments)
-        )
+        .options(selectinload(Tweet.attachments))
     )
 
     assert statement.compare(expected_statement)
 
 
 async def test_get_with_attachments_not_found(
-        tweet_repo: TweetRepository,
-        mock_db_session: MagicMock,
+    tweet_repo: TweetRepository,
+    mock_db_session: MagicMock,
 ):
     """Тест get_with_attachments, когда твит не найден."""
     tweet_id = 999  # Несуществующий ID
@@ -72,7 +73,9 @@ async def test_get_with_attachments_not_found(
     mock_result.scalars = MagicMock(return_value=mock_scalars)
 
     # Вызываем метод
-    result = await tweet_repo.get_with_attachments(db=mock_db_session, tweet_id=tweet_id)
+    result = await tweet_repo.get_with_attachments(
+        db=mock_db_session, tweet_id=tweet_id
+    )
 
     # Проверки
     assert result is None  # Ожидаем None
@@ -83,9 +86,10 @@ async def test_get_with_attachments_not_found(
 
 # --- Тесты для get_feed_for_user ---
 
+
 async def test_tweet_repo_get_feed_for_user(
-        tweet_repo: TweetRepository,
-        mock_db_session: MagicMock,
+    tweet_repo: TweetRepository,
+    mock_db_session: MagicMock,
 ):
     """Тест получения ленты твитов."""
     author_ids = [1, 2]
@@ -117,12 +121,9 @@ async def test_tweet_repo_get_feed_for_user(
         .options(
             selectinload(Tweet.author),
             selectinload(Tweet.likes).selectinload(Like.user),  # Точно как в репо
-            selectinload(Tweet.attachments)
+            selectinload(Tweet.attachments),
         )
-        .order_by(
-            desc(like_count_subquery.c.like_count).nulls_last(),
-            desc(Tweet.id)
-        )
+        .order_by(desc(like_count_subquery.c.like_count).nulls_last(), desc(Tweet.id))
     )
 
     # Сравниваем сгенерированные стейтменты
@@ -130,8 +131,8 @@ async def test_tweet_repo_get_feed_for_user(
 
 
 async def test_tweet_repo_get_feed_for_user_empty_authors(
-        tweet_repo: TweetRepository,
-        mock_db_session: MagicMock,
+    tweet_repo: TweetRepository,
+    mock_db_session: MagicMock,
 ):
     """Тест получения ленты с пустым списком авторов."""
     # Запускаем метод

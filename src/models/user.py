@@ -26,6 +26,7 @@ class User(Base):
         following: Список связей подписки, где этот пользователь является подписчиком
         followers: Список связей подписки, где этот пользователь является тем, на кого подписаны
     """
+
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)

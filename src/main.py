@@ -32,7 +32,9 @@ async def lifespan(app: FastAPI):  # pragma: no cover
         await db.connect()
         yield
     except Exception as exc:
-        log.critical(f"Критическая ошибка при старте приложения (БД?): {exc}", exc_info=True)
+        log.critical(
+            f"Критическая ошибка при старте приложения (БД?): {exc}", exc_info=True
+        )
         raise exc
     finally:
         log.info("Остановка приложения...")
@@ -43,8 +45,12 @@ async def lifespan(app: FastAPI):  # pragma: no cover
 # Создаем экземпляр FastAPI
 def create_app() -> FastAPI:
     """Создает и конфигурирует экземпляр приложения FastAPI."""
-    log.info(f"Создание экземпляра FastAPI для '{settings.PROJECT_NAME} {settings.API_VERSION}'")
-    log.info(f"Debug={settings.DEBUG}, Testing={settings.TESTING}, Production={settings.PRODUCTION}")
+    log.info(
+        f"Создание экземпляра FastAPI для '{settings.PROJECT_NAME} {settings.API_VERSION}'"
+    )
+    log.info(
+        f"Debug={settings.DEBUG}, Testing={settings.TESTING}, Production={settings.PRODUCTION}"
+    )
 
     app = FastAPI(
         title=settings.PROJECT_NAME,
@@ -58,17 +64,24 @@ def create_app() -> FastAPI:
     # Позволяет фронтенду с другого домена обращаться к API
     if not settings.PRODUCTION:  # type: ignore[truthy-function]
         allow_origins: list[str] = ["*"]  # Разрешаем все для разработки/тестирования
-        log.warning("CORS настроен разрешать все источники (*). Не использовать в PRODUCTION!")
+        log.warning(
+            "CORS настроен разрешать все источники (*). Не использовать в PRODUCTION!"
+        )
     else:
         allow_origins = []  # По умолчанию запретить все, если не задано
-        log.info(f"CORS настроен для PRODUCTION. Разрешенные источники: {allow_origins}")
+        log.info(
+            f"CORS настроен для PRODUCTION. Разрешенные источники: {allow_origins}"
+        )
 
     app.add_middleware(
         CORSMiddleware,
         allow_origins=allow_origins,
         allow_credentials=True,
         allow_methods=["*"],  # Разрешить все стандартные методы (GET, POST, etc.)
-        allow_headers=["*", settings.API_KEY_HEADER],  # Разрешить все заголовки + наш кастомный
+        allow_headers=[
+            "*",
+            settings.API_KEY_HEADER,
+        ],  # Разрешить все заголовки + наш кастомный
     )
 
     # Настраиваем обработчики исключений
@@ -80,7 +93,9 @@ def create_app() -> FastAPI:
     app.include_router(api_router, prefix="/api")
 
     # Монтируем статические файлы для медиа
-    log.info(f"Монтирование статики: URL '{settings.MEDIA_URL_PREFIX}', Директория '{settings.MEDIA_ROOT_PATH}'")
+    log.info(
+        f"Монтирование статики: URL '{settings.MEDIA_URL_PREFIX}', Директория '{settings.MEDIA_ROOT_PATH}'"
+    )
     app.mount(
         settings.MEDIA_URL_PREFIX,
         StaticFiles(directory=settings.MEDIA_ROOT_PATH),  # type: ignore[arg-type]
@@ -111,7 +126,9 @@ def create_app() -> FastAPI:
         log.debug(f"Путь '{full_path}' не найден, отдаем SPA index.html")
         return FileResponse(INDEX_HTML_PATH)
 
-    log.info(f"Приложение '{settings.PROJECT_NAME} {settings.API_VERSION}' сконфигурировано и готово к запуску.")
+    log.info(
+        f"Приложение '{settings.PROJECT_NAME} {settings.API_VERSION}' сконфигурировано и готово к запуску."
+    )
     return app
 
 

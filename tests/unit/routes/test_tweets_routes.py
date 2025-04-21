@@ -23,10 +23,11 @@ pytestmark = pytest.mark.asyncio
 
 # --- Тест для обработчика роута get_tweets_feed ---
 
+
 async def test_get_tweets_feed_handler(
-        mock_db_session: MagicMock,
-        test_user_obj: User,
-        mock_tweet_service: MagicMock,
+    mock_db_session: MagicMock,
+    test_user_obj: User,
+    mock_tweet_service: MagicMock,
 ):
     """Юнит-тест для обработчика get_tweets_feed."""
     # Настраиваем мок сервиса
@@ -50,10 +51,11 @@ async def test_get_tweets_feed_handler(
 
 # --- Тест для обработчика роута create_tweet ---
 
+
 async def test_create_tweet_handler(
-        mock_db_session: MagicMock,
-        test_user_obj: User,
-        mock_tweet_service: MagicMock,
+    mock_db_session: MagicMock,
+    test_user_obj: User,
+    mock_tweet_service: MagicMock,
 ):
     """Юнит-тест для обработчика create_tweet."""
     # Входные данные
@@ -83,10 +85,11 @@ async def test_create_tweet_handler(
 
 # --- Тест для обработчика роута delete_tweet ---
 
+
 async def test_delete_tweet_handler(
-        mock_db_session: MagicMock,
-        test_user_obj: User,
-        mock_tweet_service: MagicMock,
+    mock_db_session: MagicMock,
+    test_user_obj: User,
+    mock_tweet_service: MagicMock,
 ):
     """Юнит-тест для обработчика delete_tweet."""
     tweet_id_to_delete = 456
@@ -112,10 +115,11 @@ async def test_delete_tweet_handler(
 
 # --- Тест для обработчика роута like_tweet ---
 
+
 async def test_like_tweet_handler(
-        mock_db_session: MagicMock,
-        test_user_obj: User,
-        mock_like_service: MagicMock,
+    mock_db_session: MagicMock,
+    test_user_obj: User,
+    mock_like_service: MagicMock,
 ):
     """Юнит-тест для обработчика like_tweet."""
     tweet_id_to_like = 789
@@ -141,10 +145,11 @@ async def test_like_tweet_handler(
 
 # --- Тест для обработчика роута unlike_tweet ---
 
+
 async def test_unlike_tweet_handler(
-        mock_db_session: MagicMock,
-        test_user_obj: User,
-        mock_like_service: MagicMock,
+    mock_db_session: MagicMock,
+    test_user_obj: User,
+    mock_like_service: MagicMock,
 ):
     """Юнит-тест для обработчика unlike_tweet."""
     tweet_id_to_unlike = 101

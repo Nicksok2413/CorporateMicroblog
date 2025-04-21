@@ -18,6 +18,7 @@ class BaseUser(TunedModel):
         id (int): Уникальный идентификатор пользователя
         name (str): Имя пользователя
     """
+
     id: int
     name: str
 
@@ -36,6 +37,7 @@ class UserProfile(TunedModel):
         followers (List[BaseUser]): Список пользователей, подписанных на этого пользователя
         following (List[BaseUser]): Список пользователей, на которых подписан этот пользователь
     """
+
     id: int
     name: str
     followers: List[BaseUser] = Field(default_factory=list)
@@ -50,4 +52,5 @@ class UserProfileResult(ResultTrue):
         result (bool): Всегда True
         user (UserProfile): Данные профиля пользователя
     """
+
     user: UserProfile

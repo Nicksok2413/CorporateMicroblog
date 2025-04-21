@@ -22,7 +22,9 @@ class UserService(BaseService[User, UserRepository]):
         super().__init__(repo)
         self.follow_repo = follow_repo
 
-    async def get_user_by_api_key(self, db: AsyncSession, *, api_key: str) -> Optional[User]:
+    async def get_user_by_api_key(
+        self, db: AsyncSession, *, api_key: str
+    ) -> Optional[User]:
         """
         Получает пользователя по API ключу.
 
@@ -55,18 +57,26 @@ class UserService(BaseService[User, UserRepository]):
         user = await self._get_obj_or_404(db, obj_id=user_id)
 
         # Получаем подписки и подписчиков с загруженными данными пользователей
-        following_relations: Sequence[Follow] = await self.follow_repo.get_following_with_users(db, follower_id=user_id)
-        follower_relations: Sequence[Follow] = await self.follow_repo.get_followers_with_users(db, following_id=user_id)
+        following_relations: Sequence[
+            Follow
+        ] = await self.follow_repo.get_following_with_users(db, follower_id=user_id)
+        follower_relations: Sequence[
+            Follow
+        ] = await self.follow_repo.get_followers_with_users(db, following_id=user_id)
 
         # Преобразуем данные в формат схемы BaseUser
-        following_list = [BaseUser.model_validate(f.followed_user) for f in following_relations]
-        followers_list = [BaseUser.model_validate(f.follower) for f in follower_relations]
+        following_list = [
+            BaseUser.model_validate(f.followed_user) for f in following_relations
+        ]
+        followers_list = [
+            BaseUser.model_validate(f.follower) for f in follower_relations
+        ]
 
         profile = UserProfile(
             id=user.id,
             name=user.name,
             followers=followers_list,
-            following=following_list
+            following=following_list,
         )
         log.info(f"Профиль для пользователя ID {user_id} успешно сформирован.")
         return profile

@@ -19,11 +19,11 @@ router = APIRouter(prefix="/medias", tags=["Media"])
     description="Загружает медиафайл (изображение) и возвращает его ID для последующего прикрепления к твиту.",
 )
 async def upload_media_file(
-        db: DBSession,
-        current_user: CurrentUser,
-        media_service: MediaSvc,
-        # Данные файла из формы (multipart/form-data)
-        file: UploadFile = File(..., description="Медиафайл для загрузки (jpg, png, gif)")
+    db: DBSession,
+    current_user: CurrentUser,
+    media_service: MediaSvc,
+    # Данные файла из формы (multipart/form-data)
+    file: UploadFile = File(..., description="Медиафайл для загрузки (jpg, png, gif)"),
 ) -> Optional[MediaCreateResult]:
     """
     Обрабатывает загрузку медиафайла.
@@ -46,7 +46,9 @@ async def upload_media_file(
         MediaValidationError: Если файл не прошел валидацию (перехватывается обработчиком).
         BadRequestError: Если произошла ошибка сохранения файла или БД (перехватывается).
     """
-    log.info(f"Пользователь ID {current_user.id} загружает файл: '{file.filename}' ({file.content_type})")
+    log.info(
+        f"Пользователь ID {current_user.id} загружает файл: '{file.filename}' ({file.content_type})"
+    )
     media = None
 
     try:
@@ -54,10 +56,13 @@ async def upload_media_file(
             db=db,
             file=file.file,  # Передаем сам файловый объект
             filename=file.filename or "untitled",  # Имя файла или заглушка
-            content_type=file.content_type or "application/octet-stream"  # MIME-type или заглушка
+            content_type=file.content_type
+            or "application/octet-stream",  # MIME-type или заглушка
         )
     except Exception:
-        log.exception(f"Ошибка при обработке загрузки файла от пользователя ID {current_user.id}")
+        log.exception(
+            f"Ошибка при обработке загрузки файла от пользователя ID {current_user.id}"
+        )
         raise
     finally:
         await file.close()

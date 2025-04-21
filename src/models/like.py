@@ -24,6 +24,7 @@ class Like(Base):
         user: Связь с объектом лайкнувшего пользователя (User)
         tweet: Связь с объектом лайкнутого твита (Tweet)
     """
+
     __tablename__ = "likes"
 
     # Составной первичный ключ гарантирует, что пользователь может лайкнуть твит только один раз.
@@ -40,4 +41,6 @@ class Like(Base):
     tweet: Mapped["Tweet"] = relationship(back_populates="likes")
 
     # Явное ограничение уникальности (покрывается составным первичным ключом, но хорошо для ясности)
-    __table_args__ = (UniqueConstraint("user_id", "tweet_id", name="uq_user_tweet_like"),)
+    __table_args__ = (
+        UniqueConstraint("user_id", "tweet_id", name="uq_user_tweet_like"),
+    )

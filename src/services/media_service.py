@@ -28,6 +28,7 @@ class MediaService(BaseService[Media, MediaRepository]):
     Отвечает за сохранение файлов, создание записей в БД.
     Использует комбинацию timestamp + короткая случайная строка для имен файлов.
     """
+
     # Разрешенные типы контента для загружаемых медиа
     ALLOWED_CONTENT_TYPES: set[str] = {"image/jpeg", "image/png", "image/gif"}
     # Длина случайной части имени файла
@@ -47,8 +48,10 @@ class MediaService(BaseService[Media, MediaRepository]):
         log.debug(f"Валидация файла: name='{filename}', type='{content_type}'")
 
         if content_type not in self.ALLOWED_CONTENT_TYPES:
-            msg = (f"Недопустимый тип файла '{content_type}'. "
-                   f"Разрешены: {', '.join(self.ALLOWED_CONTENT_TYPES)}")
+            msg = (
+                f"Недопустимый тип файла '{content_type}'. "
+                f"Разрешены: {', '.join(self.ALLOWED_CONTENT_TYPES)}"
+            )
             log.warning(msg)
             raise MediaValidationError(detail=msg)
 
@@ -64,7 +67,7 @@ class MediaService(BaseService[Media, MediaRepository]):
         Returns:
             str: Случайная строка из строчных букв ASCII и цифр указанной длины.
         """
-        return ''.join(choice(ascii_lowercase + digits) for _ in range(length))
+        return "".join(choice(ascii_lowercase + digits) for _ in range(length))
 
     def _generate_unique_filename(self, original_filename: str) -> str:
         """
@@ -82,16 +85,13 @@ class MediaService(BaseService[Media, MediaRepository]):
         random_part = self._generate_short_random_string()
         extension = Path(original_filename).suffix.lower()
         unique_name = f"{timestamp}_{random_part}{extension}"
-        log.debug(f"Сгенерировано уникальное имя файла: '{unique_name}' для '{original_filename}'")
+        log.debug(
+            f"Сгенерировано уникальное имя файла: '{unique_name}' для '{original_filename}'"
+        )
         return unique_name
 
     async def save_media_file(
-            self,
-            db: AsyncSession,
-            *,
-            file: IO[bytes],
-            filename: str,
-            content_type: str
+        self, db: AsyncSession, *, file: IO[bytes], filename: str, content_type: str
     ) -> Media:
         """
         Сохраняет медиафайл и создает соответствующую запись в БД.
@@ -117,19 +117,26 @@ class MediaService(BaseService[Media, MediaRepository]):
 
             unique_filename: str = self._generate_unique_filename(filename)
             save_path = settings.MEDIA_ROOT_PATH / unique_filename  # type: ignore[operator]
-            log.info(f"Сохранение медиафайла '{filename}' как '{unique_filename}' в '{save_path}'")
+            log.info(
+                f"Сохранение медиафайла '{filename}' как '{unique_filename}' в '{save_path}'"
+            )
 
             # Этап 1: Сохранение файла
             try:
-                assert isinstance(save_path, Path), f"save_path должен быть Path, но получен {type(save_path)}"
+                assert isinstance(save_path, Path), (
+                    f"save_path должен быть Path, но получен {type(save_path)}"
+                )
 
-                async with aiofiles.open(save_path, 'wb') as out_file:
+                async with aiofiles.open(save_path, "wb") as out_file:
                     while content := file.read(1024 * 1024):  # Читаем по 1MB
                         await out_file.write(content)
                 log.success(f"Файл '{unique_filename}' успешно сохранен.")
 
             except (IOError, TypeError) as io_exc:
-                log.error(f"Ошибка при сохранении файла '{unique_filename}': {io_exc}", exc_info=True)
+                log.error(
+                    f"Ошибка при сохранении файла '{unique_filename}': {io_exc}",
+                    exc_info=True,
+                )
                 # Пытаемся удалить частично записанный файл
                 if save_path and save_path.exists():
                     try:
@@ -144,26 +151,37 @@ class MediaService(BaseService[Media, MediaRepository]):
                 media = await self.repo.create(db=db, obj_in=media_in)
                 await db.commit()
                 await db.refresh(media)
-                log.info(f"Запись для медиа ID {media.id} (файл '{unique_filename}') создана в БД.")
+                log.info(
+                    f"Запись для медиа ID {media.id} (файл '{unique_filename}') создана в БД."
+                )
                 return media
 
             except SQLAlchemyError as db_exc:
                 await db.rollback()
-                log.error(f"Ошибка БД при создании записи Media для '{unique_filename}': {db_exc}", exc_info=True)
+                log.error(
+                    f"Ошибка БД при создании записи Media для '{unique_filename}': {db_exc}",
+                    exc_info=True,
+                )
                 # Если запись в БД не удалась, удаляем сохраненный файл
                 if save_path and save_path.exists():
                     try:
                         save_path.unlink(missing_ok=True)
                     except OSError as unlink_err:
-                        log.error(f"Не удалось удалить файл '{unique_filename}' после ошибки БД: {unlink_err}")
-                raise BadRequestError("Ошибка при сохранении информации о медиафайле.") from db_exc
+                        log.error(
+                            f"Не удалось удалить файл '{unique_filename}' после ошибки БД: {unlink_err}"
+                        )
+                raise BadRequestError(
+                    "Ошибка при сохранении информации о медиафайле."
+                ) from db_exc
 
         except (MediaValidationError, BadRequestError):
             # Пробрасываем наши ожидаемые ошибки дальше
             # Откат не нужен здесь, так как ошибки произошли до commit или откат был сделан выше
             raise
         except Exception as outer_exc:
-            log.exception(f"Непредвиденная внешняя ошибка при сохранении медиа {filename}: {outer_exc}")
+            log.exception(
+                f"Непредвиденная внешняя ошибка при сохранении медиа {filename}: {outer_exc}"
+            )
             await db.rollback()  # Гарантируем откат, если транзакция была начата
             # Попытка удалить файл, если он существует
             if save_path and save_path.exists():
@@ -189,9 +207,11 @@ class MediaService(BaseService[Media, MediaRepository]):
         delete_tasks = []
 
         for file_path_str in file_paths:
-            full_path = settings.MEDIA_ROOT_PATH / file_path_str.lstrip('/')  # type: ignore[operator]
+            full_path = settings.MEDIA_ROOT_PATH / file_path_str.lstrip("/")  # type: ignore[operator]
             # Запускаем синхронное удаление в отдельном потоке
-            delete_tasks.append(asyncio.to_thread(self._delete_single_file_sync, full_path))
+            delete_tasks.append(
+                asyncio.to_thread(self._delete_single_file_sync, full_path)
+            )
 
         # Запускаем удаление параллельно
         results = await asyncio.gather(*delete_tasks, return_exceptions=True)
@@ -209,7 +229,9 @@ class MediaService(BaseService[Media, MediaRepository]):
                 success_count += 1
                 log.debug(f"Файл '{file_to_log}' успешно удален.")
 
-        log.info(f"Завершено удаление файлов: {success_count} успешно из {len(file_paths)}.")
+        log.info(
+            f"Завершено удаление файлов: {success_count} успешно из {len(file_paths)}."
+        )
 
     def _delete_single_file_sync(self, file_path: Path) -> bool:
         """

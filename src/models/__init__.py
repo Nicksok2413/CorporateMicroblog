@@ -4,6 +4,7 @@
 Экспортирует базовый класс Base, все определенные модели и ассоциативные таблицы,
 чтобы Alembic мог обнаружить их для автогенерации миграций.
 """
+
 from .base import Base
 from .follow import Follow
 from .like import Like

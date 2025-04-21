@@ -14,12 +14,12 @@ class MicroblogHTTPException(HTTPException):
     """Базовое исключение для API микросервиса."""
 
     def __init__(
-            self,
-            status_code: int,
-            detail: str,
-            error_type: Optional[str] = None,
-            headers: Optional[dict[str, Any]] = None,
-            extra: Optional[dict[str, Any]] = None
+        self,
+        status_code: int,
+        detail: str,
+        error_type: Optional[str] = None,
+        headers: Optional[dict[str, Any]] = None,
+        extra: Optional[dict[str, Any]] = None,
     ):
         super().__init__(status_code=status_code, detail=detail, headers=headers)
         self.error_type = error_type or "microblog_error"
@@ -36,15 +36,28 @@ class NotFoundError(MicroblogHTTPException):
 class AuthenticationRequiredError(MicroblogHTTPException):
     """Ошибка при отсутствии заголовка `api-key`."""
 
-    def __init__(self, detail: str = "Требуется аутентификация", headers: Optional[dict[str, Any]] = None, **kwargs):
-        super().__init__(status.HTTP_401_UNAUTHORIZED, detail, "unauthorized", headers=headers, **kwargs)
+    def __init__(
+        self,
+        detail: str = "Требуется аутентификация",
+        headers: Optional[dict[str, Any]] = None,
+        **kwargs,
+    ):
+        super().__init__(
+            status.HTTP_401_UNAUTHORIZED,
+            detail,
+            "unauthorized",
+            headers=headers,
+            **kwargs,
+        )
 
 
 class PermissionDeniedError(MicroblogHTTPException):
     """Ошибка доступа при отсутствии прав."""
 
     def __init__(self, detail: str = "Доступ запрещен", **kwargs):
-        super().__init__(status.HTTP_403_FORBIDDEN, detail, "permission_denied", **kwargs)
+        super().__init__(
+            status.HTTP_403_FORBIDDEN, detail, "permission_denied", **kwargs
+        )
 
 
 class BadRequestError(MicroblogHTTPException):
@@ -58,7 +71,9 @@ class MediaValidationError(MicroblogHTTPException):
     """Ошибка валидации медиафайла."""
 
     def __init__(self, detail: str = "Ошибка валидации медиа", **kwargs):
-        super().__init__(status.HTTP_400_BAD_REQUEST, detail, "media_validation_error", **kwargs)
+        super().__init__(
+            status.HTTP_400_BAD_REQUEST, detail, "media_validation_error", **kwargs
+        )
 
 
 class ConflictError(MicroblogHTTPException):
@@ -70,7 +85,10 @@ class ConflictError(MicroblogHTTPException):
 
 # --- Обработчики исключений FastAPI ---
 
-async def microblog_exception_handler(request: Request, exc: MicroblogHTTPException) -> JSONResponse:
+
+async def microblog_exception_handler(
+    request: Request, exc: MicroblogHTTPException
+) -> JSONResponse:
     """
     Обработчик для кастомных исключений MicroblogHTTPException.
 
@@ -87,19 +105,19 @@ async def microblog_exception_handler(request: Request, exc: MicroblogHTTPExcept
         f"Обработана ошибка API ({exc.status_code} {exc.error_type}): {exc.detail}"
     )
     content = ResultFalseWithError(
-        error_type=exc.error_type,
-        error_message=exc.detail,
-        extra_info=exc.extra
+        error_type=exc.error_type, error_message=exc.detail, extra_info=exc.extra
     ).model_dump()
 
     return JSONResponse(
         status_code=exc.status_code,
         content=content,
-        headers=getattr(exc, 'headers', None)  # Извлекаем headers из исключения
+        headers=getattr(exc, "headers", None),  # Извлекаем headers из исключения
     )
 
 
-async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
+async def validation_exception_handler(
+    request: Request, exc: RequestValidationError
+) -> JSONResponse:
     """
     Обработчик ошибок валидации Pydantic (RequestValidationError).
 
@@ -143,7 +161,9 @@ async def generic_exception_handler(request: Request, exc: Exception) -> JSONRes
         JSONResponse: Ответ 500 Internal Server Error в стандартном формате.
     """
     # Используем log.exception для автоматического добавления трейсбэка
-    log.exception(f"Необработанное исключение во время запроса {request.method} {request.url.path}: {exc}")
+    log.exception(
+        f"Необработанное исключение во время запроса {request.method} {request.url.path}: {exc}"
+    )
 
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

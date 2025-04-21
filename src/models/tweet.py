@@ -25,6 +25,7 @@ class Tweet(Base):
         likes: Список лайков, полученных этим твитом
         attachments: Список объектов Media, прикрепленных к этому твиту
     """
+
     __tablename__ = "tweets"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
@@ -41,5 +42,5 @@ class Tweet(Base):
     attachments: Mapped[List["Media"]] = relationship(
         back_populates="tweet",
         cascade="all, delete-orphan",
-        lazy="selectin" # Используем selectinload по умолчанию для этой связи
+        lazy="selectin",  # Используем selectinload по умолчанию для этой связи
     )

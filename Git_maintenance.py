@@ -54,13 +54,13 @@ def run_command(command_str):
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
-            encoding='utf-8',
-            bufsize=1  # Построчная буферизация
+            encoding="utf-8",
+            bufsize=1,  # Построчная буферизация
         )
 
         # Чтение и вывод в реальном времени
         for line in process.stdout:
-            print(line, end='')
+            print(line, end="")
 
         process.wait()  # Ожидание завершения процесса
 
@@ -68,12 +68,21 @@ def run_command(command_str):
             print("\n--- Успешно ---")
             return True
         else:
-            print(f"\n❌ Ошибка выполнения команды (Код возврата: {process.returncode})", file=sys.stderr)
+            print(
+                f"\n❌ Ошибка выполнения команды (Код возврата: {process.returncode})",
+                file=sys.stderr,
+            )
             return False
 
     except FileNotFoundError:
-        print(f"❌ Ошибка: Команда или программа в '{command_str}' не найдена.", file=sys.stderr)
-        print("Убедитесь, что git, cp, find, rm установлены и доступны в системном PATH.", file=sys.stderr)
+        print(
+            f"❌ Ошибка: Команда или программа в '{command_str}' не найдена.",
+            file=sys.stderr,
+        )
+        print(
+            "Убедитесь, что git, cp, find, rm установлены и доступны в системном PATH.",
+            file=sys.stderr,
+        )
         return False
     except Exception as exc:
         print(f"❌ Неожиданная ошибка при выполнении: {command_str}", file=sys.stderr)
@@ -88,13 +97,22 @@ def main():
     # Проверка: находимся ли мы в корне Git репозитория?
     if not os.path.isdir(GIT_DIR):
         print(f"❌ Ошибка: Каталог '{GIT_DIR}' не найден.", file=sys.stderr)
-        print("Пожалуйста, запустите этот скрипт из корневого каталога вашего Git репозитория.", file=sys.stderr)
+        print(
+            "Пожалуйста, запустите этот скрипт из корневого каталога вашего Git репозитория.",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     # Проверка, существует ли уже каталог бэкапа (возможно, от предыдущего неудачного запуска)
     if os.path.exists(BACKUP_DIR):
-        print(f"⚠️ Предупреждение: Каталог резервной копии '{BACKUP_DIR}' уже существует.", file=sys.stderr)
-        print(f"Пожалуйста, удалите или переименуйте '{BACKUP_DIR}' вручную и повторите попытку.", file=sys.stderr)
+        print(
+            f"⚠️ Предупреждение: Каталог резервной копии '{BACKUP_DIR}' уже существует.",
+            file=sys.stderr,
+        )
+        print(
+            f"Пожалуйста, удалите или переименуйте '{BACKUP_DIR}' вручную и повторите попытку.",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     # Последовательное выполнение команд
@@ -103,8 +121,10 @@ def main():
             print("\n--- Скрипт прерван из-за ошибки ---", file=sys.stderr)
 
             if os.path.exists(BACKUP_DIR) and not cmd.startswith("rm -rf"):
-                print(f"ℹ️ Каталог резервной копии '{BACKUP_DIR}' мог быть создан и оставлен нетронутым.",
-                      file=sys.stderr)
+                print(
+                    f"ℹ️ Каталог резервной копии '{BACKUP_DIR}' мог быть создан и оставлен нетронутым.",
+                    file=sys.stderr,
+                )
 
             sys.exit(1)  # Выход с кодом ошибки
 

@@ -14,9 +14,12 @@ class LikeRepository:
     Репозиторий для управления лайками.
     Не наследуется от BaseRepository из-за специфики модели Like.
     """
+
     model = Like
 
-    async def get_like(self, db: AsyncSession, *, user_id: int, tweet_id: int) -> Optional[Like]:
+    async def get_like(
+        self, db: AsyncSession, *, user_id: int, tweet_id: int
+    ) -> Optional[Like]:
         """
         Проверяет наличие лайка от пользователя на конкретный твит.
 
@@ -31,8 +34,7 @@ class LikeRepository:
         log.debug(f"Проверка лайка: user_id={user_id}, tweet_id={tweet_id}")
 
         statement = select(self.model).where(
-            self.model.user_id == user_id,
-            self.model.tweet_id == tweet_id
+            self.model.user_id == user_id, self.model.tweet_id == tweet_id
         )
 
         result = await db.execute(statement)
@@ -50,12 +52,16 @@ class LikeRepository:
         Returns:
             Like: Созданный объект Like.
         """
-        log.debug(f"Подготовка к добавлению лайка: user_id={user_id}, tweet_id={tweet_id}")
+        log.debug(
+            f"Подготовка к добавлению лайка: user_id={user_id}, tweet_id={tweet_id}"
+        )
         db_obj = self.model(user_id=user_id, tweet_id=tweet_id)
         db.add(db_obj)
         return db_obj
 
-    async def delete_like(self, db: AsyncSession, *, user_id: int, tweet_id: int) -> None:
+    async def delete_like(
+        self, db: AsyncSession, *, user_id: int, tweet_id: int
+    ) -> None:
         """
         Выполняет удаление записи о лайке напрямую в БД (без загрузки объекта).
 
@@ -64,11 +70,12 @@ class LikeRepository:
             user_id (int): ID пользователя.
             tweet_id (int): ID твита.
         """
-        log.debug(f"Подготовка к удалению лайка: user_id={user_id}, tweet_id={tweet_id}")
+        log.debug(
+            f"Подготовка к удалению лайка: user_id={user_id}, tweet_id={tweet_id}"
+        )
 
         statement = delete(self.model).where(
-            self.model.user_id == user_id,
-            self.model.tweet_id == tweet_id
+            self.model.user_id == user_id, self.model.tweet_id == tweet_id
         )
 
         await db.execute(statement)

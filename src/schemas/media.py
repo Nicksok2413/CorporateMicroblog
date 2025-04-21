@@ -13,6 +13,7 @@ class MediaCreate(BaseModel):
     Fields:
         file_path (str): Относительный путь к сохраненному файлу
     """
+
     file_path: str = Field(..., description="Относительный путь к файлу в хранилище")
 
 
@@ -25,4 +26,5 @@ class MediaCreateResult(ResultTrue):
         result (bool): Всегда True
         media_id (int): ID загруженного и сохраненного медиафайла
     """
+
     media_id: int

@@ -15,10 +15,11 @@ pytestmark = pytest.mark.asyncio
 
 # --- Тесты на создание твита ---
 
+
 async def test_create_tweet_success_no_media(
-        authenticated_client: AsyncClient,
-        test_user: User,
-        db_session: AsyncSession  # Добавляем сессию для проверки БД
+    authenticated_client: AsyncClient,
+    test_user: User,
+    db_session: AsyncSession,  # Добавляем сессию для проверки БД
 ):
     """Тест успешного создания твита без медиа."""
     tweet_data = {"tweet_data": "My first test tweet!"}
@@ -77,11 +78,12 @@ async def test_create_tweet_unauthorized(client: AsyncClient):
 
 # --- Тесты на создание твита с медиа ---
 
+
 async def test_create_tweet_with_one_media(
-        authenticated_client: AsyncClient,
-        test_user: User,
-        create_uploaded_media_list: Callable[[int], Awaitable[List[Media]]],
-        db_session: AsyncSession
+    authenticated_client: AsyncClient,
+    test_user: User,
+    create_uploaded_media_list: Callable[[int], Awaitable[List[Media]]],
+    db_session: AsyncSession,
 ):
     """Тест успешного создания твита с одним медиа ."""
     # Вызываем фабрику для создания 1 медиа
@@ -91,7 +93,7 @@ async def test_create_tweet_with_one_media(
 
     tweet_data = {
         "tweet_data": "Tweet with one media from factory!",
-        "tweet_media_ids": [uploaded_media.id]
+        "tweet_media_ids": [uploaded_media.id],
     }
     response = await authenticated_client.post("/api/tweets", json=tweet_data)
 
@@ -109,19 +111,23 @@ async def test_create_tweet_with_one_media(
     # Проверяем медиа в БД
     await db_session.refresh(uploaded_media)  # Обновляем объект media
     assert uploaded_media is not None
-    assert uploaded_media.tweet_id == new_tweet_id  # Проверяем, что tweet_id установился
+    assert (
+        uploaded_media.tweet_id == new_tweet_id
+    )  # Проверяем, что tweet_id установился
 
     # Проверяем связь через твит
-    await db_session.refresh(tweet_in_db, attribute_names=['attachments'])  # Обновляем твит со связью
+    await db_session.refresh(
+        tweet_in_db, attribute_names=["attachments"]
+    )  # Обновляем твит со связью
     assert len(tweet_in_db.attachments) == 1
     assert tweet_in_db.attachments[0].id == uploaded_media.id
 
 
 async def test_create_tweet_with_multiple_media(
-        authenticated_client: AsyncClient,
-        test_user: User,
-        create_uploaded_media_list: Callable[[int], Awaitable[List[Media]]],
-        db_session: AsyncSession
+    authenticated_client: AsyncClient,
+    test_user: User,
+    create_uploaded_media_list: Callable[[int], Awaitable[List[Media]]],
+    db_session: AsyncSession,
 ):
     """Тест успешного создания твита с тремя медиа."""
     # Вызываем фабрику, чтобы создать 3 медиафайла
@@ -132,7 +138,7 @@ async def test_create_tweet_with_multiple_media(
 
     tweet_data = {
         "tweet_data": "Tweet with 3 media items!",
-        "tweet_media_ids": media_ids
+        "tweet_media_ids": media_ids,
     }
 
     response = await authenticated_client.post("/api/tweets", json=tweet_data)
@@ -153,7 +159,9 @@ async def test_create_tweet_with_multiple_media(
         await db_session.refresh(media)
         assert media.tweet_id == new_tweet_id
 
-    await db_session.refresh(tweet_in_db, attribute_names=['attachments'])  # Обновляем объекты media
+    await db_session.refresh(
+        tweet_in_db, attribute_names=["attachments"]
+    )  # Обновляем объекты media
     assert len(tweet_in_db.attachments) == 3
 
     # Проверяем ID привязанных медиа (сортируем для стабильности теста)
@@ -166,7 +174,7 @@ async def test_create_tweet_with_nonexistent_media(authenticated_client: AsyncCl
     """Тест создания твита с несуществующим media_id."""
     tweet_data = {
         "tweet_data": "Tweet with bad media!",
-        "tweet_media_ids": [99999]  # Несуществующий ID
+        "tweet_media_ids": [99999],  # Несуществующий ID
     }
     response = await authenticated_client.post("/api/tweets", json=tweet_data)
 
@@ -179,10 +187,9 @@ async def test_create_tweet_with_nonexistent_media(authenticated_client: AsyncCl
 
 # --- Тесты на удаление твитов ---
 
+
 async def test_delete_tweet_success_no_media(
-        authenticated_client: AsyncClient,
-        test_user: User,
-        db_session: AsyncSession
+    authenticated_client: AsyncClient, test_user: User, db_session: AsyncSession
 ):
     """Тест успешного удаления своего твита без медиа."""
     # Создаем твит
@@ -203,10 +210,10 @@ async def test_delete_tweet_success_no_media(
 
 
 async def test_delete_tweet_success_with_media(
-        authenticated_client: AsyncClient,
-        test_user: User,
-        create_uploaded_media_list: Callable[[int], Awaitable[List[Media]]],
-        db_session: AsyncSession
+    authenticated_client: AsyncClient,
+    test_user: User,
+    create_uploaded_media_list: Callable[[int], Awaitable[List[Media]]],
+    db_session: AsyncSession,
 ):
     """Тест успешного удаления своего твита с медиа."""
     # Создаем медиа
@@ -220,7 +227,9 @@ async def test_delete_tweet_success_with_media(
 
     tweet_id = tweet.id
     media_id = uploaded_media_list[0].id
-    media_path = settings.MEDIA_ROOT_PATH / uploaded_media_list[0].file_path  # Запоминаем путь к файлу
+    media_path = (
+        settings.MEDIA_ROOT_PATH / uploaded_media_list[0].file_path
+    )  # Запоминаем путь к файлу
     uploaded_media_list[0].tweet_id = tweet_id
     await db_session.commit()
 
@@ -247,9 +256,9 @@ async def test_delete_tweet_success_with_media(
 
 
 async def test_delete_tweet_forbidden(
-        authenticated_client: AsyncClient,  # Клиент test_user
-        test_user_alice: User,
-        db_session: AsyncSession
+    authenticated_client: AsyncClient,  # Клиент test_user
+    test_user_alice: User,
+    db_session: AsyncSession,
 ):
     """Тест попытки удалить чужой твит."""
     # Создаем твит от alice
@@ -288,14 +297,15 @@ async def test_delete_tweet_unauthorized(client: AsyncClient):
 
 # --- Тесты на получение ленты твитов ---
 
+
 # # Фикстура создания состояния системы
 @pytest_asyncio.fixture(scope="function")
 async def feed_setup(
-        db_session: AsyncSession,
-        test_user: User,
-        test_user_alice: User,
-        test_user_bob: User,
-        create_uploaded_media_list: Callable[[int], Awaitable[List[Media]]],
+    db_session: AsyncSession,
+    test_user: User,
+    test_user_alice: User,
+    test_user_bob: User,
+    create_uploaded_media_list: Callable[[int], Awaitable[List[Media]]],
 ):
     """Настраивает данные для тестов ленты: пользователи, подписки, твиты, лайки."""
     # 1. Подписки: test_user -> alice
@@ -305,8 +315,12 @@ async def feed_setup(
     # 2. Твиты
     tweet_user = Tweet(author_id=test_user.id, content="My own tweet")
     tweet_alice_1 = Tweet(author_id=test_user_alice.id, content="Alice's tweet 1")
-    tweet_alice_2 = Tweet(author_id=test_user_alice.id, content="Alice's tweet 2 with media")
-    tweet_bob = Tweet(author_id=test_user_bob.id, content="Bob's tweet (should not be in feed)")
+    tweet_alice_2 = Tweet(
+        author_id=test_user_alice.id, content="Alice's tweet 2 with media"
+    )
+    tweet_bob = Tweet(
+        author_id=test_user_bob.id, content="Bob's tweet (should not be in feed)"
+    )
     db_session.add_all([tweet_user, tweet_alice_1, tweet_alice_2, tweet_bob])
     await db_session.flush()  # Получаем ID твитов
 
@@ -338,13 +352,14 @@ async def feed_setup(
         "tweet_alice_1_id": tweet_alice_1.id,
         "tweet_alice_2_id": tweet_alice_2.id,
         "tweet_bob_id": tweet_bob.id,
-        "media": uploaded_media
+        "media": uploaded_media,
     }
 
+
 async def test_get_tweet_feed_success_with_own_tweet(
-        authenticated_client: AsyncClient,
-        test_user: User,
-        db_session: AsyncSession,
+    authenticated_client: AsyncClient,
+    test_user: User,
+    db_session: AsyncSession,
 ):
     """Тест успешного получения ленты твитов с одним своим твитом."""
     # Создаем твит
@@ -367,8 +382,7 @@ async def test_get_tweet_feed_success_with_own_tweet(
 
 
 async def test_get_tweet_feed_success(
-        authenticated_client: AsyncClient,
-        feed_setup: dict
+    authenticated_client: AsyncClient, feed_setup: dict
 ):
     """Тест успешного получения ленты твитов."""
     response = await authenticated_client.get("/api/tweets")
@@ -386,14 +400,18 @@ async def test_get_tweet_feed_success(
     expected_ids = {
         feed_setup["tweet_user_id"],
         feed_setup["tweet_alice_1_id"],
-        feed_setup["tweet_alice_2_id"]
+        feed_setup["tweet_alice_2_id"],
     }
     assert feed_tweet_ids == expected_ids
 
     # Проверяем структуру одного из твитов (например, tweet_alice_2 с медиа и 2 лайками)
     tweet_alice_2_data = next(
-        (tweet for tweet in tweets_in_feed if tweet["id"] == feed_setup["tweet_alice_2_id"]),
-        None
+        (
+            tweet
+            for tweet in tweets_in_feed
+            if tweet["id"] == feed_setup["tweet_alice_2_id"]
+        ),
+        None,
     )
     assert tweet_alice_2_data is not None
     assert tweet_alice_2_data["content"] == "Alice's tweet 2 with media"
@@ -412,7 +430,9 @@ async def test_get_tweet_feed_success(
     # Проверяем, что это URL, сформированный правильно
     media_url = tweet_alice_2_data["attachments"][0]
     expected_media_path = feed_setup["media"].file_path
-    expected_url_part = f"{settings.MEDIA_URL_PREFIX.rstrip('/')}/{expected_media_path.lstrip('/')}"
+    expected_url_part = (
+        f"{settings.MEDIA_URL_PREFIX.rstrip('/')}/{expected_media_path.lstrip('/')}"
+    )
     assert media_url == expected_url_part
 
     # Проверим сортировку:
@@ -454,6 +474,7 @@ async def test_get_tweet_feed_unauthorized(client: AsyncClient):
 
 # --- Тесты для лайков ---
 
+
 # Фикстура твита для лайков
 @pytest_asyncio.fixture(scope="function")
 async def tweet_for_likes(db_session: AsyncSession, test_user_alice: User) -> Tweet:
@@ -466,10 +487,10 @@ async def tweet_for_likes(db_session: AsyncSession, test_user_alice: User) -> Tw
 
 
 async def test_like_tweet_success(
-        authenticated_client: AsyncClient,  # Клиент test_user
-        tweet_for_likes: Tweet,
-        test_user: User,
-        db_session: AsyncSession
+    authenticated_client: AsyncClient,  # Клиент test_user
+    tweet_for_likes: Tweet,
+    test_user: User,
+    db_session: AsyncSession,
 ):
     """Тест успешного лайка твита."""
     # Лайкаем
@@ -505,11 +526,12 @@ async def test_like_tweet_unauthorized(client: AsyncClient, tweet_for_likes: Twe
 
 # --- Тесты для удаления лайков ---
 
+
 async def test_unlike_tweet_success(
-        authenticated_client: AsyncClient,
-        tweet_for_likes: Tweet,
-        test_user: User,
-        db_session: AsyncSession
+    authenticated_client: AsyncClient,
+    tweet_for_likes: Tweet,
+    test_user: User,
+    db_session: AsyncSession,
 ):
     """Тест успешного удаления лайка."""
     tweet_id = tweet_for_likes.id
@@ -532,11 +554,12 @@ async def test_unlike_tweet_success(
 
 
 async def test_unlike_tweet_not_found_like(
-        authenticated_client: AsyncClient,
-        tweet_for_likes: Tweet
+    authenticated_client: AsyncClient, tweet_for_likes: Tweet
 ):
     """Тест удаления несуществующего лайка (твит не был лайкнут)."""
-    response = await authenticated_client.delete(f"/api/tweets/{tweet_for_likes.id}/likes")
+    response = await authenticated_client.delete(
+        f"/api/tweets/{tweet_for_likes.id}/likes"
+    )
     assert response.status_code == status.HTTP_404_NOT_FOUND
     json_response = response.json()
     assert json_response["result"] is False

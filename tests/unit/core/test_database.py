@@ -10,6 +10,7 @@ from src.core.database import Database, get_db_session
 
 # --- Фикстуры ---
 
+
 # Фикстура для мока AsyncEngine
 @pytest.fixture
 def mock_engine() -> MagicMock:
@@ -46,6 +47,7 @@ def mock_session_factory(mock_session: MagicMock) -> MagicMock:
 
 # --- Тесты для класса Database ---
 
+
 def test_database_initialization():
     """Тест инициализации класса Database."""
     db = Database()
@@ -55,15 +57,17 @@ def test_database_initialization():
 
 # Используем patch для мокирования функций на уровне модуля
 @pytest.mark.asyncio
-@patch('src.core.database.create_async_engine')
-@patch('src.core.database.async_sessionmaker')
-@patch('src.core.database.Database._verify_connection', new_callable=AsyncMock)  # Мок верификации
+@patch("src.core.database.create_async_engine")
+@patch("src.core.database.async_sessionmaker")
+@patch(
+    "src.core.database.Database._verify_connection", new_callable=AsyncMock
+)  # Мок верификации
 async def test_database_connect_success(
-        mock_verify: AsyncMock,
-        mock_sessionmaker: MagicMock,
-        mock_create_engine: MagicMock,
-        mock_engine: MagicMock,
-        mock_session_factory: MagicMock,
+    mock_verify: AsyncMock,
+    mock_sessionmaker: MagicMock,
+    mock_create_engine: MagicMock,
+    mock_engine: MagicMock,
+    mock_session_factory: MagicMock,
 ):
     """Тест успешного подключения к БД."""
     # Настраиваем моки
@@ -79,14 +83,14 @@ async def test_database_connect_success(
         echo=settings.DEBUG,
         pool_pre_ping=True,
         pool_recycle=3600,
-        extra_arg="test"  # Проверяем доп. аргумент
+        extra_arg="test",  # Проверяем доп. аргумент
     )
     mock_sessionmaker.assert_called_once_with(
         bind=mock_engine,
         class_=AsyncSession,
         expire_on_commit=False,
         autocommit=False,
-        autoflush=False
+        autoflush=False,
     )
     mock_verify.assert_awaited_once()  # Проверяем, что верификация вызывалась
 
@@ -96,17 +100,19 @@ async def test_database_connect_success(
 
 
 @pytest.mark.asyncio
-@patch('src.core.database.create_async_engine')
-@patch('src.core.database.async_sessionmaker')
-@patch('src.core.database.Database._verify_connection', new_callable=AsyncMock)
+@patch("src.core.database.create_async_engine")
+@patch("src.core.database.async_sessionmaker")
+@patch("src.core.database.Database._verify_connection", new_callable=AsyncMock)
 async def test_database_connect_verify_failure(
-        mock_verify: AsyncMock,
-        mock_sessionmaker: MagicMock,
-        mock_create_engine: MagicMock,
+    mock_verify: AsyncMock,
+    mock_sessionmaker: MagicMock,
+    mock_create_engine: MagicMock,
 ):
     """Тест ошибки при верификации подключения."""
     # Настраиваем моки
-    mock_verify.side_effect = RuntimeError("Verification failed")  # Ошибка при верификации
+    mock_verify.side_effect = RuntimeError(
+        "Verification failed"
+    )  # Ошибка при верификации
 
     db = Database()
     with pytest.raises(RuntimeError, match="Verification failed"):
@@ -144,11 +150,11 @@ async def test_database_disconnect_no_engine():
 
 
 @pytest.mark.asyncio
-@patch('src.core.database.text')  # Мокируем text, чтобы не зависеть от sqlalchemy
+@patch("src.core.database.text")  # Мокируем text, чтобы не зависеть от sqlalchemy
 async def test_database_verify_connection_success(
-        mock_sa_text: MagicMock,
-        mock_session_factory: MagicMock,
-        mock_session: MagicMock,
+    mock_sa_text: MagicMock,
+    mock_session_factory: MagicMock,
+    mock_session: MagicMock,
 ):
     """Тест успешной верификации соединения."""
     # Настраиваем моки
@@ -161,13 +167,15 @@ async def test_database_verify_connection_success(
 
     # Проверяем, что сессия была создана и использована
     mock_session_factory.assert_called_once()
-    mock_session.execute.assert_awaited_once_with("SELECT 1 SQL")  # Проверяем вызов execute
+    mock_session.execute.assert_awaited_once_with(
+        "SELECT 1 SQL"
+    )  # Проверяем вызов execute
 
 
 @pytest.mark.asyncio
 async def test_database_verify_connection_db_error(
-        mock_session_factory: MagicMock,
-        mock_session: MagicMock,
+    mock_session_factory: MagicMock,
+    mock_session: MagicMock,
 ):
     """Тест ошибки БД при верификации соединения."""
     # Настраиваем мок execute на выброс ошибки
@@ -177,7 +185,9 @@ async def test_database_verify_connection_db_error(
     db = Database()
     db.session_factory = mock_session_factory
 
-    with pytest.raises(RuntimeError, match="Не удалось проверить подключение к БД.") as exc_info:
+    with pytest.raises(
+        RuntimeError, match="Не удалось проверить подключение к БД."
+    ) as exc_info:
         await db._verify_connection()
 
     # Убедимся, что исходная ошибка сохранена в __cause__ или __context__
@@ -196,8 +206,8 @@ async def test_database_verify_connection_factory_not_set():
 
 @pytest.mark.asyncio
 async def test_database_session_success(
-        mock_session_factory: MagicMock,
-        mock_session: MagicMock,
+    mock_session_factory: MagicMock,
+    mock_session: MagicMock,
 ):
     """Тест успешного получения и использования сессии через контекстный менеджер."""
     db = Database()
@@ -217,8 +227,8 @@ async def test_database_session_success(
 
 @pytest.mark.asyncio
 async def test_database_session_exception_and_rollback(
-        mock_session_factory: MagicMock,
-        mock_session: MagicMock,
+    mock_session_factory: MagicMock,
+    mock_session: MagicMock,
 ):
     """Тест отката транзакции при ошибке внутри контекстного менеджера сессии."""
     db = Database()
@@ -247,15 +257,20 @@ async def test_database_session_factory_not_set():
 
 # --- Тесты для зависимости get_db_session ---
 
+
 @pytest.mark.asyncio
-@patch('src.core.database.db', new_callable=MagicMock)  # Мокируем глобальный экземпляр db
+@patch(
+    "src.core.database.db", new_callable=MagicMock
+)  # Мокируем глобальный экземпляр db
 async def test_get_db_session_dependency_success(
-        mock_global_db: MagicMock,
-        mock_session: MagicMock,
+    mock_global_db: MagicMock,
+    mock_session: MagicMock,
 ):
     """Тест успешного получения сессии через зависимость FastAPI."""
     # Настраиваем мок контекстного менеджера db.session()
-    mock_global_db.session.return_value = mock_session  # Контекстный менеджер вернет мок сессии
+    mock_global_db.session.return_value = (
+        mock_session  # Контекстный менеджер вернет мок сессии
+    )
 
     # Итерируемся по генератору зависимости
     yielded_session = None

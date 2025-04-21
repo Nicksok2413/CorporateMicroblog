@@ -18,9 +18,9 @@ router = APIRouter(prefix="/users", tags=["Users"])
     description="Возвращает информацию о профиле аутентифицированного пользователя, включая списки подписчиков и подписок.",
 )
 async def get_my_profile(
-        db: DBSession,
-        current_user: CurrentUser,
-        user_service: UserSvc,
+    db: DBSession,
+    current_user: CurrentUser,
+    user_service: UserSvc,
 ) -> UserProfileResult:
     """
     Возвращает профиль текущего пользователя.
@@ -48,12 +48,12 @@ async def get_my_profile(
     description="Возвращает информацию о профиле указанного пользователя, включая списки подписчиков и подписок.",
     responses={
         status.HTTP_404_NOT_FOUND: {"description": "Пользователь не найден"},
-    }
+    },
 )
 async def get_user_profile_by_id(
-        db: DBSession,
-        user_service: UserSvc,
-        user_id: int = Path(..., description="ID пользователя для просмотра профиля", gt=0),
+    db: DBSession,
+    user_service: UserSvc,
+    user_id: int = Path(..., description="ID пользователя для просмотра профиля", gt=0),
 ) -> UserProfileResult:
     """
     Возвращает профиль пользователя по указанному ID.
@@ -85,13 +85,15 @@ async def get_user_profile_by_id(
         status.HTTP_404_NOT_FOUND: {"description": "Пользователь не найден"},
         status.HTTP_403_FORBIDDEN: {"description": "Нельзя подписаться на себя"},
         status.HTTP_409_CONFLICT: {"description": "Уже подписаны"},
-    }
+    },
 )
 async def follow_user(
-        db: DBSession,
-        current_user: CurrentUser,
-        follow_service: FollowSvc,
-        user_id: int = Path(..., description="ID пользователя, на которого нужно подписаться", gt=0),
+    db: DBSession,
+    current_user: CurrentUser,
+    follow_service: FollowSvc,
+    user_id: int = Path(
+        ..., description="ID пользователя, на которого нужно подписаться", gt=0
+    ),
 ) -> ResultTrue:
     """
     Создает подписку текущего пользователя на указанного пользователя.
@@ -111,8 +113,12 @@ async def follow_user(
         ConflictError: Если подписка уже существует.
         BadRequestError: При ошибке сохранения.
     """
-    log.info(f"Запрос на подписку от пользователя ID {current_user.id} на пользователя ID {user_id}")
-    await follow_service.follow_user(db=db, current_user=current_user, user_to_follow_id=user_id)
+    log.info(
+        f"Запрос на подписку от пользователя ID {current_user.id} на пользователя ID {user_id}"
+    )
+    await follow_service.follow_user(
+        db=db, current_user=current_user, user_to_follow_id=user_id
+    )
     return ResultTrue()
 
 
@@ -122,15 +128,19 @@ async def follow_user(
     status_code=status.HTTP_200_OK,
     summary="Отписаться от пользователя",
     responses={
-        status.HTTP_404_NOT_FOUND: {"description": "Пользователь не найден или подписка отсутствует"},
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Пользователь не найден или подписка отсутствует"
+        },
         status.HTTP_403_FORBIDDEN: {"description": "Нельзя отписаться от себя"},
-    }
+    },
 )
 async def unfollow_user(
-        db: DBSession,
-        current_user: CurrentUser,
-        follow_service: FollowSvc,
-        user_id: int = Path(..., description="ID пользователя, от которого нужно отписаться", gt=0),
+    db: DBSession,
+    current_user: CurrentUser,
+    follow_service: FollowSvc,
+    user_id: int = Path(
+        ..., description="ID пользователя, от которого нужно отписаться", gt=0
+    ),
 ) -> ResultTrue:
     """
     Удаляет подписку текущего пользователя от указанного пользователя.
@@ -149,6 +159,10 @@ async def unfollow_user(
         PermissionDeniedError: Если пользователь пытается отписаться от себя.
         BadRequestError: При ошибке удаления.
     """
-    log.info(f"Запрос на отписку от пользователя ID {user_id} от пользователя ID {current_user.id}")
-    await follow_service.unfollow_user(db=db, current_user=current_user, user_to_unfollow_id=user_id)
+    log.info(
+        f"Запрос на отписку от пользователя ID {user_id} от пользователя ID {current_user.id}"
+    )
+    await follow_service.unfollow_user(
+        db=db, current_user=current_user, user_to_unfollow_id=user_id
+    )
     return ResultTrue()

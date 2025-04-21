@@ -74,7 +74,9 @@ class BaseRepository(Generic[ModelType, CreateSchemaType]):
         Returns:
             ModelType: Добавленный объект модели.
         """
-        log.debug(f"Добавление {self.model.__name__} в сессию (ID: {getattr(db_obj, 'id', 'new')})")
+        log.debug(
+            f"Добавление {self.model.__name__} в сессию (ID: {getattr(db_obj, 'id', 'new')})"
+        )
         db.add(db_obj)
         return db_obj
 
@@ -90,7 +92,9 @@ class BaseRepository(Generic[ModelType, CreateSchemaType]):
             ModelType: Созданный объект модели.
         """
         obj_in_data = obj_in.model_dump()
-        log.debug(f"Подготовка к созданию {self.model.__name__} с данными: {obj_in_data}")
+        log.debug(
+            f"Подготовка к созданию {self.model.__name__} с данными: {obj_in_data}"
+        )
         db_obj = self.model(**obj_in_data)
         await self.add(db, db_obj=db_obj)
         return db_obj
@@ -103,7 +107,9 @@ class BaseRepository(Generic[ModelType, CreateSchemaType]):
             db (AsyncSession): Сессия БД.
             db_obj (ModelType): Экземпляр модели для удаления.
         """
-        log.debug(f"Пометка на удаление {self.model.__name__} (ID: {getattr(db_obj, 'id', 'N/A')})")
+        log.debug(
+            f"Пометка на удаление {self.model.__name__} (ID: {getattr(db_obj, 'id', 'N/A')})"
+        )
         await db.delete(db_obj)
 
     async def remove(self, db: AsyncSession, *, obj_id: int) -> Optional[ModelType]:

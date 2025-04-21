@@ -4,7 +4,12 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator, Optional
 
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 
 from src.core.config import settings
 from src.core.logging import log
@@ -42,7 +47,7 @@ class Database:
             echo=settings.DEBUG,  # Включаем логирование SQL запросов в режиме DEBUG
             pool_pre_ping=True,  # Проверять соединение перед использованием
             pool_recycle=3600,  # Переподключение каждый час
-            **kwargs
+            **kwargs,
         )
 
         self.session_factory = async_sessionmaker(
@@ -50,7 +55,7 @@ class Database:
             class_=AsyncSession,
             expire_on_commit=False,
             autocommit=False,  # Управляем транзакциями явно
-            autoflush=False  # Управляем flush явно
+            autoflush=False,  # Управляем flush явно
         )
 
         await self._verify_connection()
@@ -95,15 +100,18 @@ class Database:
         """
         if not self.session_factory:
             raise RuntimeError(
-                "База данных не инициализирована. Вызовите `await db.connect()` перед использованием сессий.")
+                "База данных не инициализирована. Вызовите `await db.connect()` перед использованием сессий."
+            )
 
         session: AsyncSession = self.session_factory()
 
         try:
             yield session
         except Exception as exc:
-            log.error(f"Ошибка во время сессии БД, выполняется откат: {exc}",
-                      exc_info=settings.DEBUG)  # Трейсбек только в DEBUG
+            log.error(
+                f"Ошибка во время сессии БД, выполняется откат: {exc}",
+                exc_info=settings.DEBUG,
+            )  # Трейсбек только в DEBUG
             await session.rollback()
             raise
         finally:

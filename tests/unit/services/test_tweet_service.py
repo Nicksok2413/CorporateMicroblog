@@ -25,28 +25,29 @@ pytestmark = pytest.mark.asyncio
 # Фикстура для создания экземпляра сервиса
 @pytest.fixture
 def tweet_service(
-        mock_tweet_repo: MagicMock,
-        mock_follow_repo: MagicMock,
-        mock_media_repo: MagicMock,
-        mock_media_service: MagicMock,
+    mock_tweet_repo: MagicMock,
+    mock_follow_repo: MagicMock,
+    mock_media_repo: MagicMock,
+    mock_media_service: MagicMock,
 ) -> TweetService:
     service = TweetService(
         repo=mock_tweet_repo,
         follow_repo=mock_follow_repo,
         media_repo=mock_media_repo,
-        media_service=mock_media_service
+        media_service=mock_media_service,
     )
     return service
 
 
 # --- Тесты для create_tweet ---
 
+
 async def test_create_tweet_success_no_media(
-        tweet_service: TweetService,
-        mock_db_session: MagicMock,
-        test_user_obj: User,
-        mock_tweet_repo: MagicMock,
-        mock_media_repo: MagicMock,
+    tweet_service: TweetService,
+    mock_db_session: MagicMock,
+    test_user_obj: User,
+    mock_tweet_repo: MagicMock,
+    mock_media_repo: MagicMock,
 ):
     """Тест успешного создания твита без медиа."""
     request_data = TweetCreateRequest(tweet_data="Simple tweet", tweet_media_ids=[])
@@ -77,12 +78,12 @@ async def test_create_tweet_success_no_media(
 
 
 async def test_create_tweet_success_with_media(
-        tweet_service: TweetService,
-        mock_db_session: MagicMock,
-        test_user_obj: User,
-        test_media_obj: Media,
-        mock_media_repo: MagicMock,
-        mock_tweet_repo: MagicMock,
+    tweet_service: TweetService,
+    mock_db_session: MagicMock,
+    test_user_obj: User,
+    test_media_obj: Media,
+    mock_media_repo: MagicMock,
+    mock_tweet_repo: MagicMock,
 ):
     """Тест успешного создания твита с одним медиа."""
     media_id = test_media_obj.id
@@ -97,7 +98,7 @@ async def test_create_tweet_success_with_media(
     tweet_object_holder = {}
 
     async def mock_repo_add(db, db_obj):
-        tweet_object_holder['tweet'] = db_obj
+        tweet_object_holder["tweet"] = db_obj
         # Имитируем добавление в мок сессии для flush
         mock_db_session.add(db_obj)
 
@@ -105,8 +106,8 @@ async def test_create_tweet_success_with_media(
 
     # Мок для flush: устанавливаем ID у объекта tweet
     async def mock_flush(*args, **kwargs):
-        if 'tweet' in tweet_object_holder:
-            tweet_object_holder['tweet'].id = 123  # Пример ID
+        if "tweet" in tweet_object_holder:
+            tweet_object_holder["tweet"].id = 123  # Пример ID
 
     mock_db_session.flush.side_effect = mock_flush
     mock_db_session.refresh.return_value = None
@@ -133,10 +134,10 @@ async def test_create_tweet_success_with_media(
 
 
 async def test_create_tweet_media_not_found(
-        tweet_service: TweetService,
-        mock_db_session: MagicMock,
-        test_user_obj: User,
-        mock_media_repo: MagicMock,
+    tweet_service: TweetService,
+    mock_db_session: MagicMock,
+    test_user_obj: User,
+    mock_media_repo: MagicMock,
 ):
     """Тест создания твита, когда медиа не найден."""
     media_id = 999
@@ -162,10 +163,10 @@ async def test_create_tweet_media_not_found(
 
 
 async def test_create_tweet_db_error_on_flush(
-        tweet_service: TweetService,
-        mock_db_session: MagicMock,
-        test_user_obj: User,
-        mock_tweet_repo: MagicMock,
+    tweet_service: TweetService,
+    mock_db_session: MagicMock,
+    test_user_obj: User,
+    mock_tweet_repo: MagicMock,
 ):
     """Тест ошибки БД при flush (например, при получении ID твита)."""
     tweet_data_req = TweetCreateRequest(tweet_data="Simple tweet", tweet_media_ids=[])
@@ -187,10 +188,10 @@ async def test_create_tweet_db_error_on_flush(
 
 
 async def test_create_tweet_unexpected_error_on_refresh(
-        tweet_service: TweetService,
-        mock_db_session: MagicMock,
-        test_user_obj: User,
-        mock_tweet_repo: MagicMock,
+    tweet_service: TweetService,
+    mock_db_session: MagicMock,
+    test_user_obj: User,
+    mock_tweet_repo: MagicMock,
 ):
     """Тест непредвиденной ошибки при вызове db.refresh."""
     request_data = TweetCreateRequest(tweet_data="Simple tweet", tweet_media_ids=[])
@@ -200,14 +201,14 @@ async def test_create_tweet_unexpected_error_on_refresh(
     tweet_object_holder = {}
 
     async def mock_repo_add(db, db_obj):
-        tweet_object_holder['tweet'] = db_obj
+        tweet_object_holder["tweet"] = db_obj
 
     mock_tweet_repo.add.side_effect = mock_repo_add
 
     # Имитируем успешный flush, устанавливающий ID
     async def mock_flush(*args, **kwargs):
-        if 'tweet' in tweet_object_holder:
-            tweet_object_holder['tweet'].id = 123
+        if "tweet" in tweet_object_holder:
+            tweet_object_holder["tweet"].id = 123
 
     mock_db_session.flush.side_effect = mock_flush
 
@@ -232,18 +233,19 @@ async def test_create_tweet_unexpected_error_on_refresh(
     mock_db_session.flush.assert_awaited_once()
     mock_db_session.commit.assert_awaited_once()  # Commit вызывается до refresh
     mock_db_session.refresh.assert_awaited_once()  # Refresh вызывался и вызвал ошибку
-    mock_db_session.rollback.assert_not_awaited() # Роллбэк не должен вызываться, т.к. ошибка после commit
+    mock_db_session.rollback.assert_not_awaited()  # Роллбэк не должен вызываться, т.к. ошибка после commit
 
 
 # --- Тесты для delete_tweet ---
 
+
 async def test_delete_tweet_success_no_media(
-        tweet_service: TweetService,
-        mock_db_session: MagicMock,
-        test_user_obj: User,
-        test_tweet_obj: Tweet,  # Твит без медиа по фикстуре
-        mock_tweet_repo: MagicMock,
-        mock_media_service: MagicMock,
+    tweet_service: TweetService,
+    mock_db_session: MagicMock,
+    test_user_obj: User,
+    test_tweet_obj: Tweet,  # Твит без медиа по фикстуре
+    mock_tweet_repo: MagicMock,
+    mock_media_service: MagicMock,
 ):
     """Тест успешного удаления твита без медиа."""
     tweet_id = test_tweet_obj.id
@@ -255,24 +257,30 @@ async def test_delete_tweet_success_no_media(
     mock_tweet_repo.delete.return_value = None
 
     # Вызываем метод сервиса
-    await tweet_service.delete_tweet(db=mock_db_session, current_user=test_user_obj, tweet_id=tweet_id)
+    await tweet_service.delete_tweet(
+        db=mock_db_session, current_user=test_user_obj, tweet_id=tweet_id
+    )
 
     # Проверяем вызовы
-    mock_tweet_repo.get_with_attachments.assert_awaited_once_with(mock_db_session, tweet_id=tweet_id)
-    mock_tweet_repo.delete.assert_awaited_once_with(mock_db_session, db_obj=test_tweet_obj)
+    mock_tweet_repo.get_with_attachments.assert_awaited_once_with(
+        mock_db_session, tweet_id=tweet_id
+    )
+    mock_tweet_repo.delete.assert_awaited_once_with(
+        mock_db_session, db_obj=test_tweet_obj
+    )
     mock_db_session.commit.assert_awaited_once()  # Должен быть коммит
     mock_media_service.delete_media_files.assert_not_awaited()  # Проверяем, что delete_media_files не вызывался
     mock_db_session.rollback.assert_not_awaited()  # Роллбэка быть не должно
 
 
 async def test_delete_tweet_success_with_media(
-        tweet_service: TweetService,
-        mock_db_session: MagicMock,
-        test_user_obj: User,
-        test_tweet_obj: Tweet,
-        test_media_obj: Media,
-        mock_tweet_repo: MagicMock,
-        mock_media_service: MagicMock,
+    tweet_service: TweetService,
+    mock_db_session: MagicMock,
+    test_user_obj: User,
+    test_tweet_obj: Tweet,
+    test_media_obj: Media,
+    mock_tweet_repo: MagicMock,
+    mock_media_service: MagicMock,
 ):
     """Тест успешного удаления твита с медиа."""
     tweet_id = test_tweet_obj.id
@@ -289,11 +297,17 @@ async def test_delete_tweet_success_with_media(
     mock_media_service.delete_media_files.return_value = None
 
     # Вызываем метод сервиса
-    await tweet_service.delete_tweet(db=mock_db_session, current_user=test_user_obj, tweet_id=tweet_id)
+    await tweet_service.delete_tweet(
+        db=mock_db_session, current_user=test_user_obj, tweet_id=tweet_id
+    )
 
     # Проверяем вызовы
-    mock_tweet_repo.get_with_attachments.assert_awaited_once_with(mock_db_session, tweet_id=tweet_id)
-    mock_tweet_repo.delete.assert_awaited_once_with(mock_db_session, db_obj=test_tweet_obj)
+    mock_tweet_repo.get_with_attachments.assert_awaited_once_with(
+        mock_db_session, tweet_id=tweet_id
+    )
+    mock_tweet_repo.delete.assert_awaited_once_with(
+        mock_db_session, db_obj=test_tweet_obj
+    )
     mock_db_session.commit.assert_awaited_once()  # Должен быть коммит
 
     # Проверяем удаление файлов после коммита
@@ -303,11 +317,11 @@ async def test_delete_tweet_success_with_media(
 
 
 async def test_delete_tweet_not_found(
-        tweet_service: TweetService,
-        mock_db_session: MagicMock,
-        test_user_obj: User,
-        mock_tweet_repo: MagicMock,
-        mock_media_service: MagicMock,
+    tweet_service: TweetService,
+    mock_db_session: MagicMock,
+    test_user_obj: User,
+    mock_tweet_repo: MagicMock,
+    mock_media_service: MagicMock,
 ):
     """Тест удаления несуществующего твита."""
     tweet_id = 999
@@ -316,10 +330,14 @@ async def test_delete_tweet_not_found(
 
     # Проверяем, что выбрасывается NotFoundError
     with pytest.raises(NotFoundError):
-        await tweet_service.delete_tweet(db=mock_db_session, current_user=test_user_obj, tweet_id=tweet_id)
+        await tweet_service.delete_tweet(
+            db=mock_db_session, current_user=test_user_obj, tweet_id=tweet_id
+        )
 
     # Проверяем вызовы
-    mock_tweet_repo.get_with_attachments.assert_awaited_once_with(mock_db_session, tweet_id=tweet_id)
+    mock_tweet_repo.get_with_attachments.assert_awaited_once_with(
+        mock_db_session, tweet_id=tweet_id
+    )
     mock_tweet_repo.delete.assert_not_awaited()
     mock_db_session.commit.assert_not_awaited()  # Коммита быть не должно
     mock_media_service.delete_media_files.assert_not_awaited()
@@ -327,13 +345,13 @@ async def test_delete_tweet_not_found(
 
 
 async def test_delete_tweet_permission_denied(
-        tweet_service: TweetService,
-        mock_db_session: MagicMock,
-        test_user_obj: User,
-        test_alice_obj: User,  # Другой пользователь
-        test_tweet_obj: Tweet,
-        mock_tweet_repo: MagicMock,
-        mock_media_service: MagicMock,
+    tweet_service: TweetService,
+    mock_db_session: MagicMock,
+    test_user_obj: User,
+    test_alice_obj: User,  # Другой пользователь
+    test_tweet_obj: Tweet,
+    mock_tweet_repo: MagicMock,
+    mock_media_service: MagicMock,
 ):
     """Тест попытки удаления чужого твита."""
     tweet_id = test_tweet_obj.id
@@ -344,10 +362,14 @@ async def test_delete_tweet_permission_denied(
 
     # Проверяем, что выбрасывается PermissionDeniedError
     with pytest.raises(PermissionDeniedError):
-        await tweet_service.delete_tweet(db=mock_db_session, current_user=test_user_obj, tweet_id=tweet_id)
+        await tweet_service.delete_tweet(
+            db=mock_db_session, current_user=test_user_obj, tweet_id=tweet_id
+        )
 
     # Проверяем вызовы
-    mock_tweet_repo.get_with_attachments.assert_awaited_once_with(mock_db_session, tweet_id=tweet_id)
+    mock_tweet_repo.get_with_attachments.assert_awaited_once_with(
+        mock_db_session, tweet_id=tweet_id
+    )
     mock_tweet_repo.delete.assert_not_awaited()
     mock_db_session.commit.assert_not_awaited()  # Коммита быть не должно
     mock_media_service.delete_media_files.assert_not_awaited()
@@ -355,12 +377,12 @@ async def test_delete_tweet_permission_denied(
 
 
 async def test_delete_tweet_db_error_on_commit(
-        tweet_service: TweetService,
-        mock_db_session: MagicMock,
-        test_user_obj: User,
-        test_tweet_obj: Tweet,
-        mock_tweet_repo: MagicMock,
-        mock_media_service: MagicMock,
+    tweet_service: TweetService,
+    mock_db_session: MagicMock,
+    test_user_obj: User,
+    test_tweet_obj: Tweet,
+    mock_tweet_repo: MagicMock,
+    mock_media_service: MagicMock,
 ):
     """Тест ошибки БД при коммите удаления."""
     tweet_id = test_tweet_obj.id
@@ -372,7 +394,9 @@ async def test_delete_tweet_db_error_on_commit(
 
     # Проверяем, что выбрасывается BadRequestError
     with pytest.raises(BadRequestError):
-        await tweet_service.delete_tweet(db=mock_db_session, current_user=test_user_obj, tweet_id=tweet_id)
+        await tweet_service.delete_tweet(
+            db=mock_db_session, current_user=test_user_obj, tweet_id=tweet_id
+        )
 
     # Проверяем вызовы
     mock_tweet_repo.get_with_attachments.assert_awaited_once()
@@ -383,13 +407,13 @@ async def test_delete_tweet_db_error_on_commit(
 
 
 async def test_delete_tweet_file_delete_error(
-        tweet_service: TweetService,
-        mock_db_session: MagicMock,
-        test_user_obj: User,
-        test_tweet_obj: Tweet,
-        test_media_obj: Media,
-        mock_tweet_repo: MagicMock,
-        mock_media_service: MagicMock,
+    tweet_service: TweetService,
+    mock_db_session: MagicMock,
+    test_user_obj: User,
+    test_tweet_obj: Tweet,
+    test_media_obj: Media,
+    mock_tweet_repo: MagicMock,
+    mock_media_service: MagicMock,
 ):
     """Тест ошибки при удалении файла после успешного коммита БД."""
     tweet_id = test_tweet_obj.id
@@ -407,7 +431,9 @@ async def test_delete_tweet_file_delete_error(
 
     # Проверяем, что выбрасывается BadRequestError
     with pytest.raises(BadRequestError) as exc_info:
-        await tweet_service.delete_tweet(db=mock_db_session, current_user=test_user_obj, tweet_id=tweet_id)
+        await tweet_service.delete_tweet(
+            db=mock_db_session, current_user=test_user_obj, tweet_id=tweet_id
+        )
 
     # Проверяем сообщение об ошибке
     assert "ошибка при удалении его медиафайлов" in exc_info.value.detail
@@ -423,17 +449,18 @@ async def test_delete_tweet_file_delete_error(
 
 # --- Тесты для get_tweet_feed ---
 
+
 async def test_get_tweet_feed_success(
-        tweet_service: TweetService,
-        mock_db_session: MagicMock,
-        test_user_obj: User,
-        test_alice_obj: User,  # Пользователь, на которого подписаны
-        test_tweet_obj: Tweet,  # Твит Алисы
-        test_media_obj: Media,  # Медиа для твита Алисы
-        test_like_obj: Like,  # Лайк от test_user_obj на твит Алисы
-        mock_tweet_repo: MagicMock,
-        mock_follow_repo: MagicMock,
-        mock_media_service: MagicMock,
+    tweet_service: TweetService,
+    mock_db_session: MagicMock,
+    test_user_obj: User,
+    test_alice_obj: User,  # Пользователь, на которого подписаны
+    test_tweet_obj: Tweet,  # Твит Алисы
+    test_media_obj: Media,  # Медиа для твита Алисы
+    test_like_obj: Like,  # Лайк от test_user_obj на твит Алисы
+    mock_tweet_repo: MagicMock,
+    mock_follow_repo: MagicMock,
+    mock_media_service: MagicMock,
 ):
     """Тест успешного получения ленты."""
     # Настраиваем данные
@@ -444,7 +471,9 @@ async def test_get_tweet_feed_success(
     test_tweet_obj.likes = [test_like_obj]  # Привязываем лайк
 
     # Настраиваем моки
-    mock_follow_repo.get_following_ids.return_value = [test_alice_obj.id]  # Подписан на Алису
+    mock_follow_repo.get_following_ids.return_value = [
+        test_alice_obj.id
+    ]  # Подписан на Алису
     # Репозиторий возвращает твит Алисы (включая твиты самого юзера - здесь один от Алисы)
     mock_tweet_repo.get_feed_for_user.return_value = [test_tweet_obj]
     # Медиа сервис возвращает URL
@@ -452,7 +481,9 @@ async def test_get_tweet_feed_success(
     mock_media_service.get_media_url.return_value = expected_media_url
 
     # Вызываем метод сервиса
-    feed_result = await tweet_service.get_tweet_feed(db=mock_db_session, current_user=test_user_obj)
+    feed_result = await tweet_service.get_tweet_feed(
+        db=mock_db_session, current_user=test_user_obj
+    )
 
     # Проверки
     assert isinstance(feed_result, TweetFeedResult)
@@ -483,22 +514,24 @@ async def test_get_tweet_feed_success(
     assert tweet_in_feed.attachments[0] == expected_media_url
 
     # Проверка вызовов
-    mock_follow_repo.get_following_ids.assert_awaited_once_with(mock_db_session,
-                                                                follower_id=test_user_obj.id)
+    mock_follow_repo.get_following_ids.assert_awaited_once_with(
+        mock_db_session, follower_id=test_user_obj.id
+    )
     # Проверяем, что ID текущего пользователя был добавлен к списку ID для запроса
     expected_author_ids = list(set([test_alice_obj.id] + [test_user_obj.id]))
-    mock_tweet_repo.get_feed_for_user.assert_awaited_once_with(mock_db_session,
-                                                               author_ids=expected_author_ids)
+    mock_tweet_repo.get_feed_for_user.assert_awaited_once_with(
+        mock_db_session, author_ids=expected_author_ids
+    )
     mock_media_service.get_media_url.assert_called_once_with(test_media_obj)
 
 
 async def test_get_tweet_feed_empty(
-        tweet_service: TweetService,
-        mock_db_session: MagicMock,
-        test_user_obj: User,
-        mock_tweet_repo: MagicMock,
-        mock_follow_repo: MagicMock,
-        mock_media_service: MagicMock,
+    tweet_service: TweetService,
+    mock_db_session: MagicMock,
+    test_user_obj: User,
+    mock_tweet_repo: MagicMock,
+    mock_follow_repo: MagicMock,
+    mock_media_service: MagicMock,
 ):
     """Тест получения пустой ленты."""
     # Настраиваем моки
@@ -506,7 +539,9 @@ async def test_get_tweet_feed_empty(
     mock_tweet_repo.get_feed_for_user.return_value = []  # Нет твитов
 
     # Вызываем метод сервиса
-    feed_result: TweetFeedResult = await tweet_service.get_tweet_feed(db=mock_db_session, current_user=test_user_obj)
+    feed_result: TweetFeedResult = await tweet_service.get_tweet_feed(
+        db=mock_db_session, current_user=test_user_obj
+    )
 
     # Проверки
     assert isinstance(feed_result, TweetFeedResult)
@@ -514,11 +549,13 @@ async def test_get_tweet_feed_empty(
     assert feed_result.tweets == []
 
     # Проверяем вызовы
-    mock_follow_repo.get_following_ids.assert_awaited_once_with(mock_db_session,
-                                                                follower_id=test_user_obj.id)
+    mock_follow_repo.get_following_ids.assert_awaited_once_with(
+        mock_db_session, follower_id=test_user_obj.id
+    )
     # get_feed_for_user вызывается с ID только текущего пользователя
     expected_author_ids = [test_user_obj.id]  # Только ID текущего пользователя
-    mock_tweet_repo.get_feed_for_user.assert_awaited_once_with(mock_db_session,
-                                                               author_ids=expected_author_ids)
+    mock_tweet_repo.get_feed_for_user.assert_awaited_once_with(
+        mock_db_session, author_ids=expected_author_ids
+    )
     # Нет твитов - нет вызовов
     mock_media_service.get_media_url.assert_not_called()

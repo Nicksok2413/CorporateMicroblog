@@ -13,21 +13,19 @@ pytestmark = pytest.mark.asyncio
 
 # Фикстура для создания экземпляра сервиса
 @pytest.fixture
-def user_service(
-        mock_user_repo: MagicMock,
-        mock_follow_repo: MagicMock
-) -> UserService:
+def user_service(mock_user_repo: MagicMock, mock_follow_repo: MagicMock) -> UserService:
     service = UserService(repo=mock_user_repo, follow_repo=mock_follow_repo)
     return service
 
 
 # --- Тесты для get_user_by_api_key ---
 
+
 async def test_get_user_by_api_key_found(
-        user_service: UserService,
-        mock_db_session: MagicMock,
-        test_user_obj: User,
-        mock_user_repo: MagicMock,
+    user_service: UserService,
+    mock_db_session: MagicMock,
+    test_user_obj: User,
+    mock_user_repo: MagicMock,
 ):
     """Тест успешного нахождения пользователя по API ключу."""
     api_key = test_user_obj.api_key
@@ -35,17 +33,21 @@ async def test_get_user_by_api_key_found(
     mock_user_repo.get_by_api_key.return_value = test_user_obj
 
     # Вызываем метод
-    found_user = await user_service.get_user_by_api_key(db=mock_db_session, api_key=api_key)
+    found_user = await user_service.get_user_by_api_key(
+        db=mock_db_session, api_key=api_key
+    )
 
     # Проверки
     assert found_user == test_user_obj
-    mock_user_repo.get_by_api_key.assert_awaited_once_with(mock_db_session, api_key=api_key)
+    mock_user_repo.get_by_api_key.assert_awaited_once_with(
+        mock_db_session, api_key=api_key
+    )
 
 
 async def test_get_user_by_api_key_not_found(
-        user_service: UserService,
-        mock_db_session: MagicMock,
-        mock_user_repo: MagicMock,
+    user_service: UserService,
+    mock_db_session: MagicMock,
+    mock_user_repo: MagicMock,
 ):
     """Тест случая, когда пользователь по ключу не найден."""
     api_key = "not_found_key"
@@ -53,23 +55,28 @@ async def test_get_user_by_api_key_not_found(
     mock_user_repo.get_by_api_key.return_value = None
 
     # Вызываем метод
-    found_user = await user_service.get_user_by_api_key(db=mock_db_session, api_key=api_key)
+    found_user = await user_service.get_user_by_api_key(
+        db=mock_db_session, api_key=api_key
+    )
 
     # Проверки
     assert found_user is None
-    mock_user_repo.get_by_api_key.assert_awaited_once_with(mock_db_session, api_key=api_key)
+    mock_user_repo.get_by_api_key.assert_awaited_once_with(
+        mock_db_session, api_key=api_key
+    )
 
 
 # --- Тесты для get_user_profile ---
 
+
 async def test_get_user_profile_success(
-        user_service: UserService,
-        mock_db_session: MagicMock,
-        test_user_obj: User,  # Пользователь, чей профиль запрашиваем
-        test_alice_obj: User,  # Подписчик
-        test_bob_obj: User,  # На кого подписан
-        mock_user_repo: MagicMock,
-        mock_follow_repo: MagicMock,
+    user_service: UserService,
+    mock_db_session: MagicMock,
+    test_user_obj: User,  # Пользователь, чей профиль запрашиваем
+    test_alice_obj: User,  # Подписчик
+    test_bob_obj: User,  # На кого подписан
+    mock_user_repo: MagicMock,
+    mock_follow_repo: MagicMock,
 ):
     """Тест успешного получения профиля со списками подписчиков и подписок."""
     user_id = test_user_obj.id
@@ -108,18 +115,20 @@ async def test_get_user_profile_success(
 
     # Проверяем вызовы моков
     mock_user_repo.get.assert_awaited_once_with(mock_db_session, obj_id=user_id)
-    mock_follow_repo.get_following_with_users.assert_awaited_once_with(mock_db_session,
-                                                                       follower_id=user_id)
-    mock_follow_repo.get_followers_with_users.assert_awaited_once_with(mock_db_session,
-                                                                       following_id=user_id)
+    mock_follow_repo.get_following_with_users.assert_awaited_once_with(
+        mock_db_session, follower_id=user_id
+    )
+    mock_follow_repo.get_followers_with_users.assert_awaited_once_with(
+        mock_db_session, following_id=user_id
+    )
 
 
 async def test_get_user_profile_success_no_follows(
-        user_service: UserService,
-        mock_db_session: MagicMock,
-        test_user_obj: User,
-        mock_user_repo: MagicMock,
-        mock_follow_repo: MagicMock,
+    user_service: UserService,
+    mock_db_session: MagicMock,
+    test_user_obj: User,
+    mock_user_repo: MagicMock,
+    mock_follow_repo: MagicMock,
 ):
     """Тест успешного получения профиля без подписчиков и подписок."""
     user_id = test_user_obj.id
@@ -141,17 +150,19 @@ async def test_get_user_profile_success_no_follows(
 
     # Проверяем вызовы моков
     mock_user_repo.get.assert_awaited_once_with(mock_db_session, obj_id=user_id)
-    mock_follow_repo.get_following_with_users.assert_awaited_once_with(mock_db_session,
-                                                                       follower_id=user_id)
-    mock_follow_repo.get_followers_with_users.assert_awaited_once_with(mock_db_session,
-                                                                       following_id=user_id)
+    mock_follow_repo.get_following_with_users.assert_awaited_once_with(
+        mock_db_session, follower_id=user_id
+    )
+    mock_follow_repo.get_followers_with_users.assert_awaited_once_with(
+        mock_db_session, following_id=user_id
+    )
 
 
 async def test_get_user_profile_not_found(
-        user_service: UserService,
-        mock_db_session: MagicMock,
-        mock_user_repo: MagicMock,
-        mock_follow_repo: MagicMock,
+    user_service: UserService,
+    mock_db_session: MagicMock,
+    mock_user_repo: MagicMock,
+    mock_follow_repo: MagicMock,
 ):
     """Тест получения профиля несуществующего пользователя."""
     user_id = 999

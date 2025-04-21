@@ -11,6 +11,7 @@ class TunedModel(BaseModel):
 
     Включает `from_attributes=True` для преобразования объектов SQLAlchemy в схемы.
     """
+
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -21,6 +22,7 @@ class ResultTrue(BaseModel):
     Fields:
         result (bool): Всегда True для этой схемы.
     """
+
     result: bool = True
 
 
@@ -34,7 +36,12 @@ class ResultFalseWithError(BaseModel):
         error_message (Any): Сообщение или детали ошибки.
         extra_info (Optional[Dict[str, Any]]): Дополнительная информация об ошибке (опционально).
     """
+
     result: bool = False
     error_type: str
-    error_message: Any  # Может быть строкой или сложной структурой (например, ошибки валидации)
-    extra_info: Optional[Dict[str, Any]] = None  # Для передачи доп. данных из исключений
+    error_message: (
+        Any  # Может быть строкой или сложной структурой (например, ошибки валидации)
+    )
+    extra_info: Optional[Dict[str, Any]] = (
+        None  # Для передачи доп. данных из исключений
+    )

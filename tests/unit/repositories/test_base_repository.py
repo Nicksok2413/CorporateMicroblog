@@ -13,8 +13,9 @@ from src.repositories.base import BaseRepository
 class MockModel(Base):  # Наследуемся от Base
     __tablename__ = "mock_items"
     # Определяем колонку id как Mapped и primary_key
-    id: Mapped[int] = mapped_column(primary_key=True,
-                                    autoincrement=False)  # autoincrement=False, т.к. мы будем задавать ID в тестах
+    id: Mapped[int] = mapped_column(
+        primary_key=True, autoincrement=False
+    )  # autoincrement=False, т.к. мы будем задавать ID в тестах
     name: Mapped[str] = mapped_column(default="")  # Можно задать default
 
 
@@ -34,9 +35,10 @@ def base_repo() -> BaseRepository[MockModel, MockCreateSchema]:
 
 # --- Тесты для get ---
 
+
 async def test_base_repo_get_found(
-        base_repo: BaseRepository,
-        mock_db_session: MagicMock,
+    base_repo: BaseRepository,
+    mock_db_session: MagicMock,
 ):
     """Тест get, когда объект найден."""
     mock_result = MagicMock()
@@ -56,8 +58,8 @@ async def test_base_repo_get_found(
 
 
 async def test_base_repo_get_not_found(
-        base_repo: BaseRepository,
-        mock_db_session: MagicMock,
+    base_repo: BaseRepository,
+    mock_db_session: MagicMock,
 ):
     """Тест get, когда объект не найден."""
     mock_result = MagicMock()
@@ -77,8 +79,8 @@ async def test_base_repo_get_not_found(
 
 # --- Тесты для get_all ---
 async def test_base_repo_get_all(
-        base_repo: BaseRepository,
-        mock_db_session: MagicMock,
+    base_repo: BaseRepository,
+    mock_db_session: MagicMock,
 ):
     """Тест получения всех объектов."""
     mock_result = MagicMock()
@@ -97,8 +99,8 @@ async def test_base_repo_get_all(
 
 # --- Тесты для add ---
 async def test_base_repo_add(
-        base_repo: BaseRepository,
-        mock_db_session: MagicMock,
+    base_repo: BaseRepository,
+    mock_db_session: MagicMock,
 ):
     """Тест добавления объекта в сессию."""
     obj_to_add = MockModel(id=3, name="New Item")
@@ -113,10 +115,11 @@ async def test_base_repo_add(
 # --- Тесты для create ---
 # create уже хорошо покрыт тестами сервисов
 
+
 # --- Тесты для delete ---
 async def test_base_repo_delete(
-        base_repo: BaseRepository,
-        mock_db_session: MagicMock,
+    base_repo: BaseRepository,
+    mock_db_session: MagicMock,
 ):
     """Тест пометки объекта на удаление."""
     obj_to_delete = MockModel(id=4, name="Delete Me")
@@ -130,8 +133,8 @@ async def test_base_repo_delete(
 
 # --- Тесты для remove ---
 async def test_base_repo_remove_found(
-        base_repo: BaseRepository,
-        mock_db_session: MagicMock,
+    base_repo: BaseRepository,
+    mock_db_session: MagicMock,
 ):
     """Тест remove, когда объект найден."""
     obj_to_remove_id = 5
@@ -158,8 +161,8 @@ async def test_base_repo_remove_found(
 
 
 async def test_base_repo_remove_not_found(
-        base_repo: BaseRepository,
-        mock_db_session: MagicMock,
+    base_repo: BaseRepository,
+    mock_db_session: MagicMock,
 ):
     """Тест remove, когда объект не найден."""
     obj_to_remove_id = 6

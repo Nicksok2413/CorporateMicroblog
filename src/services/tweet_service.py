@@ -9,7 +9,13 @@ from src.core.exceptions import BadRequestError, NotFoundError, PermissionDenied
 from src.core.logging import log
 from src.models import Media, Tweet, User
 from src.repositories import FollowRepository, MediaRepository, TweetRepository
-from src.schemas.tweet import LikeInfo, TweetAuthor, TweetCreateRequest, TweetFeedResult, TweetInFeed
+from src.schemas.tweet import (
+    LikeInfo,
+    TweetAuthor,
+    TweetCreateRequest,
+    TweetFeedResult,
+    TweetInFeed,
+)
 from src.services.base_service import BaseService
 from src.services.media_service import MediaService
 
@@ -22,11 +28,11 @@ class TweetService(BaseService[Tweet, TweetRepository]):
     """
 
     def __init__(
-            self,
-            repo: TweetRepository,
-            follow_repo: FollowRepository,
-            media_repo: MediaRepository,
-            media_service: MediaService  # Зависимость от медиа сервиса
+        self,
+        repo: TweetRepository,
+        follow_repo: FollowRepository,
+        media_repo: MediaRepository,
+        media_service: MediaService,  # Зависимость от медиа сервиса
     ):
         super().__init__(repo)
         self.follow_repo = follow_repo
@@ -34,11 +40,7 @@ class TweetService(BaseService[Tweet, TweetRepository]):
         self.media_service = media_service
 
     async def create_tweet(
-            self,
-            db: AsyncSession,
-            current_user: User,
-            *,
-            tweet_data: TweetCreateRequest
+        self, db: AsyncSession, current_user: User, *, tweet_data: TweetCreateRequest
     ) -> Tweet:
         """
         Создает новый твит для указанного пользователя.
@@ -66,7 +68,9 @@ class TweetService(BaseService[Tweet, TweetRepository]):
                 for media_id in tweet_data.tweet_media_ids:
                     media = await self.media_repo.get(db, obj_id=media_id)
                     if not media:
-                        log.warning(f"Медиа с ID {media_id} не найдено при создании твита.")
+                        log.warning(
+                            f"Медиа с ID {media_id} не найдено при создании твита."
+                        )
                         raise NotFoundError(f"Медиафайл с ID {media_id} не найден.")
                     media_attachments.append(media)
 
@@ -84,15 +88,21 @@ class TweetService(BaseService[Tweet, TweetRepository]):
             if media_attachments and tweet.id:
                 for media in media_attachments:
                     media.tweet_id = tweet.id
-                log.debug(f"Медиа {[media.id for media in media_attachments]} привязаны к твиту ID {tweet.id}.")
+                log.debug(
+                    f"Медиа {[media.id for media in media_attachments]} привязаны к твиту ID {tweet.id}."
+                )
             else:
-                log.debug("Медиа для привязки не найдены или ошибка получения ID твита.")
+                log.debug(
+                    "Медиа для привязки не найдены или ошибка получения ID твита."
+                )
 
             # Коммитим все изменения
             await db.commit()
             # Обновляем объект твита для загрузки связей
-            await db.refresh(tweet, attribute_names=['attachments'])
-            log.success(f"Твит ID {tweet.id} успешно создан пользователем {current_user.id}")
+            await db.refresh(tweet, attribute_names=["attachments"])
+            log.success(
+                f"Твит ID {tweet.id} успешно создан пользователем {current_user.id}"
+            )
             return tweet
 
         except NotFoundError:
@@ -100,13 +110,20 @@ class TweetService(BaseService[Tweet, TweetRepository]):
             raise
         except SQLAlchemyError as exc:
             await db.rollback()
-            log.error(f"Ошибка при создании твита пользователем {current_user.id}: {exc}", exc_info=True)
+            log.error(
+                f"Ошибка при создании твита пользователем {current_user.id}: {exc}",
+                exc_info=True,
+            )
             raise BadRequestError("Не удалось создать твит.") from exc
         except Exception as exc:
-            log.exception(f"Непредвиденная ошибка при создании твита {current_user.id}: {exc}")
+            log.exception(
+                f"Непредвиденная ошибка при создании твита {current_user.id}: {exc}"
+            )
             raise BadRequestError("Произошла непредвиденная ошибка.") from exc
 
-    async def delete_tweet(self, db: AsyncSession, current_user: User, *, tweet_id: int) -> None:
+    async def delete_tweet(
+        self, db: AsyncSession, current_user: User, *, tweet_id: int
+    ) -> None:
         """
         Удаляет твит и связанные с ним медиафайлы.
 
@@ -120,11 +137,15 @@ class TweetService(BaseService[Tweet, TweetRepository]):
             PermissionDeniedError: Если пользователь пытается удалить чужой твит.
             BadRequestError: При ошибке удаления из БД или файла.
         """
-        log.info(f"Пользователь ID {current_user.id} пытается удалить твит ID {tweet_id}")
+        log.info(
+            f"Пользователь ID {current_user.id} пытается удалить твит ID {tweet_id}"
+        )
 
         try:
             # Получаем твит
-            tweet_to_delete = await self.repo.get_with_attachments(db, tweet_id=tweet_id)
+            tweet_to_delete = await self.repo.get_with_attachments(
+                db, tweet_id=tweet_id
+            )
 
             if not tweet_to_delete:
                 raise NotFoundError(f"Твит с ID {tweet_id} не найден.")
@@ -148,11 +169,15 @@ class TweetService(BaseService[Tweet, TweetRepository]):
 
             # Коммитим удаление твита (и связанных медиа в БД)
             await db.commit()
-            log.success(f"Твит ID {tweet_id} и связанные медиа записи успешно удалены из БД.")
+            log.success(
+                f"Твит ID {tweet_id} и связанные медиа записи успешно удалены из БД."
+            )
 
             # Удаляем физические файлы после успешного коммита
             if media_files_to_delete_paths:
-                log.info(f"Удаление {len(media_files_to_delete_paths)} физических медиафайлов...")
+                log.info(
+                    f"Удаление {len(media_files_to_delete_paths)} физических медиафайлов..."
+                )
                 await self.media_service.delete_media_files(media_files_to_delete_paths)
 
         except (NotFoundError, PermissionDeniedError):
@@ -161,18 +186,28 @@ class TweetService(BaseService[Tweet, TweetRepository]):
             raise
         except SQLAlchemyError as exc:
             await db.rollback()
-            log.error(f"Ошибка БД при удалении твита ID {tweet_id} или медиа: {exc}", exc_info=True)
+            log.error(
+                f"Ошибка БД при удалении твита ID {tweet_id} или медиа: {exc}",
+                exc_info=True,
+            )
             raise BadRequestError("Не удалось удалить твит из базы данных.") from exc
         except Exception as exc:
             # Ловим другие возможные ошибки (например, при удалении файлов)
-            log.error(f"Ошибка при физическом удалении файлов для твита ID {tweet_id}: {exc}", exc_info=True)
+            log.error(
+                f"Ошибка при физическом удалении файлов для твита ID {tweet_id}: {exc}",
+                exc_info=True,
+            )
             # Сообщаем пользователю об успехе удаления твита, но проблема с файлами осталась
             # Можно вернуть специальный статус или просто считать операцию успешной с ошибкой в логах
             # Либо пробросить ошибку, но тогда непонятно, удалился ли твит для пользователя
             # Оставим проброс ошибки, но с уточнением.
-            raise BadRequestError("Твит удален из БД, но произошла ошибка при удалении его медиафайлов.") from exc
+            raise BadRequestError(
+                "Твит удален из БД, но произошла ошибка при удалении его медиафайлов."
+            ) from exc
 
-    async def get_tweet_feed(self, db: AsyncSession, current_user: User) -> TweetFeedResult:
+    async def get_tweet_feed(
+        self, db: AsyncSession, current_user: User
+    ) -> TweetFeedResult:
         """
         Формирует ленту твитов для текущего пользователя.
 
@@ -187,11 +222,15 @@ class TweetService(BaseService[Tweet, TweetRepository]):
             TweetFeedResult: Схема с лентой твитов.
         """
         log.info(f"Формирование ленты для пользователя ID {current_user.id}")
-        following_ids = await self.follow_repo.get_following_ids(db, follower_id=current_user.id)
+        following_ids = await self.follow_repo.get_following_ids(
+            db, follower_id=current_user.id
+        )
 
         # Включаем ID самого пользователя в список авторов
         author_ids_to_fetch = list(set(following_ids + [current_user.id]))
-        log.debug(f"ID авторов для ленты пользователя {current_user.id}: {author_ids_to_fetch}")
+        log.debug(
+            f"ID авторов для ленты пользователя {current_user.id}: {author_ids_to_fetch}"
+        )
 
         # Получаем твиты из репозитория (уже с загруженными связями и сортировкой)
         tweets_db: Sequence[Tweet] = await self.repo.get_feed_for_user(
@@ -203,7 +242,9 @@ class TweetService(BaseService[Tweet, TweetRepository]):
 
         for tweet in tweets_db:
             # Формируем URL для медиа
-            attachment_urls = [self.media_service.get_media_url(media) for media in tweet.attachments]
+            attachment_urls = [
+                self.media_service.get_media_url(media) for media in tweet.attachments
+            ]
             # Формируем информацию об авторе
             author_info = TweetAuthor.model_validate(tweet.author)
             # Формируем информацию о лайках
@@ -219,5 +260,7 @@ class TweetService(BaseService[Tweet, TweetRepository]):
                 )
             )
 
-        log.info(f"Лента для пользователя ID {current_user.id} сформирована, {len(feed_tweets)} твитов.")
+        log.info(
+            f"Лента для пользователя ID {current_user.id} сформирована, {len(feed_tweets)} твитов."
+        )
         return TweetFeedResult(tweets=feed_tweets)

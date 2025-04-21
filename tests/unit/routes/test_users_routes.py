@@ -18,14 +18,17 @@ pytestmark = pytest.mark.asyncio
 
 # --- Тест для обработчика роута get_my_profile ---
 
+
 async def test_get_my_profile_handler(
-        mock_db_session: MagicMock,
-        test_user_obj: User,
-        mock_user_service: MagicMock,
+    mock_db_session: MagicMock,
+    test_user_obj: User,
+    mock_user_service: MagicMock,
 ):
     """Юнит-тест для обработчика get_my_profile."""
     # Настраиваем мок сервиса
-    expected_profile_data = UserProfile(id=test_user_obj.id, name="Test User", followers=[], following=[])
+    expected_profile_data = UserProfile(
+        id=test_user_obj.id, name="Test User", followers=[], following=[]
+    )
     mock_user_service.get_user_profile.return_value = expected_profile_data
 
     # Вызываем обработчик
@@ -47,14 +50,17 @@ async def test_get_my_profile_handler(
 
 # --- Тест для обработчика роута get_user_profile_by_id ---
 
+
 async def test_get_user_profile_by_id_handler(
-        mock_db_session: MagicMock,
-        mock_user_service: MagicMock,
+    mock_db_session: MagicMock,
+    mock_user_service: MagicMock,
 ):
     """Юнит-тест для обработчика get_user_profile_by_id."""
     user_id_to_get = 2
     # Настраиваем мок сервиса
-    expected_profile_data = UserProfile(id=user_id_to_get, name="Alice", followers=[], following=[])
+    expected_profile_data = UserProfile(
+        id=user_id_to_get, name="Alice", followers=[], following=[]
+    )
     mock_user_service.get_user_profile.return_value = expected_profile_data
 
     # Вызываем обработчик
@@ -76,10 +82,11 @@ async def test_get_user_profile_by_id_handler(
 
 # --- Тест для обработчика роута follow_user ---
 
+
 async def test_follow_user_handler(
-        mock_db_session: MagicMock,
-        test_user_obj: User,
-        mock_follow_service: MagicMock,
+    mock_db_session: MagicMock,
+    test_user_obj: User,
+    mock_follow_service: MagicMock,
 ):
     """Юнит-тест для обработчика follow_user."""
     user_id_to_follow = 3
@@ -96,7 +103,9 @@ async def test_follow_user_handler(
 
     # Проверяем вызов сервиса
     mock_follow_service.follow_user.assert_awaited_once_with(
-        db=mock_db_session, current_user=test_user_obj, user_to_follow_id=user_id_to_follow
+        db=mock_db_session,
+        current_user=test_user_obj,
+        user_to_follow_id=user_id_to_follow,
     )
 
     # Проверяем результат
@@ -106,10 +115,11 @@ async def test_follow_user_handler(
 
 # --- Тест для обработчика роута unfollow_user ---
 
+
 async def test_unfollow_user_handler(
-        mock_db_session: MagicMock,
-        test_user_obj: User,
-        mock_follow_service: MagicMock,
+    mock_db_session: MagicMock,
+    test_user_obj: User,
+    mock_follow_service: MagicMock,
 ):
     """Юнит-тест для обработчика unfollow_user."""
     user_id_to_unfollow = 4
@@ -126,7 +136,9 @@ async def test_unfollow_user_handler(
 
     # Проверяем вызов сервиса
     mock_follow_service.unfollow_user.assert_awaited_once_with(
-        db=mock_db_session, current_user=test_user_obj, user_to_unfollow_id=user_id_to_unfollow
+        db=mock_db_session,
+        current_user=test_user_obj,
+        user_to_unfollow_id=user_id_to_unfollow,
     )
 
     # Проверяем результат
