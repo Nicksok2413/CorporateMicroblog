@@ -35,13 +35,9 @@ jobs:
         run: mypy src
 
       - name: Run tests with Pytest
-        # Устанавливаем TESTING=True явно для окружения CI
-        # Хотя pytest-dotenv может подхватить .env.test, лучше быть явным
-        run: pytest
+        run: pytest --cov=src --cov-report term-missing -vv
         env:
           TESTING: True # Гарантирует использование SQLite и временных папок для тестов
-          # Остальные переменные из .env.test (если они нужны тестам)
-          # можно добавить сюда или положиться на pytest-dotenv
 
   build_and_push:
     name: Build & Push Docker Image
