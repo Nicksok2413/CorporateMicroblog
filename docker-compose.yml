@@ -32,7 +32,7 @@ services:
       - "8000:8000"
     depends_on:
       db:
-        condition: service_healthy # Запускаем web только после того, как db станет 'healthy'
+        condition: service_healthy # Запускаем web только после того, как db станет healthy
     restart: unless-stopped
     networks:
       - microblog_network
