@@ -32,7 +32,7 @@ async def test_upload_media_success(
 ):
     """Тест успешной загрузки медиафайла."""
     filename = "test_image.png"
-    file_content = f"test content".encode()
+    file_content = "test content".encode()
     content_type = "image/png"
     files = {"file": (filename, file_content, content_type)}
 

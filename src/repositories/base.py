@@ -1,6 +1,6 @@
 """Базовый класс репозитория с общими CRUD операциями."""
 
-from typing import Any, Generic, List, Optional, Type, TypeVar
+from typing import Generic, List, Optional, Type, TypeVar
 
 from pydantic import BaseModel
 from sqlalchemy import select

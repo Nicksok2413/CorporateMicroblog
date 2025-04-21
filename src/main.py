@@ -77,7 +77,7 @@ def create_app() -> FastAPI:
     log.info("Обработчики исключений настроены.")
 
     # Подключаем API роутер
-    log.info(f"Подключение API роутера...")
+    log.info("Подключение API роутера...")
     app.include_router(api_router, prefix="/api")
 
     # Монтируем статические файлы для медиа

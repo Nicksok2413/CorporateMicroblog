@@ -10,3 +10,13 @@ from .like import Like
 from .media import Media
 from .tweet import Tweet
 from .user import User
+
+# Экспортируем модели и базовый класс
+__all__ = [
+    "Base",
+    "Follow",
+    "Like",
+    "Media",
+    "Tweet",
+    "User",
+]

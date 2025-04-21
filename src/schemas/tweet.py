@@ -2,7 +2,7 @@
 
 from typing import List, Optional
 
-from pydantic import ConfigDict, Field
+from pydantic import Field
 
 from src.schemas.base import BaseModel, ResultTrue, TunedModel
 from src.schemas.user import BaseUser
