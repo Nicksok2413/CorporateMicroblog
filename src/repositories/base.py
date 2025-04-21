@@ -37,7 +37,7 @@ class BaseRepository(Generic[ModelType, CreateSchemaType]):
             Optional[ModelType]: Найденный объект модели или None.
         """
         log.debug(f"Получение {self.model.__name__} по ID: {obj_id}")
-        result = await db.execute(select(self.model).where(self.model.id == obj_id))
+        result = await db.execute(select(self.model).where(self.model.id == obj_id))  # type: ignore[attr-defined]
         instance = result.scalars().first()
 
         if instance:

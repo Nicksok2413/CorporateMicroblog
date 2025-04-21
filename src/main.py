@@ -56,11 +56,10 @@ def create_app() -> FastAPI:
 
     # Настраиваем CORS (Cross-Origin Resource Sharing)
     # Позволяет фронтенду с другого домена обращаться к API
-    if not settings.PRODUCTION:
-        allow_origins = ["*"]  # Разрешаем все для разработки/тестирования
+    if not settings.PRODUCTION:  # type: ignore[truthy-function]
+        allow_origins: list[str] = ["*"]  # Разрешаем все для разработки/тестирования
         log.warning("CORS настроен разрешать все источники (*). Не использовать в PRODUCTION!")
     else:
-        # TODO: Заменить на реальные разрешенные домены в production
         allow_origins = []  # По умолчанию запретить все, если не задано
         log.info(f"CORS настроен для PRODUCTION. Разрешенные источники: {allow_origins}")
 
@@ -84,7 +83,7 @@ def create_app() -> FastAPI:
     log.info(f"Монтирование статики: URL '{settings.MEDIA_URL_PREFIX}', Директория '{settings.MEDIA_ROOT_PATH}'")
     app.mount(
         settings.MEDIA_URL_PREFIX,
-        StaticFiles(directory=settings.MEDIA_ROOT_PATH),
+        StaticFiles(directory=settings.MEDIA_ROOT_PATH),  # type: ignore[arg-type]
         name="media",
     )
 
