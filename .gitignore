@@ -4,10 +4,6 @@ __pycache__/
 *.egg-info/
 *.egg
 .python-version
-.pytest_cache/
-.mypy_cache/
-.coverage
-htmlcov/
 dist/
 build/
 *.so
@@ -18,7 +14,6 @@ build/
 .env
 .env.*
 !.env.example
-!.env.test
 .venv/
 venv/
 env/
@@ -29,6 +24,8 @@ ENV/
 *.sqlite3
 *.db
 *.dump
+# Тестовая БД, если создавалась локально
+test.db
 
 # === IDE ===
 # PyCharm
@@ -36,21 +33,34 @@ ENV/
 *.iml
 *.ipr
 *.iws
+# VS Code (опционально)
+# .vscode/
 
-# === OS ===
+# === OS files ===
 .DS_Store
 Thumbs.db
 desktop.ini
 
-# === Logs ===
-*.log
-logs/
+# === Testing / coverage reports ===
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
 
-# === Media ===
-media/
+# === mypy ===
+.mypy_cache/
+.dmypy.json
+dmypy.json
 
-# === Alembic alembic (исключаем всё, кроме самих миграций) ===
-#alembic/
-#!alembic/versions/
-#!alembic/env.py
-#!alembic/script.py.mako
+# === Project Specific ===
+# Временные директории для тестов
+/temp_media/
+/temp_logs/
