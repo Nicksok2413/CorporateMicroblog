@@ -1,52 +1,51 @@
-# .dockerignore
+# === Docker ===
+Dockerfile
+docker-compose.yml
+*.dockerignore
 
-# Git
+# === Git ===
 .git
 .gitignore
 
-# Python cache
-__pycache__/
+# === Python ===
+__pycache__
 *.pyc
 *.pyo
 *.pyd
 
-# Virtual environment
-.venv
-venv/
-env/
+# === Environment ===
 .env
+.env.*
+.venv
+venv
+env
+ENV
 
-# OS generated files
-.DS_Store
-Thumbs.db
-
-# IDE files
-.idea/
-.vscode/
-
-# Test files and cache
-.pytest_cache/
-pytest.ini
-htmlcov/
-.coverage
-# Если вы храните тестовую БД локально
+# === Database ===
+*.sqlite
+*.sqlite3
+*.db
+*.dump
+# Тестовая БД, если создавалась локально
 test.db
-test_media/ # Директория для тестовых медиа, если она вне /app
 
-# Логи (если они не должны попадать в образ)
-logs/
+# === IDE ===
+.idea
+# VS Code (опционально)
+.vscode
 
-# Docker
-Dockerfile
-docker-compose.yml
-.dockerignore
+# === Testing / coverage reports ===
+.pytest_cache
+.coverage
+htmlcov
+tests/
+test.db
 
-# Прочее
-*.log
-*.pot
-*.py[cod]
+# === Project Specific ===
+# Временные директории для тестов
+temp_media/
+temp_logs/
 
-# Если статика фронтенда не нужна в бэкенд-образе
-# (зависит от вашей структуры)
-# frontend/
-# node_modules/
+# === Other ===
+README.md
+*.md
