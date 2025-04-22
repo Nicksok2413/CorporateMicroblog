@@ -15,7 +15,8 @@ router = APIRouter(prefix="/users", tags=["Users"])
     response_model=UserProfileResult,
     status_code=status.HTTP_200_OK,
     summary="Получение профиля текущего пользователя",
-    description="Возвращает информацию о профиле аутентифицированного пользователя, включая списки подписчиков и подписок.",
+    description="Возвращает информацию о профиле аутентифицированного пользователя, "
+    "включая списки подписчиков и подписок.",
 )
 async def get_my_profile(
     db: DBSession,
@@ -45,7 +46,8 @@ async def get_my_profile(
     response_model=UserProfileResult,
     status_code=status.HTTP_200_OK,
     summary="Получение профиля пользователя по ID",
-    description="Возвращает информацию о профиле указанного пользователя, включая списки подписчиков и подписок.",
+    description="Возвращает информацию о профиле указанного пользователя, "
+    "включая списки подписчиков и подписок.",
     responses={
         status.HTTP_404_NOT_FOUND: {"description": "Пользователь не найден"},
     },

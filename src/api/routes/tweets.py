@@ -19,7 +19,8 @@ router = APIRouter(prefix="/tweets", tags=["Tweets"])
     response_model=TweetFeedResult,
     status_code=status.HTTP_200_OK,
     summary="Получение ленты твитов",
-    description="Возвращает ленту твитов от пользователей, на которых подписан текущий пользователь, и его собственные твиты, отсортированные по популярности.",
+    description="Возвращает ленту твитов от пользователей, на которых подписан текущий пользователь, "
+    "и его собственные твиты, отсортированные по популярности.",
 )
 async def get_tweets_feed(
     db: DBSession,
@@ -47,7 +48,8 @@ async def get_tweets_feed(
     response_model=TweetCreateResult,
     status_code=status.HTTP_201_CREATED,
     summary="Создание нового твита",
-    description="Позволяет аутентифицированному пользователю опубликовать новый твит, опционально прикрепив медиа.",
+    description="Позволяет аутентифицированному пользователю опубликовать новый твит, "
+    "опционально прикрепив медиа.",
 )
 async def create_tweet(
     db: DBSession,

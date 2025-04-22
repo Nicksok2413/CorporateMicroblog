@@ -100,7 +100,8 @@ class Database:
         """
         if not self.session_factory:
             raise RuntimeError(
-                "База данных не инициализирована. Вызовите `await db.connect()` перед использованием сессий."
+                "База данных не инициализирована. "
+                "Вызовите `await db.connect()` перед использованием сессий."
             )
 
         session: AsyncSession = self.session_factory()

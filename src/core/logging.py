@@ -64,11 +64,9 @@ def configure_logging():
         logger.add(
             sys.stderr,
             level=settings.LOG_LEVEL,
-            # serialize=True,  # Используем встроенную JSON сериализацию
-            format=development_formatter,  # Используем функцию-форматтер TODO: Вернуть JSON
-            colorize=True,  # Цветной вывод TODO: Remove
+            serialize=True,  # Используем встроенную JSON сериализацию
             filter=lambda record: record["name"] != "uvicorn.access",
-            backtrace=False,  # Можно оставить True для детальности в JSON
+            backtrace=False,  # Можно True для детальности в JSON
             diagnose=False,  # Диагностику в JSON не включаем
         )
         logger.info("Логирование настроено на JSON вывод в stderr.")
