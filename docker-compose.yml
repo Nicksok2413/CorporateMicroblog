@@ -11,7 +11,7 @@ services:
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"] # Экранируем $ для shell
+      test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}" ] # Экранируем $ для shell
       interval: 5s
       timeout: 5s
       retries: 5
@@ -21,15 +21,19 @@ services:
       - microblog_network
 
   web:
-    build: .
+    build:
+      context: . # Контекст сборки - корень проекта
+      dockerfile: docker/web/Dockerfile # Путь к Dockerfile для web
     container_name: microblog_web
     env_file:
       - .env
     volumes:
+      # Используем sample_media для демонстрации
       - ./sample_media:/media
       - log_data:/logs
-    ports:
-      - "8000:8000"
+    expose:
+      # Открываем порт только внутри сети Docker
+      - "8000"
     depends_on:
       db:
         condition: service_healthy # Запускаем web только после того, как db станет healthy
@@ -37,9 +41,33 @@ services:
     networks:
       - microblog_network
 
+  nginx:
+    build:
+      context: . # Контекст сборки - корень проекта
+      dockerfile: docker/nginx/Dockerfile # Путь к Dockerfile для nginx
+    container_name: microblog_nginx
+    volumes:
+      # Монтируем ту же папку sample_media, но только для чтения
+      - ./sample_media:/var/www/media:ro
+      # Монтируем том для логов Nginx
+      - nginx_log_data:/var/log/nginx
+    ports:
+      # Внешний порт 8000 хоста пробрасываем на порт 80 контейнера Nginx
+      - "8000:80"
+    depends_on:
+      - web # Запускаем Nginx после web
+    restart: unless-stopped
+    networks:
+      - microblog_network
+
 volumes:
   postgres_data:
+    driver: local
   log_data:
+    driver: local
+  nginx_log_data:
+    driver: local
 
 networks:
   microblog_network:
+    driver: bridge
