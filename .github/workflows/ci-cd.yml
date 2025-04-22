@@ -45,7 +45,7 @@ jobs:
           DEBUG: False
           LOG_LEVEL: DEBUG
           API_KEY_HEADER: api-key
-          
+
   build_and_push:
     name: Build & Push Docker Image
     runs-on: ubuntu-latest

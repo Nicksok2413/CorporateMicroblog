@@ -31,7 +31,7 @@ class MediaService(BaseService[Media, MediaRepository]):
 
     # Разрешенные типы контента для загружаемых медиа
     ALLOWED_CONTENT_TYPES: set[str] = {"image/jpeg", "image/png", "image/gif"}
-    # Длина случайной части имени файла
+    # Длина случайной части генерируемой строки имени файла
     RANDOM_PART_LENGTH: int = 6
 
     async def _validate_file(self, filename: str, content_type: str) -> None:
@@ -62,7 +62,7 @@ class MediaService(BaseService[Media, MediaRepository]):
         Генерирует короткую случайную строку из букв и цифр.
 
         Args:
-            length (int): Желаемая длина генерируемой строки. По умолчанию используется значение `RANDOM_PART_LENGTH`.
+            length (int): Длина генерируемой строки. По умолчанию используется значение `RANDOM_PART_LENGTH`.
 
         Returns:
             str: Случайная строка из строчных букв ASCII и цифр указанной длины.

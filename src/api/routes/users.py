@@ -15,7 +15,8 @@ router = APIRouter(prefix="/users", tags=["Users"])
     response_model=UserProfileResult,
     status_code=status.HTTP_200_OK,
     summary="Получение профиля текущего пользователя",
-    description="Возвращает информацию о профиле аутентифицированного пользователя, включая списки подписчиков и подписок.",
+    description="Возвращает информацию о профиле аутентифицированного пользователя, "
+    "включая списки подписчиков и подписок.",
 )
 async def get_my_profile(
     db: DBSession,
@@ -45,7 +46,8 @@ async def get_my_profile(
     response_model=UserProfileResult,
     status_code=status.HTTP_200_OK,
     summary="Получение профиля пользователя по ID",
-    description="Возвращает информацию о профиле указанного пользователя, включая списки подписчиков и подписок.",
+    description="Возвращает информацию о профиле указанного пользователя, "
+    "включая списки подписчиков и подписок.",
     responses={
         status.HTTP_404_NOT_FOUND: {"description": "Пользователь не найден"},
     },
@@ -81,6 +83,7 @@ async def get_user_profile_by_id(
     response_model=ResultTrue,
     status_code=status.HTTP_201_CREATED,
     summary="Подписаться на пользователя",
+    description="Создает подписку текущего пользователя на указанного пользователя.",
     responses={
         status.HTTP_404_NOT_FOUND: {"description": "Пользователь не найден"},
         status.HTTP_403_FORBIDDEN: {"description": "Нельзя подписаться на себя"},
@@ -127,6 +130,7 @@ async def follow_user(
     response_model=ResultTrue,
     status_code=status.HTTP_200_OK,
     summary="Отписаться от пользователя",
+    description="Удаляет подписку текущего пользователя от указанного пользователя.",
     responses={
         status.HTTP_404_NOT_FOUND: {
             "description": "Пользователь не найден или подписка отсутствует"
