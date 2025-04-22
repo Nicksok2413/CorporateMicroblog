@@ -90,6 +90,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: . # Контекст сборки - корень репозитория
+          file: ./docker/web/Dockerfile # Указываем путь к Dockerfile для web сервиса
           push: true # Пушим образ в регистр
           tags: ${{ steps.meta.outputs.tags }} # Используем теги из шага meta
           labels: ${{ steps.meta.outputs.labels }} # Добавляем стандартные метки
