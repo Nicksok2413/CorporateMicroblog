@@ -59,7 +59,7 @@ def create_app() -> FastAPI:
         log.warning(
             "CORS настроен разрешать все источники (*). Не использовать в PRODUCTION!"
         )
-    else:
+    else:  # pragma: no cover
         allow_origins = []  # По умолчанию запретить все, если не задано
         log.info(
             f"CORS настроен для PRODUCTION. Разрешенные источники: {allow_origins}"

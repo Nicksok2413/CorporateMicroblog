@@ -7,7 +7,7 @@ from loguru import logger
 from src.core.config import settings
 
 
-def development_formatter(record):
+def development_formatter(record):  # pragma: no cover
     """
     Форматтер для цветного консольного вывода в режиме разработки.
 
