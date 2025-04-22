@@ -13,12 +13,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends gcc libpq-dev &
 COPY ./requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Копируем alembic.ini и папку alembic
 COPY ./alembic.ini /app/alembic.ini
 COPY ./alembic /app/alembic
+
+# Копируем код приложения
 COPY ./src /app/src
+
+# Копируем entrypoint
+COPY ./docker/web/entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
 
 EXPOSE 8000
 
-COPY ./entrypoint.sh /app/entrypoint.sh
-RUN chmod +x /app/entrypoint.sh
 ENTRYPOINT ["/app/entrypoint.sh"]
