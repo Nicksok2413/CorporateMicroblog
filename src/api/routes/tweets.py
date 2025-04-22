@@ -130,6 +130,7 @@ async def delete_tweet(
     response_model=TweetActionResult,
     status_code=status.HTTP_201_CREATED,
     summary="Поставить лайк твиту",
+    description="Ставит лайк на указанный твит от имени текущего пользователя.",
     responses={
         status.HTTP_404_NOT_FOUND: {"description": "Твит не найден"},
         status.HTTP_409_CONFLICT: {"description": "Твит уже лайкнут"},
@@ -167,6 +168,7 @@ async def like_tweet(
     response_model=TweetActionResult,
     status_code=status.HTTP_200_OK,
     summary="Убрать лайк с твита",
+    description="Убирает лайк с указанного твита от имени текущего пользователя.",
     responses={
         status.HTTP_404_NOT_FOUND: {"description": "Лайк не найден"},
     },
