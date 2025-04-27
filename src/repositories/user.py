@@ -16,21 +16,22 @@ class UserRepository(
     """
     Репозиторий для выполнения CRUD операций с моделью User.
 
-    Наследует общие методы от BaseRepository и добавляет специфичные для User.
+    Использует хешированные API ключи.
     """
 
-    async def get_by_api_key(self, db: AsyncSession, *, api_key: str) -> Optional[User]:
+    async def get_by_sha256(
+        self, db: AsyncSession, *, sha256_hash: str
+    ) -> Optional[User]:
         """
-        Получает пользователя по его API ключу.
+        Ищет пользователя по SHA256 хешу его API ключа.
 
         Args:
             db (AsyncSession): Сессия БД.
-            api_key (str): API ключ пользователя.
+            sha256_hash (str): SHA256 хеш ключа.
 
         Returns:
             Optional[User]: Найденный пользователь или None.
         """
-        result = await db.execute(
-            select(self.model).where(self.model.api_key == api_key)
-        )
+        statement = select(self.model).where(self.model.api_key_sha256 == sha256_hash)
+        result = await db.execute(statement)
         return result.scalars().first()
