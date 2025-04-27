@@ -1,6 +1,6 @@
 """Сервис для работы с пользователями."""
 
-from typing import Optional, Sequence
+from typing import Sequence
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -21,21 +21,6 @@ class UserService(BaseService[User, UserRepository]):
     def __init__(self, repo: UserRepository, follow_repo: FollowRepository):
         super().__init__(repo)
         self.follow_repo = follow_repo
-
-    async def get_user_by_api_key(
-        self, db: AsyncSession, *, api_key: str
-    ) -> Optional[User]:
-        """
-        Получает пользователя по API ключу.
-
-        Args:
-            db (AsyncSession): Сессия БД.
-            api_key (str): API ключ.
-
-        Returns:
-            Optional[User]: Найденный пользователь или None.
-        """
-        return await self.repo.get_by_api_key(db, api_key=api_key)
 
     async def get_user_profile(self, db: AsyncSession, *, user_id: int) -> UserProfile:
         """

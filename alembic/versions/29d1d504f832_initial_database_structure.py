@@ -26,10 +26,13 @@ def upgrade() -> None:
         "users",
         sa.Column("id", sa.Integer(), nullable=False),
         sa.Column("name", sa.String(length=100), nullable=False),
-        sa.Column("api_key", sa.String(length=255), nullable=False),
+        sa.Column("api_key_hash", sa.String(length=255), nullable=False),
+        sa.Column("api_key_sha256", sa.String(length=64), nullable=False),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index(op.f("ix_users_api_key"), "users", ["api_key"], unique=True)
+    op.create_index(
+        op.f("ix_users_api_key_sha256"), "users", ["api_key_sha256"], unique=True
+    )
     op.create_index(op.f("ix_users_id"), "users", ["id"], unique=False)
     op.create_table(
         "follows",
@@ -90,6 +93,6 @@ def downgrade() -> None:
     op.drop_table("tweets")
     op.drop_table("follows")
     op.drop_index(op.f("ix_users_id"), table_name="users")
-    op.drop_index(op.f("ix_users_api_key"), table_name="users")
+    op.drop_index(op.f("ix_users_api_key_sha256"), table_name="users")
     op.drop_table("users")
     # ### end Alembic commands ###

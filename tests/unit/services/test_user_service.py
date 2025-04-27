@@ -18,54 +18,6 @@ def user_service(mock_user_repo: MagicMock, mock_follow_repo: MagicMock) -> User
     return service
 
 
-# --- Тесты для get_user_by_api_key ---
-
-
-async def test_get_user_by_api_key_found(
-    user_service: UserService,
-    mock_db_session: MagicMock,
-    test_user_obj: User,
-    mock_user_repo: MagicMock,
-):
-    """Тест успешного нахождения пользователя по API ключу."""
-    api_key = test_user_obj.api_key
-    # Настраиваем мок
-    mock_user_repo.get_by_api_key.return_value = test_user_obj
-
-    # Вызываем метод
-    found_user = await user_service.get_user_by_api_key(
-        db=mock_db_session, api_key=api_key
-    )
-
-    # Проверки
-    assert found_user == test_user_obj
-    mock_user_repo.get_by_api_key.assert_awaited_once_with(
-        mock_db_session, api_key=api_key
-    )
-
-
-async def test_get_user_by_api_key_not_found(
-    user_service: UserService,
-    mock_db_session: MagicMock,
-    mock_user_repo: MagicMock,
-):
-    """Тест случая, когда пользователь по ключу не найден."""
-    api_key = "not_found_key"
-    # Настраиваем мок
-    mock_user_repo.get_by_api_key.return_value = None
-
-    # Вызываем метод
-    found_user = await user_service.get_user_by_api_key(
-        db=mock_db_session, api_key=api_key
-    )
-
-    # Проверки
-    assert found_user is None
-    mock_user_repo.get_by_api_key.assert_awaited_once_with(
-        mock_db_session, api_key=api_key
-    )
-
-
 # --- Тесты для get_user_profile ---
 
 

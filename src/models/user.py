@@ -20,7 +20,8 @@ class User(Base):
     Attributes:
         id: Первичный ключ, идентификатор пользователя
         name: Имя пользователя
-        api_key: Уникальный API ключ для аутентификации пользователя
+        api_key_hash: Хеш API ключа (Argon2) для безопасного хранения
+        api_key_sha256: SHA256 хеш API ключа для быстрого поиска (индексирован)
         tweets: Список твитов, написанных пользователем
         likes: Список лайков, поставленных пользователем
         following: Список связей подписки, где этот пользователь является подписчиком
@@ -31,9 +32,12 @@ class User(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
-    api_key: Mapped[str] = mapped_column(
-        String(255), unique=True, index=True, nullable=False
-    )
+    api_key_hash: Mapped[str] = mapped_column(
+        String(255), nullable=False
+    )  # Хранит соленый хеш Argon2
+    api_key_sha256: Mapped[str] = mapped_column(
+        String(64), unique=True, index=True, nullable=False
+    )  # Быстрый хеш для поиска, уникальный и индексированный
 
     # Связи
     tweets: Mapped[List["Tweet"]] = relationship(

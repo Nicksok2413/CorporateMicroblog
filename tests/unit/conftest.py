@@ -90,7 +90,7 @@ def mock_tweet_repo() -> MagicMock:
 @pytest.fixture
 def mock_user_repo() -> MagicMock:
     repo = MagicMock(spec=UserRepository)
-    repo.get_by_api_key = AsyncMock()
+    repo.get_by_sha256 = AsyncMock()
     repo.get = AsyncMock()
     repo.model = User
     return repo

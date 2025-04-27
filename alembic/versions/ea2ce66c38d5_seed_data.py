@@ -6,10 +6,13 @@ Create Date: 2025-04-14 08:12:24.132416
 
 """
 
+import hashlib
 from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
+
+from src.api.dependencies import pwd_context
 
 # revision identifiers, used by Alembic.
 revision: str = "ea2ce66c38d5"
@@ -21,7 +24,8 @@ users_table = sa.table(
     "users",
     sa.column("id", sa.Integer),
     sa.column("name", sa.String),
-    sa.column("api_key", sa.String),
+    sa.column("api_key_hash", sa.String),
+    sa.column("api_key_sha256", sa.String),
 )
 
 tweets_table = sa.table(
@@ -50,20 +54,45 @@ follows_table = sa.table(
     sa.column("following_id", sa.Integer),
 )
 
+# Определяем API ключи (которые будут использовать пользователи/тесты)
+PLAIN_API_KEYS = {
+    1: "test",
+    2: "alice_key",
+    3: "bob_key",
+    4: "charlie_key",
+    5: "david_key",
+}
+
 
 def upgrade() -> None:
     """Seed data."""
+    users_to_insert = []
+
+    for user_id, plain_key in PLAIN_API_KEYS.items():
+        key_hash = pwd_context.hash(plain_key)
+        sha256_hash = hashlib.sha256(plain_key.encode("utf-8")).hexdigest()
+
+        # Находим имя пользователя
+        user_name = {
+            1: "Nick",
+            2: "Alice",
+            3: "Bob",
+            4: "Charlie",
+            5: "David (no tweets)",
+        }[user_id]
+
+        # Добавляем пользователя в список для вставки
+        users_to_insert.append(
+            {
+                "id": user_id,
+                "name": user_name,
+                "api_key_hash": key_hash,
+                "api_key_sha256": sha256_hash,
+            }
+        )
+
     # === Пользователи ===
-    op.bulk_insert(
-        users_table,
-        [
-            {"id": 1, "name": "Nick", "api_key": "test"},
-            {"id": 2, "name": "Alice", "api_key": "alice_key"},
-            {"id": 3, "name": "Bob", "api_key": "bob_key"},
-            {"id": 4, "name": "Charlie", "api_key": "charlie_key"},
-            {"id": 5, "name": "David (no tweets)", "api_key": "david_key"},
-        ],
-    )
+    op.bulk_insert(users_table, users_to_insert)
 
     # === Твиты ===
     op.bulk_insert(

@@ -16,7 +16,9 @@ pytestmark = pytest.mark.asyncio
 async def test_upload_media_unauthorized(client: AsyncClient):
     """Тест загрузки медиа без авторизации."""
     files = {"file": ("test.jpg", b"content", "image/jpeg")}
+
     response = await client.post("/api/medias", files=files)
+
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 
@@ -24,7 +26,9 @@ async def test_upload_media_invalid_key(client: AsyncClient):
     """Тест загрузки медиа с неверным ключом."""
     headers = {settings.API_KEY_HEADER: "invalid-key"}
     files = {"file": ("test.jpg", b"content", "image/jpeg")}
+
     response = await client.post("/api/medias", files=files, headers=headers)
+
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
@@ -39,6 +43,7 @@ async def test_upload_media_success(
 
     response = await authenticated_client.post("/api/medias", files=files)
 
+    # Проверки
     assert response.status_code == status.HTTP_201_CREATED
     json_response = response.json()
     assert json_response["result"] is True
@@ -69,6 +74,7 @@ async def test_upload_media_invalid_content_type(authenticated_client: AsyncClie
 
     response = await authenticated_client.post("/api/medias", files=files)
 
+    # Проверки
     # Сервис должен вернуть MediaValidationError, который обрабатывается как 400 Bad Request
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     json_response = response.json()
@@ -86,6 +92,7 @@ async def test_upload_media_no_file(authenticated_client: AsyncClient):
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     json_response = response.json()
 
+    # Проверки
     # Проверяем структуру ответа из нашего validation_exception_handler
     assert json_response["result"] is False
     assert json_response["error_type"] == "Validation Error"

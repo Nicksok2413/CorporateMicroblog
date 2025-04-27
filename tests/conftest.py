@@ -54,19 +54,34 @@ def cleanup_temp_dirs(request):
 # Фикстура пользователя `Test User`
 @pytest.fixture
 def test_user_obj() -> User:
-    return User(id=1, name="Test User", api_key="testkey1")
+    return User(
+        id=1,
+        name="Test User",
+        api_key_hash="$argon2id$v=19$m=65536,t=3,p=4$somesalt$somehash",  # Пример хеша
+        api_key_sha256="a" * 64,  # Пример SHA256
+    )
 
 
 # Фикстура пользователя `Test Alice`
 @pytest.fixture
 def test_alice_obj() -> User:
-    return User(id=2, name="Test Alice", api_key="testkey2")
+    return User(
+        id=2,
+        name="Test Alice",
+        api_key_hash="$argon2id$v=19$m=65536,t=3,p=4$othersalt$otherhash",
+        api_key_sha256="b" * 64,
+    )
 
 
 # Фикстура пользователя `Test Bob`
 @pytest.fixture
 def test_bob_obj() -> User:
-    return User(id=3, name="Test Bob", api_key="testkey3")
+    return User(
+        id=3,
+        name="Test Bob",
+        api_key_hash="$argon2id$v=19$m=65536,t=3,p=4$anothersalt$anotherhash",
+        api_key_sha256="c" * 64,
+    )
 
 
 # Фикстура твита

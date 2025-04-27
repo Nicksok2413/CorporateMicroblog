@@ -1,3 +1,5 @@
+from typing import Tuple
+
 import pytest
 import pytest_asyncio
 from httpx import AsyncClient
@@ -18,13 +20,16 @@ pytestmark = pytest.mark.asyncio
 
 async def test_create_tweet_success_no_media(
     authenticated_client: AsyncClient,
-    test_user: User,
+    test_user_data: Tuple[User, str],
     db_session: AsyncSession,  # Добавляем сессию для проверки БД
 ):
     """Тест успешного создания твита без медиа."""
+    test_user, _ = test_user_data
     tweet_data = {"tweet_data": "My first test tweet!"}
+
     response = await authenticated_client.post("/api/tweets", json=tweet_data)
 
+    # Проверки
     assert response.status_code == status.HTTP_201_CREATED
     json_response = response.json()
     assert json_response["result"] is True
@@ -45,8 +50,10 @@ async def test_create_tweet_too_long(authenticated_client: AsyncClient):
     """Тест создания твита со слишком длинным текстом."""
     long_text = "a" * 281  # 281 символ
     tweet_data = {"tweet_data": long_text}
+
     response = await authenticated_client.post("/api/tweets", json=tweet_data)
 
+    # Проверки
     # Ожидаем ошибку валидации 422
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     json_response = response.json()
@@ -59,8 +66,10 @@ async def test_create_tweet_too_long(authenticated_client: AsyncClient):
 async def test_create_tweet_empty(authenticated_client: AsyncClient):
     """Тест создания твита с пустым текстом."""
     tweet_data = {"tweet_data": ""}
+
     response = await authenticated_client.post("/api/tweets", json=tweet_data)
 
+    # Проверки
     # Ожидаем ошибку валидации 422
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     json_response = response.json()
@@ -72,7 +81,9 @@ async def test_create_tweet_empty(authenticated_client: AsyncClient):
 async def test_create_tweet_unauthorized(client: AsyncClient):
     """Тест создания твита без аутентификации."""
     tweet_data = {"tweet_data": "Should not work"}
+
     response = await client.post("/api/tweets", json=tweet_data)
+
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 
@@ -81,13 +92,16 @@ async def test_create_tweet_unauthorized(client: AsyncClient):
 
 async def test_create_tweet_with_one_media(
     authenticated_client: AsyncClient,
-    test_user: User,
+    test_user_data: Tuple[User, str],
     create_uploaded_media_list: Callable[[int], Awaitable[List[Media]]],
     db_session: AsyncSession,
 ):
-    """Тест успешного создания твита с одним медиа ."""
+    """Тест успешного создания твита с одним медиа."""
+    test_user, _ = test_user_data
+
     # Вызываем фабрику для создания 1 медиа
     uploaded_media_list = await create_uploaded_media_list(count=1)
+
     assert len(uploaded_media_list) == 1
     uploaded_media = uploaded_media_list[0]  # Берем первый (и единственный) элемент
 
@@ -95,8 +109,10 @@ async def test_create_tweet_with_one_media(
         "tweet_data": "Tweet with one media from factory!",
         "tweet_media_ids": [uploaded_media.id],
     }
+
     response = await authenticated_client.post("/api/tweets", json=tweet_data)
 
+    # Проверки
     assert response.status_code == status.HTTP_201_CREATED
     json_response = response.json()
     assert json_response["result"] is True
@@ -125,11 +141,13 @@ async def test_create_tweet_with_one_media(
 
 async def test_create_tweet_with_multiple_media(
     authenticated_client: AsyncClient,
-    test_user: User,
+    test_user_data: Tuple[User, str],
     create_uploaded_media_list: Callable[[int], Awaitable[List[Media]]],
     db_session: AsyncSession,
 ):
     """Тест успешного создания твита с тремя медиа."""
+    test_user, _ = test_user_data
+
     # Вызываем фабрику, чтобы создать 3 медиафайла
     uploaded_media_list = await create_uploaded_media_list(count=3)
     assert len(uploaded_media_list) == 3  # Убедимся, что фабрика сработала
@@ -143,6 +161,7 @@ async def test_create_tweet_with_multiple_media(
 
     response = await authenticated_client.post("/api/tweets", json=tweet_data)
 
+    # Проверки
     assert response.status_code == status.HTTP_201_CREATED
     json_response = response.json()
     assert json_response["result"] is True
@@ -176,8 +195,10 @@ async def test_create_tweet_with_nonexistent_media(authenticated_client: AsyncCl
         "tweet_data": "Tweet with bad media!",
         "tweet_media_ids": [99999],  # Несуществующий ID
     }
+
     response = await authenticated_client.post("/api/tweets", json=tweet_data)
 
+    # Проверки
     assert response.status_code == status.HTTP_404_NOT_FOUND
     json_response = response.json()
     assert json_response["result"] is False
@@ -189,9 +210,13 @@ async def test_create_tweet_with_nonexistent_media(authenticated_client: AsyncCl
 
 
 async def test_delete_tweet_success_no_media(
-    authenticated_client: AsyncClient, test_user: User, db_session: AsyncSession
+    authenticated_client: AsyncClient,
+    test_user_data: Tuple[User, str],
+    db_session: AsyncSession,
 ):
     """Тест успешного удаления своего твита без медиа."""
+    test_user, _ = test_user_data
+
     # Создаем твит
     tweet = Tweet(author_id=test_user.id, content="Tweet to delete")
     db_session.add(tweet)
@@ -211,11 +236,13 @@ async def test_delete_tweet_success_no_media(
 
 async def test_delete_tweet_success_with_media(
     authenticated_client: AsyncClient,
-    test_user: User,
+    test_user_data: Tuple[User, str],
     create_uploaded_media_list: Callable[[int], Awaitable[List[Media]]],
     db_session: AsyncSession,
 ):
     """Тест успешного удаления своего твита с медиа."""
+    test_user, _ = test_user_data
+
     # Создаем медиа
     uploaded_media_list = await create_uploaded_media_list(count=1)
     assert len(uploaded_media_list) == 1
@@ -257,10 +284,12 @@ async def test_delete_tweet_success_with_media(
 
 async def test_delete_tweet_forbidden(
     authenticated_client: AsyncClient,  # Клиент test_user
-    test_user_alice: User,
+    test_user_alice_data: Tuple[User, str],
     db_session: AsyncSession,
 ):
     """Тест попытки удалить чужой твит."""
+    test_user_alice, _ = test_user_alice_data
+
     # Создаем твит от alice
     tweet = Tweet(author_id=test_user_alice.id, content="Alice's tweet")
     db_session.add(tweet)
@@ -282,6 +311,8 @@ async def test_delete_tweet_forbidden(
 async def test_delete_tweet_not_found(authenticated_client: AsyncClient):
     """Тест попытки удалить несуществующий твит."""
     response = await authenticated_client.delete("/api/tweets/99999")
+
+    # Проверки
     assert response.status_code == status.HTTP_404_NOT_FOUND
     json_response = response.json()
     assert json_response["result"] is False
@@ -292,6 +323,7 @@ async def test_delete_tweet_unauthorized(client: AsyncClient):
     """Тест удаления твита без аутентификации."""
     # Нужен ID существующего твита, но т.к. БД чистая, просто используем любой ID
     response = await client.delete("/api/tweets/1")
+
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 
@@ -302,12 +334,16 @@ async def test_delete_tweet_unauthorized(client: AsyncClient):
 @pytest_asyncio.fixture(scope="function")
 async def feed_setup(
     db_session: AsyncSession,
-    test_user: User,
-    test_user_alice: User,
-    test_user_bob: User,
+    test_user_data: Tuple[User, str],
+    test_user_alice_data: Tuple[User, str],
+    test_user_bob_data: Tuple[User, str],
     create_uploaded_media_list: Callable[[int], Awaitable[List[Media]]],
 ):
     """Настраивает данные для тестов ленты: пользователи, подписки, твиты, лайки."""
+    test_user, _ = test_user_data
+    test_user_alice, _ = test_user_alice_data
+    test_user_bob, _ = test_user_bob_data
+
     # 1. Подписки: test_user -> alice
     follow = Follow(follower_id=test_user.id, following_id=test_user_alice.id)
     db_session.add(follow)
@@ -358,10 +394,12 @@ async def feed_setup(
 
 async def test_get_tweet_feed_success_with_own_tweet(
     authenticated_client: AsyncClient,
-    test_user: User,
+    test_user_data: Tuple[User, str],
     db_session: AsyncSession,
 ):
     """Тест успешного получения ленты твитов с одним своим твитом."""
+    test_user, _ = test_user_data
+
     # Создаем твит
     tweet = Tweet(author_id=test_user.id, content="My own tweet")
     db_session.add(tweet)
@@ -370,6 +408,8 @@ async def test_get_tweet_feed_success_with_own_tweet(
 
     # Получаем ленту
     response = await authenticated_client.get("/api/tweets")
+
+    # Проверки
     assert response.status_code == status.HTTP_200_OK
     tweets = response.json()["tweets"]
     assert len(tweets) == 1
@@ -387,6 +427,7 @@ async def test_get_tweet_feed_success(
     """Тест успешного получения ленты твитов."""
     response = await authenticated_client.get("/api/tweets")
 
+    # Проверки
     assert response.status_code == status.HTTP_200_OK
     json_response = response.json()
     assert json_response["result"] is True
@@ -460,6 +501,7 @@ async def test_get_tweet_feed_empty(authenticated_client: AsyncClient):
     """Тест получения пустой ленты (пользователь ни на кого не подписан и не имеет твитов)."""
     response = await authenticated_client.get("/api/tweets")
 
+    # Проверки
     assert response.status_code == status.HTTP_200_OK
     json_response = response.json()
     assert json_response["result"] is True
@@ -469,6 +511,7 @@ async def test_get_tweet_feed_empty(authenticated_client: AsyncClient):
 async def test_get_tweet_feed_unauthorized(client: AsyncClient):
     """Тест получения ленты без аутентификации."""
     response = await client.get("/api/tweets")
+
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 
@@ -477,8 +520,11 @@ async def test_get_tweet_feed_unauthorized(client: AsyncClient):
 
 # Фикстура твита для лайков
 @pytest_asyncio.fixture(scope="function")
-async def tweet_for_likes(db_session: AsyncSession, test_user_alice: User) -> Tweet:
+async def tweet_for_likes(
+    db_session: AsyncSession, test_user_alice_data: Tuple[User, str]
+) -> Tweet:
     """Фикстура, создающая твит для лайков."""
+    test_user_alice, _ = test_user_alice_data
     tweet = Tweet(author_id=test_user_alice.id, content="Tweet for likes")
     db_session.add(tweet)
     await db_session.commit()
@@ -489,14 +535,18 @@ async def tweet_for_likes(db_session: AsyncSession, test_user_alice: User) -> Tw
 async def test_like_tweet_success(
     authenticated_client: AsyncClient,  # Клиент test_user
     tweet_for_likes: Tweet,
-    test_user: User,
+    test_user_data: Tuple[User, str],
     db_session: AsyncSession,
 ):
     """Тест успешного лайка твита."""
+    test_user, _ = test_user_data
+
     # Лайкаем
     tweet_id = tweet_for_likes.id
+
     response = await authenticated_client.post(f"/api/tweets/{tweet_id}/likes")
 
+    # Проверки
     assert response.status_code == status.HTTP_201_CREATED
     json_response = response.json()
     assert json_response["result"] is True
@@ -511,6 +561,8 @@ async def test_like_tweet_success(
 async def test_like_tweet_not_found(authenticated_client: AsyncClient):
     """Тест лайка несуществующего твита."""
     response = await authenticated_client.post("/api/tweets/99999/likes")
+
+    # Проверки
     assert response.status_code == status.HTTP_404_NOT_FOUND
     json_response = response.json()
     assert json_response["result"] is False
@@ -521,6 +573,7 @@ async def test_like_tweet_not_found(authenticated_client: AsyncClient):
 async def test_like_tweet_unauthorized(client: AsyncClient, tweet_for_likes: Tweet):
     """Тест лайка без аутентификации."""
     response = await client.post(f"/api/tweets/{tweet_for_likes.id}/likes")
+
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 
@@ -530,11 +583,13 @@ async def test_like_tweet_unauthorized(client: AsyncClient, tweet_for_likes: Twe
 async def test_unlike_tweet_success(
     authenticated_client: AsyncClient,
     tweet_for_likes: Tweet,
-    test_user: User,
+    test_user_data: Tuple[User, str],
     db_session: AsyncSession,
 ):
     """Тест успешного удаления лайка."""
+    test_user, _ = test_user_data
     tweet_id = tweet_for_likes.id
+
     # Сначала ставим лайк
     like = Like(user_id=test_user.id, tweet_id=tweet_id)
     db_session.add(like)
@@ -542,6 +597,8 @@ async def test_unlike_tweet_success(
 
     # Удаляем лайк через API
     response = await authenticated_client.delete(f"/api/tweets/{tweet_id}/likes")
+
+    # Проверки
     assert response.status_code == status.HTTP_200_OK
     json_response = response.json()
     assert json_response["result"] is True
@@ -560,6 +617,8 @@ async def test_unlike_tweet_not_found_like(
     response = await authenticated_client.delete(
         f"/api/tweets/{tweet_for_likes.id}/likes"
     )
+
+    # Проверки
     assert response.status_code == status.HTTP_404_NOT_FOUND
     json_response = response.json()
     assert json_response["result"] is False
@@ -570,6 +629,8 @@ async def test_unlike_tweet_not_found_like(
 async def test_unlike_tweet_not_found_tweet(authenticated_client: AsyncClient):
     """Тест удаления лайка с несуществующего твита."""
     response = await authenticated_client.delete("/api/tweets/99999/likes")
+
+    # Проверки
     # Ожидаем 404, т.к. сервис сначала проверяет наличие лайка, которого не будет
     assert response.status_code == status.HTTP_404_NOT_FOUND
     json_response = response.json()
@@ -580,4 +641,5 @@ async def test_unlike_tweet_not_found_tweet(authenticated_client: AsyncClient):
 async def test_unlike_tweet_unauthorized(client: AsyncClient, tweet_for_likes: Tweet):
     """Тест удаления лайка без аутентификации."""
     response = await client.delete(f"/api/tweets/{tweet_for_likes.id}/likes")
+
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
