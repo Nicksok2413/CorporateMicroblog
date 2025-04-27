@@ -1,8 +1,10 @@
 """Зависимости FastAPI для API версии v1."""
 
-from typing import Annotated
+import hashlib
+from typing import Annotated, Optional
 
 from fastapi import Depends, Header
+from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database import get_db_session
@@ -110,33 +112,37 @@ MediaSvc = Annotated[MediaService, Depends(get_media_service)]
 TweetSvc = Annotated[TweetService, Depends(get_tweet_service)]
 UserSvc = Annotated[UserService, Depends(get_user_service)]
 
-
 # --- Зависимость для получения текущего пользователя ---
+
+
+# Настройка Хеширования
+pwd_context = CryptContext(schemes=["argon2"])
 
 
 async def get_current_user(
     db: DBSession,
     user_repo: UserRepo,
     api_key: Annotated[
-        str | None, Header(description="Ключ API для аутентификации пользователя.")
+        Optional[str], Header(description="Ключ API для аутентификации пользователя.")
     ] = None,
 ) -> User:
     """
-    Зависимость для получения текущего пользователя на основе API ключа.
+    Зависимость для получения текущего пользователя на основе хешированного API ключа.
 
-    Проверяет наличие заголовка `api-key` и ищет пользователя в базе данных.
+    Проверяет наличие заголовка `api-key`, ищет пользователя по SHA256 хешу
+    и верифицирует ключ с использованием Argon2.
 
     Args:
         db (AsyncSession): Сессия БД.
         user_repo (UserRepo): Экземпляр репозитория пользователей.
-        api_key (str | None): Значение заголовка `api-key` из запроса.
+        api_key (Optional[str]): Значение заголовка `api-key` из запроса.
 
     Returns:
         User: Объект аутентифицированного пользователя.
 
     Raises:
         AuthenticationRequiredError(401): Если заголовок `api-key` отсутствует.
-        PermissionDeniedError(403): Если пользователь с таким `api-key` не найден в базе данных.
+        PermissionDeniedError(403): Если пользователь с таким `api-key` не найден в БД.
     """
     if api_key is None:
         log.warning("Запрос без API ключа.")
@@ -145,13 +151,33 @@ async def get_current_user(
             extra={"headers": {"WWW-Authenticate": "Header"}},
         )
 
-    log.debug(f"Попытка аутентификации по API ключу: {api_key[:4]}...{api_key[-4:]}")
-    user = await user_repo.get_by_api_key(db=db, api_key=api_key)
+    log.debug(f"Попытка аутентификации по API ключу: {api_key}")
+
+    # 1. Вычисляем быстрый хеш от присланного ключа
+    try:
+        sha256_hash = hashlib.sha256(api_key.encode("utf-8")).hexdigest()
+
+    except Exception as exc:
+        # Может случиться при странных входных данных
+        log.error(f"Ошибка вычисления SHA256 для API ключа: {exc}")
+        raise PermissionDeniedError(detail="Ошибка обработки ключа.")
+
+    # 2. Ищем пользователя по быстрому хешу
+    user = await user_repo.get_by_sha256(db=db, sha256_hash=sha256_hash)
 
     if user is None:
-        log.warning(f"Недействительный API ключ: {api_key[:4]}...{api_key[-4:]}")
+        # Пользователь с таким быстрым хешем не найден
+        log.warning("Недействительный API ключ: SHA256 не найден.")
         raise PermissionDeniedError(detail="Недействительный API ключ.")
 
+    # 3. Проверяем основной хеш с помощью passlib
+    is_valid = pwd_context.verify(api_key, user.api_key_hash)
+
+    if not is_valid:
+        log.warning(f"Недействительный API ключ для user ID {user.id}: хеш не совпал.")
+        raise PermissionDeniedError(detail="Недействительный API ключ.")
+
+    # 4. Если все проверки пройдены
     log.info(f"Пользователь ID {user.id} ({user.name}) аутентифицирован.")
     return user
 
