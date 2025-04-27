@@ -7,26 +7,18 @@ Create Date: 2025-04-14 08:12:24.132416
 """
 
 import hashlib
-import logging
 from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
 
-from passlib.context import CryptContext
+from src.api.dependencies import pwd_context
 
 # revision identifiers, used by Alembic.
 revision: str = "ea2ce66c38d5"
 down_revision: Union[str, None] = "29d1d504f832"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
-
-# Настраиваем логирование, чтобы видеть сгенерированные ключи (ТОЛЬКО ДЛЯ ОТЛАДКИ СИДИНГА!)
-logging.basicConfig(level=logging.INFO)
-log = logging.getLogger(__name__)
-
-# Настраиваем контекст хеширования как в dependencies.py
-pwd_context = CryptContext(schemes=["argon2"])
 
 users_table = sa.table(
     "users",
@@ -75,7 +67,6 @@ PLAIN_API_KEYS = {
 def upgrade() -> None:
     """Seed data."""
     users_to_insert = []
-    log.info("--- ГЕНЕРАЦИЯ ХЕШЕЙ ДЛЯ СИДИНГА ---")
 
     for user_id, plain_key in PLAIN_API_KEYS.items():
         key_hash = pwd_context.hash(plain_key)
@@ -90,12 +81,7 @@ def upgrade() -> None:
             5: "David (no tweets)",
         }[user_id]
 
-        log.info(
-            f"User ID: {user_id}, Name: {user_name}, Plain Key: '{plain_key}'"
-        )  # ВЫВОД КЛЮЧА!
-        log.info(f"  SHA256: {sha256_hash}")
-        log.info(f"  Argon2 Hash: {key_hash[:20]}...")  # Показываем только начало хеша
-
+        # Добавляем пользователя в список для вставки
         users_to_insert.append(
             {
                 "id": user_id,
@@ -104,8 +90,6 @@ def upgrade() -> None:
                 "api_key_sha256": sha256_hash,
             }
         )
-
-    log.info("------------------------------------------------------")
 
     # === Пользователи ===
     op.bulk_insert(users_table, users_to_insert)
