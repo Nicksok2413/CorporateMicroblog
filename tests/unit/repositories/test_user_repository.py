@@ -16,17 +16,17 @@ def user_repo() -> UserRepository:
     return UserRepository(User)
 
 
-# --- Тест для get_by_api_key ---
+# --- Тест для get_by_sha256 ---
 
 
-async def test_get_by_api_key_found(
+async def test_get_by_sha256_found(
     user_repo: UserRepository,
     mock_db_session: MagicMock,
     test_user_obj: User,
 ):
-    """Тест get_by_api_key, когда ключ найден."""
-    api_key = "found_key"
-    test_user_obj.api_key = api_key
+    """Тест get_by_sha256, когда хеш найден."""
+    sha256_hash = "a" * 64  # Пример хеша
+    test_user_obj.api_key_sha256 = sha256_hash  # Устанавливаем хеш объекту
 
     # Настраиваем мок результата execute
     mock_result = mock_db_session.execute.return_value
@@ -35,7 +35,7 @@ async def test_get_by_api_key_found(
     mock_result.scalars = MagicMock(return_value=mock_scalars)
 
     # Вызываем метод
-    result = await user_repo.get_by_api_key(db=mock_db_session, api_key=api_key)
+    result = await user_repo.get_by_sha256(db=mock_db_session, sha256_hash=sha256_hash)
 
     # Проверки
     assert result == test_user_obj
@@ -44,12 +44,12 @@ async def test_get_by_api_key_found(
     mock_scalars.first.assert_called_once()
 
 
-async def test_get_by_api_key_not_found(
+async def test_get_by_sha256_not_found(
     user_repo: UserRepository,
     mock_db_session: MagicMock,
 ):
-    """Тест get_by_api_key, когда ключ не найден."""
-    api_key = "not_found_key"
+    """Тест get_by_sha256, когда хеш не найден."""
+    sha256_hash = "notfound" * 8
 
     # Настраиваем мок результата execute
     mock_result = mock_db_session.execute.return_value
@@ -58,7 +58,7 @@ async def test_get_by_api_key_not_found(
     mock_result.scalars = MagicMock(return_value=mock_scalars)
 
     # Вызываем метод
-    result = await user_repo.get_by_api_key(db=mock_db_session, api_key=api_key)
+    result = await user_repo.get_by_sha256(db=mock_db_session, sha256_hash=sha256_hash)
 
     # Проверки
     assert result is None

@@ -1,4 +1,5 @@
-from typing import AsyncGenerator, Awaitable, Callable, List
+import hashlib
+from typing import AsyncGenerator, Awaitable, Callable, List, Tuple
 from uuid import uuid4
 
 import pytest
@@ -13,6 +14,7 @@ from sqlalchemy.ext.asyncio import (
 )
 from sqlalchemy.pool import NullPool
 
+from src.api.dependencies import pwd_context
 from src.core.config import settings
 from src.core.database import get_db_session
 from src.main import app
@@ -93,50 +95,58 @@ async def client(override_get_db: AsyncSession) -> AsyncGenerator[AsyncClient, N
     del app.dependency_overrides[get_db_session]
 
 
-# Фикстура для аутентифицированного клиента
-@pytest.fixture(scope="function")
-def authenticated_client(client: AsyncClient, test_user: User) -> AsyncClient:
-    """Возвращает тестовый клиент с установленным заголовком api-key тестового пользователя."""
-    client.headers[settings.API_KEY_HEADER] = test_user.api_key
-    return client
-
-
 # --- Вспомогательные фикстуры ---
+
+
+# Общая функция для создания пользователя с хешами
+async def _create_test_user(
+    db_session: AsyncSession,
+    name: str,
+    api_key: str,
+) -> Tuple[User, str]:
+    """"""
+    key_hash = pwd_context.hash(api_key)
+    sha256_hash = hashlib.sha256(api_key.encode("utf-8")).hexdigest()
+
+    user = User(name=name, api_key_hash=key_hash, api_key_sha256=sha256_hash)
+
+    db_session.add(user)
+    await db_session.commit()
+    await db_session.refresh(user)
+    return user, api_key  # Возвращаем объект И исходный ключ
 
 
 # Фикстура пользователя `Test User`
 @pytest_asyncio.fixture(scope="function")
-async def test_user(db_session: AsyncSession) -> User:
-    """Создает тестового пользователя с уникальным api_key в БД и возвращает его объект."""
-    user = User(
-        name="Test User", api_key=f"test_key_{uuid4().hex[:6]}"
-    )  # Делаем api_key уникальным
-    db_session.add(user)
-    await db_session.commit()
-    await db_session.refresh(user)
-    return user
+async def test_user_data(db_session: AsyncSession) -> Tuple[User, str]:
+    """Создает пользователя `Test User` в БД и возвращает (объект User, исходный api_key)."""
+    api_key = f"test_key_{uuid4().hex[:6]}"
+    return await _create_test_user(db_session, "Test User", api_key)
 
 
 # Фикстура пользователя `Test Alice`
 @pytest_asyncio.fixture(scope="function")
-async def test_user_alice(db_session: AsyncSession) -> User:
-    """Создает второго тестового пользователя с уникальным api_key."""
-    user = User(name="Test Alice", api_key=f"alice_test_{uuid4().hex[:6]}")
-    db_session.add(user)
-    await db_session.commit()
-    await db_session.refresh(user)
-    return user
+async def test_user_alice_data(db_session: AsyncSession) -> Tuple[User, str]:
+    """Создает пользователя `Test Alice` в БД и возвращает (объект User, исходный api_key)."""
+    api_key = f"alice_test_{uuid4().hex[:6]}"
+    return await _create_test_user(db_session, "Test Alice", api_key)
 
 
 # Фикстура пользователя `Test Bob`
 @pytest_asyncio.fixture(scope="function")
-async def test_user_bob(db_session: AsyncSession) -> User:
-    """Создает третьего тестового пользователя с уникальным api_key."""
-    user = User(name="Test Bob", api_key=f"bob_test_{uuid4().hex[:6]}")
-    db_session.add(user)
-    await db_session.commit()
-    await db_session.refresh(user)
-    return user
+async def test_user_bob_data(db_session: AsyncSession) -> Tuple[User, str]:
+    """Создает пользователя `Test Bob` в БД и возвращает (объект User, исходный api_key)."""
+    api_key = f"bob_test_{uuid4().hex[:6]}"
+    return await _create_test_user(db_session, "Test Bob", api_key)
+
+
+# Фикстура для аутентифицированного клиента
+@pytest.fixture(scope="function")
+def authenticated_client(client: AsyncClient, test_user_data) -> AsyncClient:
+    """Возвращает тестовый клиент с установленным api-key тестового пользователя."""
+    user_obj, api_key = test_user_data
+    client.headers[settings.API_KEY_HEADER] = api_key
+    return client
 
 
 # Фикстура фабрики загрузки медиафайлов
