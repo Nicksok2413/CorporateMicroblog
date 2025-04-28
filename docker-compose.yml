@@ -28,9 +28,8 @@ services:
     env_file:
       - .env
     volumes:
-      # Используем sample_media для демонстрации
-      - ./sample_media:/media
-      - log_data:/logs
+      - media_data:/media # Том для медиа-файлов
+      - log_data:/logs # Том для логов
     expose:
       # Открываем порт только внутри сети Docker
       - "8000"
@@ -47,8 +46,7 @@ services:
       dockerfile: docker/nginx/Dockerfile # Путь к Dockerfile для nginx
     container_name: microblog_nginx
     volumes:
-      # Монтируем ту же папку sample_media, но только для чтения
-      - ./sample_media:/var/www/media:ro
+      - media_data:/var/www/media:ro # Nginx читает из тома media_data
       # Монтируем папку с сертификатами (только для чтения)
       - ./docker/nginx/certs:/etc/nginx/certs:ro
       # Монтируем том для логов Nginx
@@ -66,6 +64,8 @@ services:
 
 volumes:
   postgres_data:
+    driver: local
+  media_data:
     driver: local
   log_data:
     driver: local
