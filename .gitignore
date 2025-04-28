@@ -64,3 +64,8 @@ dmypy.json
 # Временные директории для тестов
 /temp_media/
 /temp_logs/
+
+# === Security certificates ===
+*.key
+*.pem
+*.csr
