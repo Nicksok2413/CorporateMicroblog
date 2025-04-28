@@ -41,5 +41,5 @@ RUN mkdir -p /media && chown 1001:1001 /media
 # Открываем порт 8000
 EXPOSE 8000
 
-# Точка входа будет выполнена от имени appuser
+# Точка входа
 ENTRYPOINT ["/app/entrypoint.sh"]
