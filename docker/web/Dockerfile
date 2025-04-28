@@ -36,8 +36,8 @@ RUN chmod +x /app/entrypoint.sh
 
 # Создаем директории для логов и медиа и устанавливаем владельца
 # Эти директории будут перекрыты томами, но полезно иметь их с правильными правами в образе
-RUN mkdir /logs && chown appuser:appgroup /logs
-RUN mkdir /media && chown appuser:appgroup /media
+RUN mkdir -p /logs && chown appuser:appgroup /logs
+RUN mkdir  -p /media && chown appuser:appgroup /media
 
 # Открываем порт 8000
 EXPOSE 8000
