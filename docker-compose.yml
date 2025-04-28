@@ -49,11 +49,15 @@ services:
     volumes:
       # Монтируем ту же папку sample_media, но только для чтения
       - ./sample_media:/var/www/media:ro
+      # Монтируем папку с сертификатами (только для чтения)
+      - ./docker/nginx/certs:/etc/nginx/certs:ro
       # Монтируем том для логов Nginx
       - nginx_log_data:/var/log/nginx
     ports:
-      # Внешний порт 8000 хоста пробрасываем на порт 80 контейнера Nginx
+      # Внешний HTTP порт 8000 хоста пробрасываем на порт 80 контейнера Nginx (для редиректа)
       - "8000:80"
+      # Внешний HTTPS порт 8443 хоста пробрасываем на порт 443 контейнера Nginx
+      - "8443:443"
     depends_on:
       - web # Запускаем Nginx после web
     restart: unless-stopped
