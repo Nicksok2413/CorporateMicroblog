@@ -68,4 +68,5 @@ dmypy.json
 # === Security certificates ===
 *.key
 *.pem
+*.crt
 *.csr
