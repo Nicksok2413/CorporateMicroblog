@@ -14,36 +14,32 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Создаем группу и non-root пользователя appuser
-RUN addgroup --system appgroup && \
-    adduser --system --ingroup appgroup --no-create-home appuser
-
-# Устанавливаем владельца рабочей директории до копирования файлов
-RUN chown appuser:appgroup /app
+RUN addgroup --system appgroup --gid 1001 && \
+    adduser --system --ingroup appgroup --uid 1001 --no-create-home appuser
 
 # Копируем requirements.txt
 COPY ./requirements.txt /app/requirements.txt
-# Устанавливаем зависимости от имени root (для доступа к системным пакетам)
+# Устанавливаем зависимости
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Копируем остальные файлы от имени appuser
-COPY --chown=appuser:appgroup ./src /app/src
-COPY --chown=appuser:appgroup ./alembic /app/alembic
-COPY --chown=appuser:appgroup ./alembic.ini /app/alembic.ini
-COPY --chown=appuser:appgroup ./docker/web/entrypoint.sh /app/entrypoint.sh
+COPY ./src /app/src
+COPY ./alembic /app/alembic
+COPY ./alembic.ini /app/alembic.ini
+COPY ./docker/web/entrypoint.sh /app/entrypoint.sh
+# Копируем начальные медиа
+COPY ./sample_media /app/initial_media
 
 # Устанавливаем права на выполнение entrypoint
 RUN chmod +x /app/entrypoint.sh
 
 # Создаем директории для логов и медиа и устанавливаем владельца
 # Эти директории будут перекрыты томами, но полезно иметь их с правильными правами в образе
-RUN mkdir -p /logs && chown appuser:appgroup /logs
-RUN mkdir  -p /media && chown appuser:appgroup /media
+RUN mkdir -p /logs && chown 1001:1001 /logs
+RUN mkdir -p /media && chown 1001:1001 /media
 
 # Открываем порт 8000
 EXPOSE 8000
-
-# Переключаемся на non-root пользователя
-USER appuser
 
 # Точка входа будет выполнена от имени appuser
 ENTRYPOINT ["/app/entrypoint.sh"]
