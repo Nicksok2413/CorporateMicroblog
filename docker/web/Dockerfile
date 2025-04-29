@@ -8,35 +8,51 @@ ENV PYTHONDONTWRITEBYTECODE=1
 # Устанавливаем рабочую директорию
 WORKDIR /app
 
-# # Установка системных зависимостей (для psycopg)
+# Устанавливаем системные зависимости (для psycopg и su-exec)
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends gcc libpq-dev && \
-    rm -rf /var/lib/apt/lists/*
+    apt-get install -y --no-install-recommends \
+        gcc \
+        libpq-dev \
+        build-essential \
+        ca-certificates \
+        wget \
+    # Компилируем и устанавливаем su-exec
+    && wget -O su-exec.tar.gz https://github.com/ncopa/su-exec/archive/master.tar.gz \
+    && tar -xzf su-exec.tar.gz \
+    && cd su-exec-master \
+    && make \
+    && cp su-exec /usr/local/bin/su-exec \
+    && cd / \
+    && rm -rf su-exec.tar.gz su-exec-master \
+    # Удаляем ненужные для runtime пакеты сборки
+    && apt-get purge -y --auto-remove build-essential wget \
+    && rm -rf /var/lib/apt/lists/*
 
 # Создаем группу и non-root пользователя appuser
-RUN addgroup --system appgroup --gid 1001 && \
-    adduser --system --ingroup appgroup --uid 1001 --no-create-home appuser
+RUN addgroup --system appgroup && \
+    adduser --system --ingroup appgroup --no-create-home appuser
+
+# Устанавливаем владельца рабочей директории до копирования файлов
+RUN chown appuser:appgroup /app
 
 # Копируем requirements.txt
 COPY ./requirements.txt /app/requirements.txt
-# Устанавливаем зависимости
+# Устанавливаем зависимости от имени root (для доступа к системным пакетам)
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Копируем остальные файлы от имени appuser
-COPY ./src /app/src
-COPY ./alembic /app/alembic
-COPY ./alembic.ini /app/alembic.ini
-COPY ./docker/web/entrypoint.sh /app/entrypoint.sh
-# Копируем начальные медиа
-COPY ./sample_media /app/initial_media
+COPY --chown=appuser:appgroup ./src /app/src
+COPY --chown=appuser:appgroup ./alembic /app/alembic
+COPY --chown=appuser:appgroup ./alembic.ini /app/alembic.ini
+COPY --chown=appuser:appgroup ./docker/web/entrypoint.sh /app/entrypoint.sh
 
 # Устанавливаем права на выполнение entrypoint
 RUN chmod +x /app/entrypoint.sh
 
 # Создаем директории для логов и медиа и устанавливаем владельца
 # Эти директории будут перекрыты томами, но полезно иметь их с правильными правами в образе
-RUN mkdir -p /logs && chown 1001:1001 /logs
-RUN mkdir -p /media && chown 1001:1001 /media
+RUN mkdir -p /logs && chown appuser:appgroup /logs
+RUN mkdir -p /media && chown appuser:appgroup /media
 
 # Открываем порт 8000
 EXPOSE 8000

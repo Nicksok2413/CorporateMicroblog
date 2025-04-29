@@ -43,42 +43,27 @@ except Exception as exc:
 END
 }
 
+# Ожидание БД
 wait_for_db
 
+# Установка прав на тома
+# Указываем пользователя и группу, под которыми будет работать приложение
+APP_USER=appuser
+APP_GROUP=appgroup
+echo "Установка владельца для /media и /logs на ${APP_USER}:${APP_GROUP}..."
+# Используем chown для изменения владельца точки монтирования тома
+# Это нужно делать от root перед понижением привилегий
+chown -R "${APP_USER}:${APP_GROUP}" /media
+chown -R "${APP_USER}:${APP_GROUP}" /logs
+echo "Права установлены."
+
+# Применяем миграции Alembic
 echo "Применение миграций Alembic..."
-alembic upgrade head
+#su-exec appuser alembic upgrade head
+su-exec "${APP_USER}" alembic upgrade head
 
-# --- Инициализация медиа тома при первом запуске ---
-MEDIA_DIR="/media"
-INITIAL_MEDIA_DIR="/app/initial_media"
-MARKER_FILE="$MEDIA_DIR/.volume_initialized"
-
-# Проверяем, существует ли сама директория /media
-if [ ! -d "$MEDIA_DIR" ]; then
-  echo "Критическая ошибка: директория тома $MEDIA_DIR не смонтирована!"
-  exit 1
-fi
-
-# Копируем, если нужно
-if [ -d "$INITIAL_MEDIA_DIR" ] && [ ! -f "$MARKER_FILE" ]; then
-  echo "Инициализация тома медиа: копирование начальных файлов из $INITIAL_MEDIA_DIR в $MEDIA_DIR..."
-  # Копируем содержимое
-  cp -a $INITIAL_MEDIA_DIR/. $MEDIA_DIR/ && \
-  # Устанавливаем владельца для скопированных файлов/папок внутри /media на appuser (UID 1001)
-  find $MEDIA_DIR -mindepth 1 -exec chown 1001:1001 {} + && \
-  # Создаем маркерный файл
-  touch $MARKER_FILE && \
-  chown 1001:1001 $MARKER_FILE # Устанавливаем владельца и для маркера
-  echo "Том медиа инициализирован."
-else
-  if [ -f "$MARKER_FILE" ]; then
-     echo "Том медиа уже инициализирован."
-   else
-     echo "Нет начальных медиафайлов для копирования ($INITIAL_MEDIA_DIR)."
-   fi
-fi
-# -------------------------------------------------
-
+# Запускаем основное приложение Uvicorn
 echo "Запуск основного приложения Uvicorn..."
-exec uvicorn src.main:app --host 0.0.0.0 --port 8000
-# exec uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload # Для разработки
+#exec su-exec appuser uvicorn src.main:app --host 0.0.0.0 --port 8000
+exec su-exec "${APP_USER}" uvicorn src.main:app --host 0.0.0.0 --port 8000
+# exec su-exec appuser uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload # Для разработки

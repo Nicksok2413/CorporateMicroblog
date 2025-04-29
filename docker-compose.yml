@@ -20,6 +20,20 @@ services:
     networks:
       - microblog_network
 
+  media-initializer:
+    build:
+      context: . # Контекст сборки - корень проекта
+      dockerfile: docker/media_init/Dockerfile # Путь к Dockerfile инициализатора медиа
+    container_name: microblog_media_init
+    volumes:
+      # Монтируем том для медиа-файлов
+      - media_data:/target_media_volume
+    # Копируем все из /init_media (внутри образа) в смонтированный том /target_media_volume
+    # Ключ -n: не перезаписывать существующие файлы (важно для повторных запусков)
+    command: sh -c 'cp -rn /init_media/* /target_media_volume/ && echo "Initial media copied." || echo "Initial media already exists or error."'
+    networks: # Сеть не обязательна, но пусть будет для консистентности
+      - microblog_network
+
   web:
     build:
       context: . # Контекст сборки - корень проекта
@@ -36,6 +50,8 @@ services:
     depends_on:
       db:
         condition: service_healthy # Запускаем web только после того, как db станет healthy
+      media-initializer:
+        condition: service_completed_successfully # Запускаем после успешного завершения инициализатора медиа
     restart: unless-stopped
     networks:
       - microblog_network
@@ -46,7 +62,8 @@ services:
       dockerfile: docker/nginx/Dockerfile # Путь к Dockerfile для nginx
     container_name: microblog_nginx
     volumes:
-      - media_data:/var/www/media:ro # Nginx читает из тома media_data
+      # Монтируем том для медиа-файлов (только для чтения)
+      - media_data:/var/www/media:ro
       # Монтируем папку с сертификатами (только для чтения)
       - ./docker/nginx/certs:/etc/nginx/certs:ro
       # Монтируем том для логов Nginx
