@@ -43,11 +43,27 @@ except Exception as exc:
 END
 }
 
+# Ожидание БД
 wait_for_db
 
-echo "Применение миграций Alembic..."
-alembic upgrade head
+# Установка прав на тома
+# Указываем пользователя и группу, под которыми будет работать приложение
+APP_USER=appuser
+APP_GROUP=appgroup
+echo "Установка владельца для /media и /logs на ${APP_USER}:${APP_GROUP}..."
+# Используем chown для изменения владельца точки монтирования тома
+# Это нужно делать от root перед понижением привилегий
+chown -R "${APP_USER}:${APP_GROUP}" /media
+chown -R "${APP_USER}:${APP_GROUP}" /logs
+echo "Права установлены."
 
+# Применяем миграции Alembic
+echo "Применение миграций Alembic..."
+#su-exec appuser alembic upgrade head
+su-exec "${APP_USER}" alembic upgrade head
+
+# Запускаем основное приложение Uvicorn
 echo "Запуск основного приложения Uvicorn..."
-exec uvicorn src.main:app --host 0.0.0.0 --port 8000
-# exec uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload # Для разработки
+#exec su-exec appuser uvicorn src.main:app --host 0.0.0.0 --port 8000
+exec su-exec "${APP_USER}" uvicorn src.main:app --host 0.0.0.0 --port 8000
+# exec su-exec appuser uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload # Для разработки
