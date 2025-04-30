@@ -64,8 +64,8 @@ services:
     volumes:
       # Монтируем том для медиа-файлов (только для чтения)
       - media_data:/var/www/media:ro
-      # Монтируем папку с сертификатами (только для чтения)
-      - ./docker/nginx/certs:/etc/nginx/certs:ro
+      # Монтируем том для хранения сгенерированных сертификатов
+      - certs_data:/etc/nginx/certs
       # Монтируем том для логов Nginx
       - nginx_log_data:/var/log/nginx
     ports:
@@ -85,6 +85,8 @@ volumes:
   media_data:
     driver: local
   log_data:
+    driver: local
+  certs_data:
     driver: local
   nginx_log_data:
     driver: local
