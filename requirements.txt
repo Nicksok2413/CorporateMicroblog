@@ -1,12 +1,21 @@
-aiofiles>=24.1.0
-alembic==1.15.2
+# Основной фреймворк и его окружение
 fastapi==0.115.12
+uvicorn[standard]==0.34.2
+pydantic==2.11.4
+pydantic-settings==2.9.1
+python-dotenv==1.1.0
+python-multipart==0.0.20 # Для обработки форм (загрузка файлов)
+
+# База данных и ORM
+sqlalchemy==2.0.40
+psycopg[binary]==3.2.6 # Драйвер PostgreSQL (psycopg3)
+alembic==1.15.2
+
+# Асинхронные файловые операции
+aiofiles==24.1.0
+
+# Логирование
 loguru==0.7.3
-passlib[argon2]>=1.7.4
-psycopg[binary]>=3.2.6
-pydantic>=2.11.4
-pydantic_settings>=2.9.1
-python-dotenv>=1.1.0
-python-multipart>=0.0.20
-sqlalchemy>=2.0.40
-uvicorn>=0.34.2
+
+# Хеширование паролей/ключей
+passlib[argon2]==1.7.4
