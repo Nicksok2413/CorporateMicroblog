@@ -1,5 +1,8 @@
 FROM nginx:1.27-alpine
 
+# Устанавливаем openssl
+RUN apk --no-cache add openssl
+
 # Удаляем стандартный конфиг
 RUN rm /etc/nginx/conf.d/default.conf
 
@@ -21,5 +24,18 @@ RUN mkdir -p /var/log/nginx && \
     touch /var/log/nginx/access.log /var/log/nginx/error.log && \
     chown -R nginx:nginx /var/log/nginx
 
-# Открываем порт 80
+# Создаем директорию для сертификатов
+# Права на запись не нужны, но установим владельца
+RUN mkdir -p /etc/nginx/certs && \
+    chown nginx:nginx /etc/nginx/certs
+
+# Копируем и устанавливаем права на выполнение entrypoint
+COPY ./docker/nginx/entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
+# Открываем порты
 EXPOSE 80
+EXPOSE 443
+
+# Точка входа
+ENTRYPOINT ["/docker-entrypoint.sh"]
