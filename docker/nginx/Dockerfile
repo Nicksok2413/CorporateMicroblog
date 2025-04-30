@@ -39,3 +39,7 @@ EXPOSE 443
 
 # Точка входа
 ENTRYPOINT ["/docker-entrypoint.sh"]
+
+# Указываем команду по умолчанию, которую будет запускать entrypoint через "$@"
+# Это стандартная команда для запуска Nginx в foreground
+CMD ["nginx", "-g", "daemon off;"]
