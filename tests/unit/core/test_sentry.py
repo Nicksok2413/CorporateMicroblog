@@ -1,7 +1,4 @@
-from logging import INFO, ERROR
 from unittest.mock import MagicMock, patch
-
-import pytest
 
 from src.core import sentry
 
