@@ -68,8 +68,7 @@ def initialize_sentry():
                 FastApiIntegration(transaction_style="endpoint"),
                 SqlalchemyIntegration(),
                 LoggingIntegration(
-                    level=log_level_breadcrumbs,
-                    event_level=log_level_events
+                    level=log_level_breadcrumbs, event_level=log_level_events
                 ),
             ],
             environment=environment,
