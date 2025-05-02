@@ -4,6 +4,8 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette_exporter import PrometheusMiddleware, handle_metrics
 
 from src.api.router import api_router
 from src.core.config import settings
@@ -55,6 +57,11 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
         description="Бэкенд для корпоративного сервиса микроблогов",
     )
+
+    # Добавляем middleware для Prometheus
+    app.add_middleware(PrometheusMiddleware, app_name="microblog_fastapi")
+    # Эндпоинт /metrics будет добавлен автоматически этим middleware
+    log.info("PrometheusMiddleware добавлен.")
 
     # Настраиваем CORS (Cross-Origin Resource Sharing)
     # Позволяет фронтенду с другого домена обращаться к API

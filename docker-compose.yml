@@ -79,6 +79,50 @@ services:
     networks:
       - microblog_network
 
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: microblog_prometheus
+    volumes:
+      # Монтируем конфиг Prometheus
+      - ./docker/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      # Том для данных Prometheus (история метрик)
+      - prometheus_data:/prometheus
+    command: # Передаем путь к конфигу
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus' # Путь для хранения данных
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--web.enable-lifecycle' # Разрешает перезагрузку конфига через API
+    ports:
+      - "9090:9090" # Открываем порт Prometheus
+    depends_on:
+      - web # Запускаем Prometheus после web
+    restart: unless-stopped
+    networks:
+      - microblog_network
+
+  grafana:
+    image: grafana/grafana-oss:latest
+    container_name: microblog_grafana
+    volumes:
+      # Том для данных Grafana (настройки, пользователи, дашборды)
+      - grafana_data:/var/lib/grafana
+      # Монтируем provisioning для автонастройки
+      - ./docker/monitoring/grafana/provisioning/:/etc/grafana/provisioning/:ro
+      # Монтируем папку с JSON дашбордами для provisioning
+      - ./docker/monitoring/grafana/dashboards/:/etc/grafana/provisioning/dashboards/:ro
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: 2413
+      GF_USERS_ALLOW_SIGN_UP: "false" # Отключить регистрацию новых пользователей
+    ports:
+      - "3000:3000" # Открываем порт Grafana
+    depends_on:
+      - prometheus # Запускаем Grafana после Prometheus
+    restart: unless-stopped
+    networks:
+      - microblog_network
+
 volumes:
   postgres_data:
     driver: local
@@ -89,6 +133,10 @@ volumes:
   certs_data:
     driver: local
   nginx_log_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
     driver: local
 
 networks:
