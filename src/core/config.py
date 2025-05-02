@@ -2,6 +2,7 @@
 
 from pathlib import Path
 from tempfile import gettempdir
+from typing import Optional
 
 from pydantic import Field, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -33,6 +34,12 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = Field(default="INFO", description="Уровень логирования")
     # Настройки безопасности
     API_KEY_HEADER: str = Field("api-key", description="HTTP-заголовок с API-ключом")
+
+    # --- Настройки Sentry ---
+    SENTRY_DSN: Optional[str] = Field(
+        default=None,
+        description="Sentry DSN для включения интеграции. Если None, Sentry отключен.",
+    )
 
     # --- Вычисляемые поля ---
 

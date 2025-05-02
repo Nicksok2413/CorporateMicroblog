@@ -10,6 +10,10 @@ from src.core.config import settings
 from src.core.database import db
 from src.core.exceptions import setup_exception_handlers
 from src.core.logging import log
+from src.core.sentry import initialize_sentry
+
+# Вызываем инициализацию Sentry
+initialize_sentry()
 
 
 # Определяем lifespan для управления подключением к БД

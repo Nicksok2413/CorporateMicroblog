@@ -14,8 +14,11 @@ alembic==1.15.2
 # Асинхронные файловые операции
 aiofiles==24.1.0
 
+# Хеширование паролей/ключей
+passlib[argon2]==1.7.4
+
 # Логирование
 loguru==0.7.3
 
-# Хеширование паролей/ключей
-passlib[argon2]==1.7.4
+# Sentry
+sentry-sdk[fastapi,sqlalchemy]==2.27.0
