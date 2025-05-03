@@ -1,27 +1,33 @@
-# config file version
 apiVersion: 1
 
-# list of datasources that should be deleted from the database
+# Список источников данных для удаления (если они существуют с таким именем и orgId)
+# Полезно, чтобы гарантировать применение именно нашей конфигурации
 deleteDatasources:
   - name: Prometheus
     orgId: 1
 
-# list of datasources to insert/update depending
-# what's available in the database
+# Список источников данных для создания или обновления
 datasources:
-  # <string> name of the datasource. Required
+    # Имя источника данных, которое будет отображаться в Grafana UI
   - name: Prometheus
-    # <string> datasource type. Required
+    # Тип источника данных
     type: prometheus
-    # <string> access mode. proxy or direct (server or browser in the UI). Required
+    # Режим доступа. 'proxy' означает, что браузер пользователя будет делать запросы к Grafana,
+    # а Grafana уже будет запрашивать данные у Prometheus. 'direct' означал бы,
+    # что браузер пользователя напрямую обращается к Prometheus.
     access: proxy
-    # <int> org id. defaults to 1
+    # ID организации. По умолчанию 1 для стандартной организации Grafana.
     orgId: 1
-    # <string> url
-    url: http://prometheus:9090 # Имя сервиса Prometheus и его порт внутри сети Docker
-    # <bool> enable basic auth
+    # URL, по которому Grafana будет обращаться к Prometheus.
+    # Используем имя сервиса 'prometheus' и его стандартный порт 9090 внутри сети Docker.
+    url: http://prometheus:9090
+    # Отключить базовую аутентификацию (если Prometheus не требует логин/пароль)
     basicAuth: false
-    # <bool> mark as default datasource. Max one per org
+    # Сделать этот источник данных источником по умолчанию для новых панелей.
     isDefault: true
-    # <bool> allow users to edit datasources from the UI.
+    # Позволять ли пользователям редактировать этот источник данных через UI Grafana.
     editable: true
+    # Версия JSON данных (для внутреннего использования Grafana)
+    jsonData:
+      # Таймаут для HTTP запросов к Prometheus
+      timeout: 60
