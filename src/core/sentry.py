@@ -1,3 +1,5 @@
+"""Настройка Sentry SDK."""
+
 from logging import INFO, ERROR
 
 import sentry_sdk
