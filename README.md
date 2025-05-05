@@ -257,6 +257,11 @@ curl -k -X GET "https://localhost:8443/api/users/me" \
     ```bash
     pytest --cov=src --cov-report term-missing -vv
     ```
+6.  **Аудит зависимостей:**
+    ```bash
+    pip-audit
+    ```
+
 
 ## 🧹 Линтинг и Форматирование
 
