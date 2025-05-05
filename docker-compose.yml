@@ -34,6 +34,16 @@ services:
     networks: # Сеть не обязательна, но пусть будет для консистентности
       - microblog_network
 
+  redis:
+    image: redis:7.4-alpine
+    container_name: microblog_redis
+    command: redis-server --save 60 1 --loglevel warning
+    volumes:
+      - redis_data:/data # Том для персистентности (опционально)
+    restart: unless-stopped
+    networks:
+      - microblog_network
+
   web:
     build:
       context: . # Контекст сборки - корень проекта
@@ -52,6 +62,8 @@ services:
         condition: service_healthy # Запускаем web только после того, как db станет healthy
       media-initializer:
         condition: service_completed_successfully # Запускаем после успешного завершения инициализатора медиа
+      redis:
+        condition: service_started # Запускаем после успешного старта Redis
     restart: unless-stopped
     networks:
       - microblog_network
@@ -127,6 +139,8 @@ volumes:
   postgres_data:
     driver: local
   media_data:
+    driver: local
+  redis_data:
     driver: local
   log_data:
     driver: local

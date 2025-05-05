@@ -1,12 +1,14 @@
 """Основной файл приложения FastAPI для сервиса микроблогов."""
 
 from contextlib import asynccontextmanager
+from typing import Optional
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette_exporter import PrometheusMiddleware, handle_metrics
 
 from src.api.router import api_router
+from src.core.cache import RedisClientType, initialize_cache, close_redis_connection
 from src.core.config import settings
 from src.core.database import db
 from src.core.exceptions import setup_exception_handlers
@@ -17,7 +19,7 @@ from src.core.sentry import initialize_sentry
 initialize_sentry()
 
 
-# Определяем lifespan для управления подключением к БД
+# Определяем lifespan для управления подключением к Redis и БД
 @asynccontextmanager
 async def lifespan(app: FastAPI):  # pragma: no cover
     """
@@ -25,17 +27,28 @@ async def lifespan(app: FastAPI):  # pragma: no cover
     Выполняет подключение к БД при старте и отключение при завершении.
     """
     log.info("Инициализация приложения...")
+    # Переменные для хранения состояний ресурсов
+    redis_client: Optional[RedisClientType] = None
+    db_connected = False
+
     try:
+        # Инициализация Redis и Кэша
+        redis_client = await initialize_cache()
+        # Инициализация подключения к БД
         await db.connect()
+        db_connected = True
+        # Приложение готово к работе
         yield
     except Exception as exc:
-        log.critical(
-            f"Критическая ошибка при старте приложения (БД?): {exc}", exc_info=True
-        )
+        log.critical(f"Критическая ошибка: {exc}", exc_info=True)
         raise exc
     finally:
         log.info("Остановка приложения...")
-        await db.disconnect()
+        # # Закрываем соединение с Redis
+        await close_redis_connection(redis_client)
+        # Закрываем соединение с БД, если оно было установлено
+        if db_connected:
+            await db.disconnect()
         log.info("Приложение остановлено.")
 
 

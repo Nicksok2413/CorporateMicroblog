@@ -1,6 +1,7 @@
 """API роуты для работы с пользователями, их профилями и подписками."""
 
 from fastapi import APIRouter, Path, status
+from fastapi_cache.decorator import cache
 
 from src.api.dependencies import CurrentUser, DBSession, FollowSvc, UserSvc
 from src.core.logging import log
@@ -18,6 +19,7 @@ router = APIRouter(prefix="/users", tags=["Users"])
     description="Возвращает информацию о профиле аутентифицированного пользователя, "
     "включая списки подписчиков и подписок.",
 )
+@cache(expire=120)
 async def get_my_profile(
     db: DBSession,
     current_user: CurrentUser,
@@ -52,6 +54,7 @@ async def get_my_profile(
         status.HTTP_404_NOT_FOUND: {"description": "Пользователь не найден"},
     },
 )
+@cache(expire=120)
 async def get_user_profile_by_id(
     db: DBSession,
     user_service: UserSvc,

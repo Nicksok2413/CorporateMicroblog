@@ -11,6 +11,10 @@ sqlalchemy==2.0.40
 psycopg[binary]==3.2.6 # Драйвер PostgreSQL (psycopg3)
 alembic==1.15.2
 
+# Кеширование
+redis[hiredis]==6.0.0
+fastapi-cache2[redis]==0.2.2
+
 # Асинхронные файловые операции
 aiofiles==24.1.0
 
