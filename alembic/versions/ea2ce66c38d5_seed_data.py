@@ -9,10 +9,9 @@ Create Date: 2025-04-14 08:12:24.132416
 import hashlib
 from typing import Sequence, Union
 
-from alembic import op
 import sqlalchemy as sa
-
-from src.api.dependencies import pwd_context
+from alembic import op
+from passlib.context import CryptContext
 
 # revision identifiers, used by Alembic.
 revision: str = "ea2ce66c38d5"
@@ -62,6 +61,9 @@ PLAIN_API_KEYS = {
     4: "charlie_key",
     5: "david_key",
 }
+
+# Настройка хеширования как в src/api/dependencies.py
+pwd_context = CryptContext(schemes=["argon2"])
 
 
 def upgrade() -> None:
