@@ -1,7 +1,7 @@
 # Сервис Корпоративных Микроблогов (Backend) 🚀
 
 ![Python](https://img.shields.io/badge/Python-3.12-blueviolet) ![FastAPI](https://img.shields.io/badge/FastAPI-0.115-success) ![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-2.0-orange) 
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-blue) ![Nginx](https://img.shields.io/badge/Nginx-stable-brightgreen)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-blue) ![Nginx](https://img.shields.io/badge/Nginx-1.27-brightgreen)
 
 Бэкенд для корпоративного сервиса микроблогов, реализованный на Python с использованием FastAPI, SQLAlchemy и PostgreSQL.
 
