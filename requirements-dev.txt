@@ -1,6 +1,9 @@
 # Включаем основные зависимости
 -r requirements.txt
 
+# pre-commit
+pre-commit==4.2.0
+
 # Тестирование
 pytest==8.3.5
 pytest-asyncio==0.26.0
