@@ -9,7 +9,6 @@ repos:
       - id: check-merge-conflict # Предотвращает коммит файлов с маркерами конфликтов слияния
       - id: check-added-large-files # Предотвращает коммит больших файлов (можно настроить args)
       - id: detect-private-key # Ищет приватные ключи
-      - id: trailing-whitespace # Удаляет лишние пробелы в конце строк
 
   # Хуки для Ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
