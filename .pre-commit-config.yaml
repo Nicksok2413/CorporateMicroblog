@@ -1,0 +1,21 @@
+repos:
+  # Стандартные хуки от pre-commit
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-yaml # Проверяет синтаксис YAML файлов
+      - id: check-json # Проверяет синтаксис JSON файлов
+      - id: check-toml # Проверяет синтаксис TOML файлов (pyproject.toml, pytest.ini)
+      - id: check-merge-conflict # Предотвращает коммит файлов с маркерами конфликтов слияния
+      - id: check-added-large-files # Предотвращает коммит больших файлов (можно настроить args)
+      - id: detect-private-key # Ищет приватные ключи
+
+  # Хуки для Ruff
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.11.8
+    hooks:
+      # Запуск линтера
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix] # Автоматически исправлять и падать, если исправления были
+      # Запуск форматтера
+      - id: ruff-format
