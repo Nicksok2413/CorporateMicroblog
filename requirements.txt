@@ -8,20 +8,18 @@ python-multipart==0.0.20 # Для обработки форм (загрузка 
 
 # База данных и ORM
 sqlalchemy==2.0.40
-psycopg[binary]==3.2.6 # Драйвер PostgreSQL (psycopg3)
+psycopg[binary]==3.2.6
 alembic==1.15.2
 
 # Асинхронные файловые операции
 aiofiles==24.1.0
 
-# Хеширование паролей/ключей
+# Хеширование ключей
 passlib[argon2]==1.7.4
 
 # Логирование
 loguru==0.7.3
 
-# Sentry
+# Мониторинг
 sentry-sdk[fastapi,sqlalchemy]==2.27.0
-
-# Prometheus
 starlette-exporter==0.23.0
