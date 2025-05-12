@@ -89,19 +89,16 @@
 │   ├── media_init/
 │   │   ├── sample_media/       # Медиафайлы для демонстрации
 │   │   └── Dockerfile          # Dockerfile для init-контейнера медиа
-│   │
 │   ├── monitoring/
 │   │   ├── grafana/
 │   │   │   ├── dashboards/     # JSON файлы дашбордов
 │   │   │   └── provisioning/   # Файлы автонастройки Grafana (datasources, dashboards)
 │   │   └── prometheus/
 │   │       └── prometheus.yml  # Конфигурация Prometheus
-│   │
 │   ├── nginx/
 │   │   ├── Dockerfile          # Dockerfile для Nginx
 │   │   ├── entrypoint.sh       # Скрипт генерации сертификата и запуска Nginx
 │   │   └── nginx.conf          # Конфигурация Nginx
-│   │
 │   └── web/
 │       ├── Dockerfile          # Dockerfile для FastAPI приложения
 │       └── entrypoint.sh       # Скрипт точки входа web сервиса (миграции, chown, запуск uvicorn)
