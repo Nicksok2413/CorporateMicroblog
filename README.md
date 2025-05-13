@@ -83,6 +83,10 @@
 ## 📂 Структура Проекта
 
 ```
+├── .github/
+│   └── workflows/
+│       └── ci-cd.yml           # GitHub Actions CI/CD
+│
 ├── alembic/                    # Alembic миграции БД
 │
 ├── docker/                     # Конфигурации и Dockerfiles для сервисов
@@ -127,9 +131,9 @@
 │       ├── services/           # Unit-тесты сервисов (бизнес-логика)
 │       └── conftest.py         # Фикстуры для unit-тестов (моки)
 │
+├── .dockerignore               # Игнорируемые файлы Docker при сборке
 ├── .env.example                # Шаблон файла переменных окружения
 ├── .gitignore                  # Игнорируемые файлы Git
-├── .dockerignore               # Игнорируемые файлы Docker при сборке
 ├── .pre-commit-config.yaml     # Конфигурация Pre-commit
 ├── alembic.ini                 # Конфигурация Alembic
 ├── docker-compose.yml          # Docker Compose конфигурация (основной оркестратор)
