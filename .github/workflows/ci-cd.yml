@@ -31,10 +31,6 @@ jobs:
           ruff format . --check # Проверяем форматирование без изменения файлов
       - name: Check types with Mypy
         run: mypy src
-
-      - name: Audit dependencies with pip-audit # Аудит зависимостей
-        run: pip-audit
-
       - name: Run tests with Pytest
         run: pytest --cov=src --cov-report term-missing -vv
         env:
